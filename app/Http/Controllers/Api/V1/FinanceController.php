@@ -58,7 +58,13 @@ class FinanceController extends Controller
             'remarks' => ['nullable', 'string', 'max:1000'],
         ]);
 
-        $action->transition($finance, FinanceStatus::from($data['status']), $data, $request->user());
+        $target = FinanceStatus::from($data['status']);
+
+        if ($target->requiresDedicatedAction()) {
+            return ApiResponse::error('Disbursed is set by the disburse endpoint (which creates the disbursement + ledger credit), not the status endpoint.', 422);
+        }
+
+        $action->transition($finance, $target, $data, $request->user());
 
         return ApiResponse::success(['status' => $finance->fresh()->status->value], 'Finance status updated.');
     }

@@ -70,3 +70,41 @@ it('creates a finance file from the web endpoint', function () {
 
     expect(FinanceApplication::query()->where('booking_id', $booking->id)->exists())->toBeTrue();
 });
+
+it('refuses to mark a finance file Disbursed through the generic status control', function () {
+    [$booking, $admin] = ledgerBooking(['payment_mode' => 'finance']);
+    $action = app(FinanceApplicationAction::class);
+    $app = $action->create($booking, ['loan_amount' => 600000], $admin);
+
+    foreach (['file_ready', 'submitted', 'logged_in', 'credit_pending', 'sanctioned', 'agreement_pending', 'disbursement_pending'] as $s) {
+        $action->transition($app->fresh(), FinanceStatus::from($s), [], $admin);
+    }
+    expect($app->fresh()->status)->toBe(FinanceStatus::DisbursementPending);
+
+    $this->actingAs($admin)
+        ->from("/admin/finance/{$app->id}")
+        ->post("/admin/finance/{$app->id}/transition", ['status' => 'disbursed'])
+        ->assertRedirect("/admin/finance/{$app->id}")
+        ->assertSessionHas('error');
+
+    // Status unchanged, no disbursement record, no ledger credit.
+    $app->refresh();
+    expect($app->status)->toBe(FinanceStatus::DisbursementPending)
+        ->and($app->disbursements()->count())->toBe(0);
+
+    $ledger = app(LedgerService::class)->forBooking($booking);
+    expect($ledger?->entries()->where('head', 'finance_amount')->count() ?? 0)->toBe(0);
+});
+
+it('omits Disbursed from the finance transition dropdown', function () {
+    [$booking, $admin] = ledgerBooking(['payment_mode' => 'finance']);
+    $action = app(FinanceApplicationAction::class);
+    $app = $action->create($booking, ['loan_amount' => 600000], $admin);
+    foreach (['file_ready', 'submitted', 'logged_in', 'credit_pending', 'sanctioned', 'agreement_pending', 'disbursement_pending'] as $s) {
+        $action->transition($app->fresh(), FinanceStatus::from($s), [], $admin);
+    }
+
+    $this->actingAs($admin)
+        ->get("/admin/finance/{$app->id}")
+        ->assertInertia(fn ($p) => $p->where('allowedTransitions', fn ($t) => collect($t)->pluck('value')->doesntContain('disbursed')));
+});

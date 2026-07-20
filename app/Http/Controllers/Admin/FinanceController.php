@@ -86,10 +86,14 @@ class FinanceController extends Controller
         return Inertia::render('admin/finance/Show', [
             'application' => $finance,
             'lenders' => Lender::query()->where('is_active', true)->orderBy('name')->get(['id', 'name']),
-            'allowedTransitions' => array_map(
+            'allowedTransitions' => array_values(array_map(
                 fn (FinanceStatus $s) => ['value' => $s->value, 'label' => $s->label()],
-                $finance->status->allowedTransitions(),
-            ),
+                // Disbursed is reached through "Record Disbursement", not this dropdown.
+                array_filter(
+                    $finance->status->allowedTransitions(),
+                    fn (FinanceStatus $s) => ! $s->requiresDedicatedAction(),
+                ),
+            )),
             'can' => [
                 'update' => $request->user()->can('update', $finance),
                 'disburse' => $request->user()->can('update', $finance),
@@ -114,7 +118,15 @@ class FinanceController extends Controller
             'remarks' => ['nullable', 'string', 'max:1000'],
         ]);
 
-        $action->transition($finance, FinanceStatus::from($data['status']), $data, $request->user());
+        $target = FinanceStatus::from($data['status']);
+
+        // Disbursement is completed via "Record Disbursement" — that creates the
+        // disbursement + posts the ledger credit. The status control must not set it.
+        if ($target->requiresDedicatedAction()) {
+            return back()->with('error', 'Use “Record Disbursement” to disburse — that step creates the disbursement and posts the customer-ledger credit.');
+        }
+
+        $action->transition($finance, $target, $data, $request->user());
 
         return back()->with('success', 'Finance status updated.');
     }

@@ -49,6 +49,17 @@ enum FinanceStatus: string implements HasTransitions
         return $this === self::Closed;
     }
 
+    /**
+     * Disbursed must only be reached through the disburse action — that step
+     * creates the Disbursement record and posts the financed amount to the
+     * customer ledger. Setting it via the generic status control would mark the
+     * file disbursed with no disbursement and no ledger credit.
+     */
+    public function requiresDedicatedAction(): bool
+    {
+        return $this === self::Disbursed;
+    }
+
     public function label(): string
     {
         return str($this->value)->replace('_', ' ')->title()->toString();
