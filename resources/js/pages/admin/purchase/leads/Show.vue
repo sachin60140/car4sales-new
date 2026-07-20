@@ -31,6 +31,18 @@ const tabs = ['Overview', 'Follow-ups', 'Documents', 'Valuation', 'Approval', 'P
 const documentStages = ['document_verification_pending', 'seller_kyc_pending'];
 const activeTab = ref(documentStages.includes(props.lead.status) ? 'Documents' : 'Overview');
 
+// Outstanding document/KYC work, surfaced as a badge on the Documents tab.
+const pendingVerifications = computed(
+    () => (props.lead.verifications ?? []).filter((v: Record<string, any>) => v.status === 'pending').length,
+);
+const documentsDue = computed(() => documentStages.includes(props.lead.status));
+// Number of unverified items when we have them; otherwise a dot ('•') while the
+// lead sits at a KYC/verification stage. Empty string = no badge.
+const documentsBadge = computed<string>(() => {
+    if (pendingVerifications.value > 0) return String(pendingVerifications.value);
+    return documentsDue.value ? '•' : '';
+});
+
 function money(v: unknown): string {
     if (v === null || v === undefined || v === '') return '—';
     return '₹' + Number(v).toLocaleString('en-IN');
@@ -196,11 +208,16 @@ const verificationStatuses = ['pending', 'received', 'verified', 'rejected', 'ex
                 <button
                     v-for="tab in tabs"
                     :key="tab"
-                    class="border-b-2 px-4 py-2 text-sm font-medium transition-colors"
+                    class="flex items-center gap-1.5 border-b-2 px-4 py-2 text-sm font-medium transition-colors"
                     :class="activeTab === tab ? 'border-primary text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground'"
                     @click="activeTab = tab"
                 >
                     {{ tab }}
+                    <span
+                        v-if="tab === 'Documents' && documentsBadge"
+                        class="inline-flex min-w-[1.25rem] items-center justify-center rounded-full bg-brand-red px-1.5 text-xs font-semibold leading-5 text-white"
+                        :title="pendingVerifications > 0 ? `${pendingVerifications} document(s) pending verification` : 'Documents / seller KYC pending'"
+                    >{{ documentsBadge }}</span>
                 </button>
             </div>
 
