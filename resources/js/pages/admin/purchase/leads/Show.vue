@@ -26,7 +26,10 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 const tabs = ['Overview', 'Follow-ups', 'Documents', 'Valuation', 'Approval', 'Purchase'];
-const activeTab = ref('Overview');
+// Open straight to the Documents tab while the lead is awaiting document
+// verification or seller KYC — that's the work due at these stages.
+const documentStages = ['document_verification_pending', 'seller_kyc_pending'];
+const activeTab = ref(documentStages.includes(props.lead.status) ? 'Documents' : 'Overview');
 
 function money(v: unknown): string {
     if (v === null || v === undefined || v === '') return '—';
