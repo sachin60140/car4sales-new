@@ -103,10 +103,16 @@ class PurchaseLeadController extends Controller
         return Inertia::render('admin/purchase/leads/Show', [
             'lead' => $purchaseLead,
             'statuses' => PurchaseLeadStatus::options(),
-            'allowedTransitions' => array_map(
+            'allowedTransitions' => array_values(array_map(
                 fn (PurchaseLeadStatus $s) => ['value' => $s->value, 'label' => $s->label()],
-                $purchaseLead->status->allowedTransitions(),
-            ),
+                // Purchase-approval and possession are reached through their own
+                // actions (which create the purchase record / stock), not the
+                // generic status control — so keep them out of that dropdown.
+                array_filter(
+                    $purchaseLead->status->allowedTransitions(),
+                    fn (PurchaseLeadStatus $s) => ! $s->requiresDedicatedAction(),
+                ),
+            )),
             'employees' => User::query()->where('is_active', true)->orderBy('name')->get(['id', 'name']),
             'can' => [
                 'update' => $request->user()->can('update', $purchaseLead),
@@ -143,6 +149,16 @@ class PurchaseLeadController extends Controller
         ]);
 
         $target = PurchaseLeadStatus::from($data['status']);
+
+        // Guard the record-creating milestones: these must go through their
+        // dedicated action so the VehiclePurchase / stock entry is actually created.
+        if ($target->requiresDedicatedAction()) {
+            $message = $target === PurchaseLeadStatus::Purchased
+                ? 'Use “Confirm Possession” to complete the purchase — that step creates the stock entry.'
+                : 'Approve the purchase from its approval request — that step creates the purchase record.';
+
+            return back()->with('error', $message);
+        }
 
         if ($target->isLost() && empty($data['lost_reason'])) {
             return back()->withErrors(['lost_reason' => 'A reason is required when marking a lead as lost.']);

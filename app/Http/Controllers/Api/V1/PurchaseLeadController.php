@@ -114,6 +114,12 @@ class PurchaseLeadController extends Controller
 
         $target = PurchaseLeadStatus::from($data['status']);
 
+        // Record-creating milestones must go through their dedicated endpoints
+        // (approval decision / possession) which create the purchase & stock.
+        if ($target->requiresDedicatedAction()) {
+            return ApiResponse::error('This status is set by its dedicated action (purchase approval or possession), not the status endpoint.', 422);
+        }
+
         if ($target->isLost() && empty($data['lost_reason'])) {
             return ApiResponse::error('A lost reason is required.', 422, ['errors' => ['lost_reason' => ['A reason is required.']]]);
         }

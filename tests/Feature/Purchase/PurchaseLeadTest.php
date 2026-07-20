@@ -56,8 +56,10 @@ it('rejects an invalid status transition', function () {
     $user = userWithPermissions(['purchase-leads.view', 'purchase-leads.update'], scope: 'all');
     $lead = PurchaseLead::factory()->create(['status' => PurchaseLeadStatus::New]);
 
+    // 'negotiation' is not reachable from New (and isn't a guarded milestone),
+    // so it exercises the invalid-transition path rather than the record-action guard.
     $this->actingAs($user)
-        ->post("/admin/purchase-leads/{$lead->id}/transition", ['status' => 'purchased'])
+        ->post("/admin/purchase-leads/{$lead->id}/transition", ['status' => 'negotiation'])
         ->assertStatus(422);
 
     expect($lead->fresh()->status)->toBe(PurchaseLeadStatus::New);

@@ -65,6 +65,19 @@ enum PurchaseLeadStatus: string implements HasTransitions
         return in_array($this, [self::Rejected, self::SellerNotInterested, self::VehicleSoldElsewhere], true);
     }
 
+    /**
+     * Statuses that must only be reached through their dedicated action, because
+     * that action creates a downstream record:
+     *   PurchaseApproved → the purchase-approval decision creates the VehiclePurchase.
+     *   Purchased        → Confirm Possession creates the stock (inventory) entry.
+     * Reaching these via the generic status control would orphan the lead (marked
+     * done with no purchase / no stock), so the generic transition must refuse them.
+     */
+    public function requiresDedicatedAction(): bool
+    {
+        return in_array($this, [self::PurchaseApproved, self::Purchased], true);
+    }
+
     public function label(): string
     {
         return str($this->value)->replace('_', ' ')->title()->toString();

@@ -186,3 +186,45 @@ it('reverses a paid seller payment with an offsetting entry', function () {
         ->and($payment->fresh()->status)->toBe('reversed')
         ->and((float) $purchase->fresh()->paidAmount())->toBe(0.0);
 });
+
+it('refuses to reach Purchased through the generic status control (must use Confirm Possession)', function () {
+    $admin = superAdmin();
+    $lead = PurchaseLead::factory()->create([
+        'status' => PurchaseLeadStatus::PossessionPending->value,
+        'registration_number' => 'UP99 QA0001',
+    ]);
+
+    $this->actingAs($admin)
+        ->from("/admin/purchase-leads/{$lead->id}")
+        ->post("/admin/purchase-leads/{$lead->id}/transition", ['status' => 'purchased'])
+        ->assertRedirect("/admin/purchase-leads/{$lead->id}")
+        ->assertSessionHas('error');
+
+    expect($lead->fresh()->status)->toBe(PurchaseLeadStatus::PossessionPending)
+        ->and(Vehicle::query()->where('registration_number', 'UP99 QA0001')->exists())->toBeFalse();
+});
+
+it('refuses to reach PurchaseApproved through the generic status control', function () {
+    $admin = superAdmin();
+    $lead = PurchaseLead::factory()->create([
+        'status' => PurchaseLeadStatus::PurchaseApprovalPending->value,
+    ]);
+
+    $this->actingAs($admin)
+        ->from("/admin/purchase-leads/{$lead->id}")
+        ->post("/admin/purchase-leads/{$lead->id}/transition", ['status' => 'purchase_approved'])
+        ->assertSessionHas('error');
+
+    expect($lead->fresh()->status)->toBe(PurchaseLeadStatus::PurchaseApprovalPending);
+});
+
+it('omits the dedicated-action statuses from the generic transition dropdown', function () {
+    $admin = superAdmin();
+    $lead = PurchaseLead::factory()->create([
+        'status' => PurchaseLeadStatus::PossessionPending->value,
+    ]);
+
+    $this->actingAs($admin)
+        ->get("/admin/purchase-leads/{$lead->id}")
+        ->assertInertia(fn ($p) => $p->where('allowedTransitions', fn ($t) => collect($t)->pluck('value')->doesntContain('purchased')));
+});
