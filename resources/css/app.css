@@ -1,0 +1,106 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body,
+html {
+    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+}
+
+@layer base {
+    :root {
+        /* Car4Sales brand palette (HSL triplets) */
+        --brand-yellow: 47 100% 50%;
+        --brand-yellow-foreground: 0 56% 20%;
+        --brand-maroon: 0 56% 24%;
+        --brand-orange: 22 92% 48%;
+        --brand-red: 358 74% 50%;
+        --brand-gold: 40 92% 55%;
+
+        --background: 40 30% 99%;
+        --foreground: 0 30% 12%;
+        --card: 0 0% 100%;
+        --card-foreground: 0 30% 12%;
+        --popover: 0 0% 100%;
+        --popover-foreground: 0 30% 12%;
+        --primary: 0 56% 24%;
+        --primary-foreground: 47 100% 97%;
+        --secondary: 45 60% 94%;
+        --secondary-foreground: 0 56% 24%;
+        --muted: 40 20% 95.5%;
+        --muted-foreground: 0 8% 42%;
+        --accent: 47 96% 92%;
+        --accent-foreground: 0 56% 22%;
+        --destructive: 358 74% 50%;
+        --destructive-foreground: 0 0% 100%;
+        --border: 40 15% 89%;
+        --input: 40 15% 87%;
+        --ring: 22 92% 48%;
+        --chart-1: 47 100% 50%;
+        --chart-2: 22 92% 48%;
+        --chart-3: 358 74% 50%;
+        --chart-4: 0 56% 30%;
+        --chart-5: 40 92% 60%;
+        --radius: 0.65rem;
+        --sidebar-background: 0 45% 15%;
+        --sidebar-foreground: 45 40% 92%;
+        --sidebar-primary: 47 100% 50%;
+        --sidebar-primary-foreground: 0 56% 18%;
+        --sidebar-accent: 0 40% 22%;
+        --sidebar-accent-foreground: 47 96% 88%;
+        --sidebar-border: 0 35% 26%;
+        --sidebar-ring: 47 100% 50%;
+    }
+
+    .dark {
+        --brand-yellow: 47 100% 52%;
+        --brand-yellow-foreground: 0 56% 16%;
+        --brand-maroon: 0 55% 44%;
+        --brand-orange: 24 90% 55%;
+        --brand-red: 358 74% 56%;
+        --brand-gold: 42 90% 58%;
+
+        --background: 0 12% 8%;
+        --foreground: 45 30% 94%;
+        --card: 0 14% 11%;
+        --card-foreground: 45 30% 94%;
+        --popover: 0 14% 11%;
+        --popover-foreground: 45 30% 94%;
+        --primary: 47 100% 52%;
+        --primary-foreground: 0 56% 14%;
+        --secondary: 0 15% 18%;
+        --secondary-foreground: 45 30% 94%;
+        --muted: 0 10% 16%;
+        --muted-foreground: 40 12% 66%;
+        --accent: 0 20% 20%;
+        --accent-foreground: 47 96% 84%;
+        --destructive: 358 72% 56%;
+        --destructive-foreground: 0 0% 100%;
+        --border: 0 12% 20%;
+        --input: 0 12% 22%;
+        --ring: 47 100% 52%;
+        --chart-1: 47 100% 55%;
+        --chart-2: 24 90% 56%;
+        --chart-3: 358 74% 58%;
+        --chart-4: 0 60% 55%;
+        --chart-5: 42 90% 62%;
+        --sidebar-background: 0 25% 9%;
+        --sidebar-foreground: 45 35% 90%;
+        --sidebar-primary: 47 100% 52%;
+        --sidebar-primary-foreground: 0 56% 14%;
+        --sidebar-accent: 0 20% 17%;
+        --sidebar-accent-foreground: 47 96% 86%;
+        --sidebar-border: 0 18% 20%;
+        --sidebar-ring: 47 100% 52%;
+    }
+}
+
+@layer base {
+    * {
+        @apply border-border;
+    }
+
+    body {
+        @apply bg-background text-foreground;
+    }
+}
