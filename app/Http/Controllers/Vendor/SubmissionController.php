@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Vendor;
 
 use App\Domain\Branches\Models\Branch;
 use App\Domain\Documents\Services\MediaUploadService;
+use App\Domain\VendorSubmissions\Actions\GenerateVendorAgreementAction;
+use App\Domain\VendorSubmissions\Actions\VendorSettlementAction;
 use App\Domain\VendorSubmissions\Actions\VendorSubmissionAction;
 use App\Domain\VendorSubmissions\Enums\ChecklistResult;
 use App\Domain\VendorSubmissions\Enums\SubmissionStatus;
@@ -135,6 +137,35 @@ class SubmissionController extends Controller
             ->with('success', 'Submitted for review. We\'ll notify you once it\'s reviewed.');
     }
 
+    public function agreement(Request $request, VendorSubmission $submission, GenerateVendorAgreementAction $action)
+    {
+        $this->authorize('view', $submission);
+        abort_unless($submission->status === SubmissionStatus::Approved, 404);
+
+        return $action->pdf($submission)->download("agreement-{$submission->submission_number}.pdf");
+    }
+
+    public function requestPayment(Request $request, VendorSubmission $submission, VendorSettlementAction $action): RedirectResponse
+    {
+        abort_unless($submission->vendor_user_id === $request->user()->id, 403);
+
+        $data = $request->validate([
+            'bank_account_name' => ['required', 'string', 'max:255'],
+            'bank_account_number' => ['required', 'string', 'max:30'],
+            'bank_ifsc' => ['required', 'string', 'max:15'],
+            'bank_name' => ['nullable', 'string', 'max:255'],
+            'cheque' => ['required', 'image', 'max:5120'],
+        ]);
+
+        try {
+            $action->requestPayment($submission, $data, $request->file('cheque'), $request->user());
+        } catch (\RuntimeException $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        return back()->with('success', 'Payment requested. Our team will process it shortly.');
+    }
+
     /** @return array<string, mixed> */
     private function formProps(?VendorSubmission $submission): array
     {
@@ -189,16 +220,22 @@ class SubmissionController extends Controller
     private function detail(VendorSubmission $s): array
     {
         $s->loadMissing(['items', 'media', 'reviewer:id,name', 'purchaseLead:id,lead_number', 'branch:id,name']);
+        $cheque = $s->media->firstWhere('type', 'cancelled_cheque');
+        $proof = $s->media->firstWhere('type', 'payment_proof');
 
         return [
             ...$s->only([
                 'id', 'submission_number', 'make', 'model', 'variant', 'manufacturing_year',
                 'registration_number', 'registration_state', 'fuel_type', 'transmission', 'color',
                 'odometer_km', 'ownership_serial', 'expected_amount', 'overall_rating', 'overall_remark',
-                'branch_id', 'review_remarks',
+                'branch_id', 'review_remarks', 'bank_account_name', 'bank_account_number', 'bank_ifsc',
+                'bank_name', 'payment_amount', 'payment_mode', 'payment_reference',
             ]),
             'status' => $s->status->value,
             'status_label' => $s->status->label(),
+            'settlement_status' => $s->settlement_status->value,
+            'settlement_label' => $s->settlement_status->label(),
+            'payment_date' => $s->payment_date?->toDateString(),
             'editable' => $s->status->isEditableByVendor(),
             'branch' => $s->branch?->only(['id', 'name']),
             'reviewer' => $s->reviewer?->only(['id', 'name']),
@@ -209,6 +246,9 @@ class SubmissionController extends Controller
             ]),
             'gallery' => $s->media->where('type', 'gallery')->values()->map(fn ($m) => $this->mediaRow($m)),
             'damage' => $s->media->where('type', 'damage')->values()->map(fn ($m) => $this->mediaRow($m)),
+            'cheque' => $cheque ? $this->mediaRow($cheque) : null,
+            'payment_proof' => $proof ? $this->mediaRow($proof) : null,
+            'agreement_url' => route('submission-agreement.download', $s),
         ];
     }
 

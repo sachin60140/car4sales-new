@@ -44,6 +44,7 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::get('vendor-submissions/{vendorSubmission}', [\App\Http\Controllers\Admin\VendorSubmissionController::class, 'show'])->name('vendor-submissions.show');
     Route::post('vendor-submissions/{vendorSubmission}/approve', [\App\Http\Controllers\Admin\VendorSubmissionController::class, 'approve'])->name('vendor-submissions.approve');
     Route::post('vendor-submissions/{vendorSubmission}/reject', [\App\Http\Controllers\Admin\VendorSubmissionController::class, 'reject'])->name('vendor-submissions.reject');
+    Route::post('vendor-submissions/{vendorSubmission}/record-payment', [\App\Http\Controllers\Admin\VendorSubmissionController::class, 'recordPayment'])->name('vendor-submissions.record-payment');
     Route::get('vendor-partners', [\App\Http\Controllers\Admin\VendorPartnerController::class, 'index'])->name('vendor-partners.index');
     Route::post('vendor-partners/{vendorProfile}/status', [\App\Http\Controllers\Admin\VendorPartnerController::class, 'setStatus'])->name('vendor-partners.status');
 

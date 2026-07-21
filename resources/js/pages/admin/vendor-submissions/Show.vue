@@ -10,7 +10,7 @@ import { computed } from 'vue';
 
 const props = defineProps<{
     submission: Record<string, any>;
-    can: { review: boolean };
+    can: { review: boolean; recordPayment: boolean };
 }>();
 
 const s = computed(() => props.submission);
@@ -34,6 +34,23 @@ function reject() {
     if (!rejectForm.remarks) return;
     rejectForm.post(`/admin/vendor-submissions/${s.value.id}/reject`, { preserveScroll: true });
 }
+
+// --- Settlement ---
+const settlement = computed<string>(() => s.value.settlement_status);
+const payForm = useForm<{ payment_amount: number | null; payment_mode: string; payment_reference: string; payment_date: string; proof: File | null }>({
+    payment_amount: Number(s.value.expected_amount ?? 0),
+    payment_mode: 'neft',
+    payment_reference: '',
+    payment_date: new Date().toISOString().slice(0, 10),
+    proof: null,
+});
+function onProof(e: Event) {
+    payForm.proof = (e.target as HTMLInputElement).files?.[0] ?? null;
+}
+function recordPayment() {
+    payForm.post(`/admin/vendor-submissions/${s.value.id}/record-payment`, { preserveScroll: true, forceFormData: true });
+}
+const paymentModes = ['neft', 'rtgs', 'upi', 'cheque', 'cash'];
 
 const statusStyle: Record<string, string> = {
     draft: 'bg-muted text-muted-foreground',
@@ -151,6 +168,47 @@ const resultStyle: Record<string, string> = { pass: 'text-emerald-600', fail: 't
                     <Card v-else-if="s.review_remarks">
                         <CardHeader><CardTitle class="text-base">Review Notes</CardTitle></CardHeader>
                         <CardContent class="text-sm text-muted-foreground">{{ s.review_remarks }}</CardContent>
+                    </Card>
+
+                    <!-- Settlement -->
+                    <Card v-if="s.status === 'approved'">
+                        <CardHeader class="flex flex-row items-center justify-between">
+                            <CardTitle class="text-base">Settlement</CardTitle>
+                            <Button v-if="s.agreement_url" size="sm" variant="outline" as-child><a :href="s.agreement_url">Agreement</a></Button>
+                        </CardHeader>
+                        <CardContent class="grid gap-3 text-sm">
+                            <span class="w-fit rounded-full bg-muted px-2 py-0.5 text-xs capitalize">{{ s.settlement_label }}</span>
+
+                            <div v-if="s.bank" class="rounded-lg border border-sidebar-border/60 p-2">
+                                <p class="text-xs font-medium uppercase text-muted-foreground">Vendor bank</p>
+                                <p>{{ s.bank.account_name }}</p>
+                                <p class="text-muted-foreground">A/c {{ s.bank.account_number }} · {{ s.bank.ifsc }}<span v-if="s.bank.bank_name"> · {{ s.bank.bank_name }}</span></p>
+                                <a v-if="s.cheque" :href="s.cheque.url" target="_blank" class="text-xs underline">Cancelled cheque</a>
+                            </div>
+
+                            <div v-if="can.recordPayment" class="grid gap-2 border-t pt-3">
+                                <div class="grid gap-1"><Label class="text-xs">Amount paid (₹)</Label><Input v-model.number="payForm.payment_amount" type="number" class="h-9" /></div>
+                                <div class="grid gap-1">
+                                    <Label class="text-xs">Mode</Label>
+                                    <select v-model="payForm.payment_mode" class="h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-sm">
+                                        <option v-for="m in paymentModes" :key="m" :value="m" class="uppercase">{{ m.toUpperCase() }}</option>
+                                    </select>
+                                </div>
+                                <div class="grid gap-1"><Label class="text-xs">Reference / UTR</Label><Input v-model="payForm.payment_reference" class="h-9" /></div>
+                                <div class="grid gap-1"><Label class="text-xs">Date</Label><Input v-model="payForm.payment_date" type="date" class="h-9" /></div>
+                                <div class="grid gap-1"><Label class="text-xs">Payment Screenshot</Label><input type="file" accept="image/*" class="text-xs" @change="onProof" /></div>
+                                <Button size="sm" :disabled="!payForm.payment_amount || payForm.processing" @click="recordPayment">Record Payment</Button>
+                            </div>
+
+                            <div v-else-if="s.payment" class="rounded-lg border border-emerald-500/40 bg-emerald-500/5 p-2">
+                                <p class="text-xs font-medium uppercase text-emerald-700 dark:text-emerald-400">Paid</p>
+                                <p class="text-lg font-bold">{{ money(s.payment.amount) }}</p>
+                                <p class="text-muted-foreground capitalize">{{ s.payment.mode }}<span v-if="s.payment.reference"> · {{ s.payment.reference }}</span><span v-if="s.payment.date"> · {{ s.payment.date }}</span></p>
+                                <a v-if="s.payment_proof" :href="s.payment_proof.url" target="_blank" class="text-xs underline">Payment proof</a>
+                            </div>
+
+                            <p v-else-if="settlement === 'agreement_ready'" class="text-xs text-muted-foreground">Waiting for the vendor to request payment.</p>
+                        </CardContent>
                     </Card>
                 </div>
             </div>

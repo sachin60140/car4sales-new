@@ -160,6 +160,7 @@ class VendorSubmissionAction
 
             $submission->update([
                 'status' => SubmissionStatus::Approved->value,
+                'settlement_status' => \App\Domain\VendorSubmissions\Enums\SettlementStatus::AgreementReady->value,
                 'reviewed_by' => $reviewer->id,
                 'reviewed_at' => now(),
                 'review_remarks' => $remarks,
@@ -167,7 +168,7 @@ class VendorSubmissionAction
             ]);
 
             $this->notifyVendor($submission, 'approved', 'Vehicle submission approved',
-                $submission->submission_number.' has been approved and taken into the purchase pipeline.');
+                $submission->submission_number.' is approved — download your agreement and request payment.');
 
             return $submission->fresh();
         });

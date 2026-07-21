@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Domain\VendorSubmissions\Actions\VendorSettlementAction;
 use App\Domain\VendorSubmissions\Actions\VendorSubmissionAction;
+use App\Domain\VendorSubmissions\Enums\SettlementStatus;
 use App\Domain\VendorSubmissions\Enums\SubmissionStatus;
 use App\Domain\VendorSubmissions\Models\VendorSubmission;
 use App\Http\Controllers\Controller;
@@ -84,11 +86,51 @@ class VendorSubmissionController extends Controller
                 ]),
                 'gallery' => $vendorSubmission->media->where('type', 'gallery')->values()->map(fn ($m) => ['id' => $m->id, 'url' => route('submission-media.view', $m)]),
                 'damage' => $vendorSubmission->media->where('type', 'damage')->values()->map(fn ($m) => ['id' => $m->id, 'url' => route('submission-media.view', $m)]),
+                // Settlement.
+                'settlement_status' => $vendorSubmission->settlement_status->value,
+                'settlement_label' => $vendorSubmission->settlement_status->label(),
+                'agreement_url' => $vendorSubmission->status === SubmissionStatus::Approved ? route('submission-agreement.download', $vendorSubmission) : null,
+                'bank' => $vendorSubmission->settlement_status === SettlementStatus::NotStarted ? null : [
+                    'account_name' => $vendorSubmission->bank_account_name,
+                    'account_number' => $vendorSubmission->bank_account_number,
+                    'ifsc' => $vendorSubmission->bank_ifsc,
+                    'bank_name' => $vendorSubmission->bank_name,
+                ],
+                'cheque' => ($c = $vendorSubmission->media->firstWhere('type', 'cancelled_cheque')) ? ['id' => $c->id, 'url' => route('submission-media.view', $c)] : null,
+                'payment' => $vendorSubmission->settlement_status === SettlementStatus::Paid ? [
+                    'amount' => $vendorSubmission->payment_amount,
+                    'mode' => $vendorSubmission->payment_mode,
+                    'reference' => $vendorSubmission->payment_reference,
+                    'date' => $vendorSubmission->payment_date?->toDateString(),
+                ] : null,
+                'payment_proof' => ($p = $vendorSubmission->media->firstWhere('type', 'payment_proof')) ? ['id' => $p->id, 'url' => route('submission-media.view', $p)] : null,
             ],
             'can' => [
                 'review' => $vendorSubmission->status === SubmissionStatus::PendingReview,
+                'recordPayment' => $vendorSubmission->settlement_status === SettlementStatus::PaymentRequested,
             ],
         ]);
+    }
+
+    public function recordPayment(Request $request, VendorSubmission $vendorSubmission, VendorSettlementAction $action): RedirectResponse
+    {
+        $this->authorize('review', $vendorSubmission);
+
+        $data = $request->validate([
+            'payment_amount' => ['required', 'numeric', 'min:0.01'],
+            'payment_mode' => ['required', 'string', 'in:neft,upi,cheque,cash,rtgs'],
+            'payment_reference' => ['nullable', 'string', 'max:255'],
+            'payment_date' => ['nullable', 'date'],
+            'proof' => ['nullable', 'image', 'max:5120'],
+        ]);
+
+        try {
+            $action->recordPayment($vendorSubmission, $data, $request->file('proof'), $request->user());
+        } catch (\RuntimeException $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        return back()->with('success', 'Payment recorded.');
     }
 
     public function approve(Request $request, VendorSubmission $vendorSubmission, VendorSubmissionAction $action): RedirectResponse

@@ -4,6 +4,7 @@ namespace App\Domain\VendorSubmissions\Models;
 
 use App\Domain\Branches\Models\Branch;
 use App\Domain\PurchaseLeads\Models\PurchaseLead;
+use App\Domain\VendorSubmissions\Enums\SettlementStatus;
 use App\Domain\VendorSubmissions\Enums\SubmissionStatus;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
@@ -22,14 +23,22 @@ class VendorSubmission extends Model
         'registration_number', 'registration_state', 'fuel_type', 'transmission', 'color',
         'odometer_km', 'ownership_serial', 'expected_amount', 'overall_rating', 'overall_remark',
         'status', 'reviewed_by', 'reviewed_at', 'review_remarks', 'purchase_lead_id', 'branch_id',
+        'settlement_status', 'bank_account_name', 'bank_account_number', 'bank_ifsc', 'bank_name',
+        'payment_requested_at', 'payment_amount', 'payment_mode', 'payment_reference',
+        'payment_date', 'paid_by', 'paid_at',
     ];
 
     protected function casts(): array
     {
         return [
             'status' => SubmissionStatus::class,
+            'settlement_status' => SettlementStatus::class,
             'expected_amount' => 'decimal:2',
+            'payment_amount' => 'decimal:2',
             'reviewed_at' => 'datetime',
+            'payment_requested_at' => 'datetime',
+            'payment_date' => 'date',
+            'paid_at' => 'datetime',
         ];
     }
 
@@ -71,6 +80,21 @@ class VendorSubmission extends Model
     public function damageMedia(): HasMany
     {
         return $this->media()->where('type', 'damage');
+    }
+
+    public function chequeMedia(): HasMany
+    {
+        return $this->media()->where('type', 'cancelled_cheque');
+    }
+
+    public function paymentProofMedia(): HasMany
+    {
+        return $this->media()->where('type', 'payment_proof');
+    }
+
+    public function paidBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'paid_by');
     }
 
     public function title(): string

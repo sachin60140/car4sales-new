@@ -121,6 +121,17 @@ class DemoDataSeeder extends Seeder
      */
     public static function clear(): void
     {
+        // Purchase leads created when a demo vendor submission was approved. Read
+        // them before the vendor users (and their cascading submissions) are gone.
+        $vendorLeadIds = \App\Domain\VendorSubmissions\Models\VendorSubmission::withTrashed()
+            ->whereHas('vendor', fn ($q) => $q->where('email', 'like', '%'.self::USER_DOMAIN))
+            ->whereNotNull('purchase_lead_id')
+            ->pluck('purchase_lead_id')
+            ->filter();
+        if ($vendorLeadIds->isNotEmpty()) {
+            PurchaseLead::withTrashed()->whereIn('id', $vendorLeadIds)->get()->each(fn (PurchaseLead $l) => $l->forceDelete());
+        }
+
         // Phase 9: demo notifications are tagged in their data payload. Demo-user
         // notifications also cascade when those users are deleted below, but the
         // admin's demo notifications must be cleared explicitly.
@@ -885,7 +896,28 @@ class DemoDataSeeder extends Seeder
             'branch_id' => $branches[0]->id ?? null, 'items' => $items(),
         ], $active->fresh());
 
-        return [2, 2];
+        // A fully-settled example: approved (→ purchase lead) and paid.
+        $s3 = $submissions->save(null, [
+            'make' => 'Tata', 'model' => 'Nexon', 'variant' => 'XZ', 'manufacturing_year' => 2021,
+            'fuel_type' => 'Petrol', 'transmission' => 'Manual', 'color' => 'Blue', 'odometer_km' => 31000,
+            'ownership_serial' => 1, 'expected_amount' => 720000, 'branch_id' => $branches[0]->id ?? null,
+            'items' => $items(),
+        ], $active->fresh());
+        $this->attachDemoMedia($s3, 'gallery', 2);
+        $this->attachDemoMedia($s3, 'damage', 1);
+        $submissions->submit($s3->fresh(), $active->fresh());
+        $submissions->approve($s3->fresh(), $admin);
+        $s3->update([
+            'settlement_status' => \App\Domain\VendorSubmissions\Enums\SettlementStatus::Paid->value,
+            'bank_account_name' => 'Deepak Auto Traders', 'bank_account_number' => '50100123456',
+            'bank_ifsc' => 'HDFC0000123', 'bank_name' => 'HDFC Bank', 'payment_requested_at' => now()->subDays(2),
+            'payment_amount' => 710000, 'payment_mode' => 'neft', 'payment_reference' => 'UTRDEMO0001',
+            'payment_date' => now()->subDay()->toDateString(), 'paid_by' => $admin->id, 'paid_at' => now()->subDay(),
+        ]);
+        $this->attachDemoMedia($s3, 'cancelled_cheque', 1);
+        $this->attachDemoMedia($s3, 'payment_proof', 1);
+
+        return [2, 3];
     }
 
     /**
