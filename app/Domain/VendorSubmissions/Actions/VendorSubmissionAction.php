@@ -19,11 +19,14 @@ use RuntimeException;
  */
 class VendorSubmissionAction
 {
-    /** Vehicle/pricing fields a vendor may edit on a submission. */
+    /**
+     * Vehicle/pricing fields a vendor may edit on a submission. overall_rating is
+     * intentionally excluded — it is auto-calculated from the checklist ratings.
+     */
     private const EDITABLE = [
         'make', 'model', 'variant', 'manufacturing_year', 'registration_number', 'registration_state',
         'fuel_type', 'transmission', 'color', 'odometer_km', 'ownership_serial',
-        'expected_amount', 'overall_rating', 'overall_remark', 'branch_id',
+        'expected_amount', 'overall_remark', 'branch_id',
     ];
 
     public function __construct(
@@ -66,6 +69,12 @@ class VendorSubmissionAction
                     ]);
                 }
             }
+
+            // Overall rating = average of the rated checklist items (rounded).
+            $ratings = $submission->items()->whereNotNull('rating')->pluck('rating');
+            $submission->update([
+                'overall_rating' => $ratings->isNotEmpty() ? (int) round((float) $ratings->avg()) : null,
+            ]);
 
             return $submission->fresh(['items']);
         });

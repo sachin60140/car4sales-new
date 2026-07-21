@@ -159,7 +159,6 @@ class SubmissionController extends Controller
             'odometer_km' => ['nullable', 'integer', 'min:0'],
             'ownership_serial' => ['nullable', 'integer', 'min:1', 'max:10'],
             'expected_amount' => ['required', 'numeric', 'min:0'],
-            'overall_rating' => ['nullable', 'integer', 'min:1', 'max:5'],
             'overall_remark' => ['nullable', 'string', 'max:1000'],
             'branch_id' => ['nullable', 'integer', 'exists:branches,id'],
             'items' => ['array'],

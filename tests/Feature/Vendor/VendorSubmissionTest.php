@@ -97,6 +97,24 @@ it('rejects a submission with a required reason', function () {
         ->and($submission->fresh()->review_remarks)->toBe('Price too high');
 });
 
+it('auto-calculates the overall rating from the checklist item ratings, ignoring any supplied value', function () {
+    $vendor = registerVendor();
+    activate($vendor);
+
+    $submission = app(VendorSubmissionAction::class)->save(null, [
+        'make' => 'A', 'model' => 'B', 'expected_amount' => 1,
+        'overall_rating' => 1, // supplied but must be ignored
+        'items' => [
+            ['section' => 'X', 'label' => 'a', 'result' => 'pass', 'rating' => 5],
+            ['section' => 'X', 'label' => 'b', 'result' => 'pass', 'rating' => 3],
+            ['section' => 'X', 'label' => 'c', 'result' => 'na', 'rating' => null],
+        ],
+    ], $vendor->fresh());
+
+    // Average of the rated items (5, 3) = 4; the N/A item is excluded.
+    expect($submission->overall_rating)->toBe(4);
+});
+
 it('requires at least one vehicle photo before submitting', function () {
     $vendor = registerVendor();
     activate($vendor);

@@ -869,7 +869,7 @@ class DemoDataSeeder extends Seeder
         $s1 = $submissions->save(null, [
             'make' => 'Maruti', 'model' => 'Baleno', 'variant' => 'Zeta', 'manufacturing_year' => 2020,
             'fuel_type' => 'Petrol', 'transmission' => 'Manual', 'color' => 'Grey', 'odometer_km' => 42000,
-            'ownership_serial' => 1, 'expected_amount' => 545000, 'overall_rating' => 4,
+            'ownership_serial' => 1, 'expected_amount' => 545000,
             'overall_remark' => 'Well maintained, single owner.', 'branch_id' => $branches[0]->id ?? null,
             'items' => $items(),
         ], $active->fresh());
@@ -881,7 +881,7 @@ class DemoDataSeeder extends Seeder
         $submissions->save(null, [
             'make' => 'Hyundai', 'model' => 'Creta', 'variant' => 'SX', 'manufacturing_year' => 2019,
             'fuel_type' => 'Diesel', 'transmission' => 'Automatic', 'color' => 'White', 'odometer_km' => 68000,
-            'ownership_serial' => 2, 'expected_amount' => 890000, 'overall_rating' => 3,
+            'ownership_serial' => 2, 'expected_amount' => 890000,
             'branch_id' => $branches[0]->id ?? null, 'items' => $items(),
         ], $active->fresh());
 

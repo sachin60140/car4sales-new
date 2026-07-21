@@ -38,7 +38,6 @@ const form = useForm<{
     odometer_km: number | null;
     ownership_serial: number | null;
     expected_amount: number | null;
-    overall_rating: number | null;
     overall_remark: string;
     branch_id: number | string;
     items: Item[];
@@ -55,7 +54,6 @@ const form = useForm<{
     odometer_km: props.submission?.odometer_km ?? null,
     ownership_serial: props.submission?.ownership_serial ?? null,
     expected_amount: props.submission?.expected_amount ?? null,
-    overall_rating: props.submission?.overall_rating ?? null,
     overall_remark: props.submission?.overall_remark ?? '',
     branch_id: props.submission?.branch_id ?? '',
     items: initialItems,
@@ -63,6 +61,14 @@ const form = useForm<{
 
 const fuels = ['Petrol', 'Diesel', 'CNG', 'Electric', 'Hybrid'];
 const transmissions = ['Manual', 'Automatic'];
+
+// Overall rating is auto-calculated (read-only): the average of the checklist
+// items that carry a rating. The server recomputes this authoritatively on save.
+const overallRating = computed<number | null>(() => {
+    const rated = form.items.filter((i) => i.rating != null);
+    if (rated.length === 0) return null;
+    return Math.round(rated.reduce((sum, i) => sum + Number(i.rating), 0) / rated.length);
+});
 
 function save() {
     if (isEdit.value) {
@@ -215,11 +221,12 @@ const resultStyle: Record<string, string> = {
                         <InputError :message="form.errors.expected_amount" />
                     </div>
                     <div class="grid gap-1.5">
-                        <Label>Overall Rating</Label>
-                        <select v-model.number="form.overall_rating" class="h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-sm">
-                            <option :value="null">—</option>
-                            <option v-for="n in 5" :key="n" :value="n">{{ n }}★</option>
-                        </select>
+                        <Label>Overall Rating <span class="text-xs font-normal text-muted-foreground">(auto)</span></Label>
+                        <div class="flex h-9 items-center rounded-md border border-input bg-muted/40 px-3 text-sm text-muted-foreground">
+                            <span v-if="overallRating">{{ overallRating }}★</span>
+                            <span v-else>Rate items to calculate</span>
+                        </div>
+                        <p class="text-xs text-muted-foreground">Averaged from your condition-report ratings.</p>
                     </div>
                     <div class="grid gap-1.5 sm:col-span-3">
                         <Label>Overall Remark</Label>
