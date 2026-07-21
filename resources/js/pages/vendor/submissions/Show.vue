@@ -202,11 +202,12 @@ const resultStyle: Record<string, string> = {
                             <p class="text-muted-foreground">A/c {{ s.bank_account_number }} · {{ s.bank_ifsc }}<span v-if="s.bank_name"> · {{ s.bank_name }}</span></p>
                         </div>
 
-                        <div v-if="settlement === 'paid'" class="rounded-lg border border-emerald-500/40 bg-emerald-500/5 p-3 text-sm">
+                        <div v-if="settlement === 'paid' || settlement === 'stocked'" class="rounded-lg border border-emerald-500/40 bg-emerald-500/5 p-3 text-sm">
                             <p class="mb-1 text-xs font-medium uppercase text-emerald-700 dark:text-emerald-400">Payment received</p>
                             <p class="text-lg font-bold">{{ money(s.payment_amount) }}</p>
                             <p class="text-muted-foreground capitalize">{{ s.payment_mode }}<span v-if="s.payment_reference"> · {{ s.payment_reference }}</span><span v-if="s.payment_date"> · {{ s.payment_date }}</span></p>
                             <a v-if="s.payment_proof" :href="s.payment_proof.url" target="_blank" class="mt-1 inline-block text-xs underline">View payment proof</a>
+                            <p v-if="settlement === 'stocked'" class="mt-2 border-t border-emerald-500/30 pt-2 text-xs text-emerald-700 dark:text-emerald-400">✓ Vehicle received and added to our inventory. This purchase is complete.</p>
                         </div>
                         <div v-else-if="settlement === 'payment_requested'" class="flex items-center rounded-lg border border-brand-orange/40 bg-brand-orange/5 p-3 text-sm text-brand-orange">
                             Payment requested — our team is processing it.

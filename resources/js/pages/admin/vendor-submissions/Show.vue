@@ -11,7 +11,7 @@ import { computed } from 'vue';
 const props = defineProps<{
     submission: Record<string, any>;
     docLabels: Record<string, string>;
-    can: { review: boolean; approveKyc: boolean; recordPayment: boolean };
+    can: { review: boolean; approveKyc: boolean; recordPayment: boolean; confirmPossession: boolean };
 }>();
 
 const s = computed(() => props.submission);
@@ -67,6 +67,31 @@ const docEntries = computed<{ type: string; label: string; doc: any }[]>(() =>
     Object.entries(props.docLabels).map(([type, label]) => ({ type, label, doc: s.value.documents?.[type] ?? null })),
 );
 const extraDocs = computed<any[]>(() => s.value.documents?.extra ?? []);
+
+// --- Confirm possession → create stock ---
+const possessionChecks = [
+    { key: 'vehicle_received', label: 'Vehicle received' },
+    { key: 'original_rc_received', label: 'Original RC' },
+    { key: 'insurance_received', label: 'Insurance' },
+    { key: 'puc_received', label: 'PUC' },
+    { key: 'noc_received', label: 'NOC' },
+    { key: 'form_35_received', label: 'Form 35' },
+    { key: 'main_key', label: 'Main key' },
+    { key: 'spare_key', label: 'Spare key' },
+    { key: 'service_book', label: 'Service book' },
+    { key: 'tool_kit', label: 'Tool kit' },
+    { key: 'spare_wheel', label: 'Spare wheel' },
+    { key: 'accessories', label: 'Accessories' },
+];
+const possessionForm = useForm<Record<string, any>>({
+    vehicle_received: true, original_rc_received: false, insurance_received: false, puc_received: false,
+    noc_received: false, form_35_received: false, main_key: false, spare_key: false,
+    service_book: false, tool_kit: false, spare_wheel: false, accessories: false,
+    odometer_km: s.value.odometer_km ?? null, fuel_level: '', remarks: '',
+});
+function confirmPossession() {
+    possessionForm.post(`/admin/vendor-submissions/${s.value.id}/confirm-possession`, { preserveScroll: true });
+}
 
 const statusStyle: Record<string, string> = {
     draft: 'bg-muted text-muted-foreground',
@@ -257,6 +282,29 @@ const resultStyle: Record<string, string> = { pass: 'text-emerald-600', fail: 't
                             </div>
 
                             <p v-else-if="settlement === 'agreement_ready'" class="text-xs text-muted-foreground">Documents verified. Waiting for the vendor to request payment.</p>
+
+                            <!-- Confirm possession → create stock -->
+                            <div v-if="can.confirmPossession" class="grid gap-2 border-t pt-3">
+                                <Label class="text-xs font-semibold">Confirm Possession &amp; Create Stock</Label>
+                                <p class="text-xs text-muted-foreground">Confirming possession creates the inventory entry automatically.</p>
+                                <div class="grid grid-cols-2 gap-1.5">
+                                    <label v-for="c in possessionChecks" :key="c.key" class="flex items-center gap-2 text-xs">
+                                        <input v-model="possessionForm[c.key]" type="checkbox" class="size-3.5" /> {{ c.label }}
+                                    </label>
+                                </div>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div class="grid gap-1"><Label class="text-xs">Odometer</Label><Input v-model.number="possessionForm.odometer_km" type="number" class="h-9" /></div>
+                                    <div class="grid gap-1"><Label class="text-xs">Fuel</Label><Input v-model="possessionForm.fuel_level" class="h-9" /></div>
+                                </div>
+                                <Button size="sm" :disabled="!possessionForm.vehicle_received || possessionForm.processing" @click="confirmPossession">Confirm Possession &amp; Create Stock</Button>
+                                <p v-if="!possessionForm.vehicle_received" class="text-xs text-muted-foreground">Tick “Vehicle received” to create the stock entry.</p>
+                            </div>
+
+                            <!-- Stocked -->
+                            <div v-if="s.vehicle" class="rounded-lg border border-emerald-500/40 bg-emerald-500/5 p-2 text-sm">
+                                <p class="text-xs font-medium uppercase text-emerald-700 dark:text-emerald-400">In inventory</p>
+                                <Link :href="`/admin/inventory/${s.vehicle.id}`" class="font-medium underline">{{ s.vehicle.stock_number }}</Link>
+                            </div>
                         </CardContent>
                     </Card>
                 </div>

@@ -59,7 +59,7 @@ class VendorSubmissionController extends Controller
         $vendorSubmission->load([
             'vendor:id,name,phone,email', 'vendor.vendorProfile:id,user_id,company_name,phone',
             'items', 'media', 'reviewer:id,name', 'kycApprovedBy:id,name',
-            'purchaseLead:id,lead_number,status', 'branch:id,name',
+            'purchaseLead:id,lead_number,status', 'branch:id,name', 'vehicle:id,stock_number',
         ]);
 
         return Inertia::render('admin/vendor-submissions/Show', [
@@ -110,21 +110,61 @@ class VendorSubmissionController extends Controller
                     'bank_name' => $vendorSubmission->bank_name,
                 ] : null,
                 'cheque' => ($c = $vendorSubmission->media->firstWhere('type', 'cancelled_cheque')) ? ['id' => $c->id, 'url' => route('submission-media.view', $c)] : null,
-                'payment' => $vendorSubmission->settlement_status === SettlementStatus::Paid ? [
+                'payment' => in_array($vendorSubmission->settlement_status, [SettlementStatus::Paid, SettlementStatus::Stocked], true) ? [
                     'amount' => $vendorSubmission->payment_amount,
                     'mode' => $vendorSubmission->payment_mode,
                     'reference' => $vendorSubmission->payment_reference,
                     'date' => $vendorSubmission->payment_date?->toDateString(),
                 ] : null,
                 'payment_proof' => ($p = $vendorSubmission->media->firstWhere('type', 'payment_proof')) ? ['id' => $p->id, 'url' => route('submission-media.view', $p)] : null,
+                // Possession → stock.
+                'possession' => $vendorSubmission->possession,
+                'vehicle' => $vendorSubmission->vehicle ? [
+                    'id' => $vendorSubmission->vehicle->id,
+                    'stock_number' => $vendorSubmission->vehicle->stock_number,
+                ] : null,
             ],
             'docLabels' => VendorSubmission::REQUIRED_KYC_DOCS,
             'can' => [
                 'review' => $vendorSubmission->status === SubmissionStatus::PendingReview,
                 'approveKyc' => $vendorSubmission->settlement_status === SettlementStatus::KycSubmitted,
                 'recordPayment' => $vendorSubmission->settlement_status === SettlementStatus::PaymentRequested,
+                'confirmPossession' => $vendorSubmission->settlement_status === SettlementStatus::Paid
+                    && $request->user()->can('possessions.create'),
             ],
         ]);
+    }
+
+    public function confirmPossession(Request $request, VendorSubmission $vendorSubmission, VendorSettlementAction $action): RedirectResponse
+    {
+        $this->authorize('review', $vendorSubmission);
+        abort_unless($request->user()->can('possessions.create'), 403);
+
+        $checklist = $request->validate([
+            'vehicle_received' => ['required', 'boolean'],
+            'original_rc_received' => ['boolean'],
+            'insurance_received' => ['boolean'],
+            'puc_received' => ['boolean'],
+            'noc_received' => ['boolean'],
+            'form_35_received' => ['boolean'],
+            'main_key' => ['boolean'],
+            'spare_key' => ['boolean'],
+            'service_book' => ['boolean'],
+            'tool_kit' => ['boolean'],
+            'spare_wheel' => ['boolean'],
+            'accessories' => ['boolean'],
+            'odometer_km' => ['nullable', 'integer', 'min:0'],
+            'fuel_level' => ['nullable', 'string', 'max:20'],
+            'remarks' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        try {
+            $result = $action->confirmPossession($vendorSubmission, $checklist, $request->user());
+        } catch (\RuntimeException $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        return back()->with('success', 'Possession confirmed. Stock '.$result['vehicle']->stock_number.' created.');
     }
 
     /** Owner-KYC documents grouped by type (+ extras), for review. */

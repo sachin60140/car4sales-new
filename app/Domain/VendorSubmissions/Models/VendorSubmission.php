@@ -28,6 +28,7 @@ class VendorSubmission extends Model
         'bank_account_name', 'bank_account_number', 'bank_ifsc', 'bank_name',
         'payment_requested_at', 'payment_amount', 'payment_mode', 'payment_reference',
         'payment_date', 'paid_by', 'paid_at',
+        'vehicle_id', 'possession', 'possession_confirmed_at', 'possessed_by',
     ];
 
     /** Owner-KYC documents the vendor must upload before the agreement is issued. */
@@ -54,6 +55,8 @@ class VendorSubmission extends Model
             'payment_requested_at' => 'datetime',
             'payment_date' => 'date',
             'paid_at' => 'datetime',
+            'possession' => 'array',
+            'possession_confirmed_at' => 'datetime',
         ];
     }
 
@@ -121,6 +124,16 @@ class VendorSubmission extends Model
     public function kycApprovedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'kyc_approved_by');
+    }
+
+    public function vehicle(): BelongsTo
+    {
+        return $this->belongsTo(\App\Domain\Inventory\Models\Vehicle::class);
+    }
+
+    public function possessedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'possessed_by');
     }
 
     public function title(): string

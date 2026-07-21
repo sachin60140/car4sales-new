@@ -5,10 +5,11 @@ namespace App\Domain\VendorSubmissions\Enums;
 /**
  * Post-approval settlement lifecycle for a vendor submission:
  *   not_started → kyc_pending → kyc_submitted → agreement_ready
- *   → payment_requested → paid
+ *   → payment_requested → paid → stocked
  *
  * kyc_pending/kyc_submitted cover the owner-details + document-verification stage
  * that must clear before the (dynamic) agreement is issued and payment can flow.
+ * After payment, possession is confirmed and the vehicle enters inventory (stocked).
  */
 enum SettlementStatus: string
 {
@@ -18,6 +19,7 @@ enum SettlementStatus: string
     case AgreementReady = 'agreement_ready';
     case PaymentRequested = 'payment_requested';
     case Paid = 'paid';
+    case Stocked = 'stocked';
 
     public function label(): string
     {
@@ -28,13 +30,14 @@ enum SettlementStatus: string
             self::AgreementReady => 'Agreement ready',
             self::PaymentRequested => 'Payment requested',
             self::Paid => 'Paid',
+            self::Stocked => 'Stocked',
         };
     }
 
     /** The agreement + payment flow is only available once owner documents are approved. */
     public function agreementAvailable(): bool
     {
-        return in_array($this, [self::AgreementReady, self::PaymentRequested, self::Paid], true);
+        return in_array($this, [self::AgreementReady, self::PaymentRequested, self::Paid, self::Stocked], true);
     }
 
     /** @return array<int, array{value: string, label: string}> */

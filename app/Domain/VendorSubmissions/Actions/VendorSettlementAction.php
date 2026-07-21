@@ -3,6 +3,8 @@
 namespace App\Domain\VendorSubmissions\Actions;
 
 use App\Domain\Documents\Services\MediaUploadService;
+use App\Domain\Inventory\Actions\CreateStockFromVendorSubmissionAction;
+use App\Domain\Inventory\Models\Vehicle;
 use App\Domain\Notifications\Enums\NotificationLevel;
 use App\Domain\Notifications\Services\NotificationService;
 use App\Domain\VendorSubmissions\Enums\SettlementStatus;
@@ -27,6 +29,7 @@ class VendorSettlementAction
     public function __construct(
         private readonly MediaUploadService $media,
         private readonly NotificationService $notifications,
+        private readonly CreateStockFromVendorSubmissionAction $createStock,
     ) {}
 
     /**
@@ -183,6 +186,42 @@ class VendorSettlementAction
             ]);
 
             return $submission->fresh();
+        });
+    }
+
+    /**
+     * Staff confirm physical possession of the vehicle (document/key checklist +
+     * odometer + fuel) and — atomically — create the stock (inventory) entry.
+     *
+     * @param  array<string, mixed>  $checklist
+     * @return array{submission: VendorSubmission, vehicle: Vehicle}
+     */
+    public function confirmPossession(VendorSubmission $submission, array $checklist, User $actor): array
+    {
+        if ($submission->settlement_status !== SettlementStatus::Paid) {
+            throw new RuntimeException('Possession can only be confirmed after the payment is recorded.');
+        }
+
+        if (empty($checklist['vehicle_received'])) {
+            throw new RuntimeException('The vehicle must be physically received to confirm possession.');
+        }
+
+        return DB::transaction(function () use ($submission, $checklist, $actor) {
+            $odometer = isset($checklist['odometer_km']) ? (int) $checklist['odometer_km'] : null;
+            $vehicle = $this->createStock->execute($submission, $actor, $odometer);
+
+            $submission->update([
+                'settlement_status' => SettlementStatus::Stocked->value,
+                'vehicle_id' => $vehicle->id,
+                'possession' => $checklist,
+                'possession_confirmed_at' => now(),
+                'possessed_by' => $actor->id,
+            ]);
+
+            $this->notifyVendor($submission, 'vendor-settlement.stocked', 'Vehicle stocked', NotificationLevel::Success,
+                $submission->submission_number.': the vehicle has been received and added to our inventory as '.$vehicle->stock_number.'.');
+
+            return ['submission' => $submission->fresh(), 'vehicle' => $vehicle];
         });
     }
 

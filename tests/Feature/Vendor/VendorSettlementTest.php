@@ -59,6 +59,20 @@ function verifiedSubmission(): array
     return [$submission, $vendor, $admin];
 }
 
+/** @return array{0: VendorSubmission, 1: User, 2: User} [submission (paid), vendor, admin] */
+function paidSubmission(): array
+{
+    [$submission, $vendor, $admin] = verifiedSubmission();
+    $action = app(VendorSettlementAction::class);
+    $action->requestPayment($submission->fresh(), $vendor);
+    $action->recordPayment($submission->fresh(), [
+        'payment_amount' => 590000, 'payment_mode' => 'neft',
+        'payment_reference' => 'UTR1', 'payment_date' => now()->toDateString(),
+    ], null, $admin);
+
+    return [$submission->fresh(), $vendor, $admin];
+}
+
 it('opens owner-KYC (kyc pending) on approval', function () {
     [$submission] = approvedSubmission();
 
@@ -155,6 +169,53 @@ it('lets staff record the payment with details and a screenshot', function () {
         ->and((float) $submission->payment_amount)->toBe(595000.0)
         ->and($submission->payment_mode)->toBe('neft')
         ->and($submission->paymentProofMedia()->count())->toBe(1);
+});
+
+it('confirms possession after payment and creates stock', function () {
+    [$submission, , $admin] = paidSubmission();
+
+    $result = app(VendorSettlementAction::class)->confirmPossession($submission->fresh(), [
+        'vehicle_received' => true, 'original_rc_received' => true, 'main_key' => true,
+        'odometer_km' => 33000, 'fuel_level' => 'Half',
+    ], $admin);
+
+    $submission->refresh();
+    $vehicle = $result['vehicle'];
+
+    expect($submission->settlement_status)->toBe(SettlementStatus::Stocked)
+        ->and($submission->vehicle_id)->toBe($vehicle->id)
+        ->and($vehicle->registration_number)->toBe('UP32 AA 0001')
+        ->and((float) $vehicle->purchase_price)->toBe(590000.0)
+        ->and($vehicle->odometer_km)->toBe(33000)
+        ->and(\App\Domain\Inventory\Models\Vehicle::whereKey($vehicle->id)->where('status', 'in_stock')->exists())->toBeTrue();
+});
+
+it('blocks possession before the payment is recorded', function () {
+    [$submission, , $admin] = verifiedSubmission();
+
+    expect(fn () => app(VendorSettlementAction::class)->confirmPossession($submission->fresh(), ['vehicle_received' => true], $admin))
+        ->toThrow(RuntimeException::class, 'payment');
+});
+
+it('requires the vehicle to be received to confirm possession', function () {
+    [$submission, , $admin] = paidSubmission();
+
+    expect(fn () => app(VendorSettlementAction::class)->confirmPossession($submission->fresh(), ['vehicle_received' => false], $admin))
+        ->toThrow(RuntimeException::class, 'received');
+});
+
+it('confirms possession + creates stock through the admin endpoint', function () {
+    [$submission, , $admin] = paidSubmission();
+
+    $this->actingAs($admin)
+        ->post("/admin/vendor-submissions/{$submission->id}/confirm-possession", [
+            'vehicle_received' => true, 'main_key' => true, 'odometer_km' => 33000,
+        ])
+        ->assertRedirect();
+
+    $submission->refresh();
+    expect($submission->settlement_status)->toBe(SettlementStatus::Stocked)
+        ->and($submission->vehicle_id)->not->toBeNull();
 });
 
 it('scopes owner-KYC submission to the submission owner', function () {

@@ -47,6 +47,7 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::post('vendor-submissions/{vendorSubmission}/approve-kyc', [\App\Http\Controllers\Admin\VendorSubmissionController::class, 'approveKyc'])->name('vendor-submissions.approve-kyc');
     Route::post('vendor-submissions/{vendorSubmission}/reject-kyc', [\App\Http\Controllers\Admin\VendorSubmissionController::class, 'rejectKyc'])->name('vendor-submissions.reject-kyc');
     Route::post('vendor-submissions/{vendorSubmission}/record-payment', [\App\Http\Controllers\Admin\VendorSubmissionController::class, 'recordPayment'])->name('vendor-submissions.record-payment');
+    Route::post('vendor-submissions/{vendorSubmission}/confirm-possession', [\App\Http\Controllers\Admin\VendorSubmissionController::class, 'confirmPossession'])->name('vendor-submissions.confirm-possession');
     Route::get('vendor-partners', [\App\Http\Controllers\Admin\VendorPartnerController::class, 'index'])->name('vendor-partners.index');
     Route::post('vendor-partners/{vendorProfile}/status', [\App\Http\Controllers\Admin\VendorPartnerController::class, 'setStatus'])->name('vendor-partners.status');
 
