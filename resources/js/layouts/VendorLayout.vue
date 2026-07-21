@@ -3,7 +3,7 @@ import AppLogoIcon from '@/components/AppLogoIcon.vue';
 import FlashMessages from '@/components/FlashMessages.vue';
 import type { SharedData } from '@/types';
 import { Link, router, usePage } from '@inertiajs/vue3';
-import { LayoutGrid, ListChecks, LogOut } from 'lucide-vue-next';
+import { LayoutGrid, ListChecks, LogOut, ShieldCheck } from 'lucide-vue-next';
 import { computed } from 'vue';
 
 const page = usePage<SharedData>();
@@ -40,6 +40,12 @@ function logout() {
                         class="inline-flex items-center gap-1.5 rounded-md px-3 py-2 text-muted-foreground transition hover:bg-muted hover:text-foreground"
                     >
                         <ListChecks class="size-4" /> <span class="hidden sm:inline">My Submissions</span>
+                    </Link>
+                    <Link
+                        href="/vendor/kyc"
+                        class="inline-flex items-center gap-1.5 rounded-md px-3 py-2 text-muted-foreground transition hover:bg-muted hover:text-foreground"
+                    >
+                        <ShieldCheck class="size-4" /> <span class="hidden sm:inline">KYC</span>
                     </Link>
                     <div class="mx-1 hidden h-6 w-px bg-border sm:block" />
                     <span class="hidden px-2 text-sm text-muted-foreground sm:inline">{{ user?.name }}</span>

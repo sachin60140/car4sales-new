@@ -42,6 +42,7 @@ use App\Domain\VendorSubmissions\Actions\VendorSettlementAction;
 use App\Domain\VendorSubmissions\Actions\VendorSubmissionAction;
 use App\Domain\VendorSubmissions\Enums\SettlementStatus;
 use App\Domain\VendorSubmissions\Enums\VendorProfileStatus;
+use App\Domain\VendorSubmissions\Models\VendorProfile;
 use App\Domain\VendorSubmissions\Models\VendorSubmission;
 use App\Domain\Visits\Actions\ScheduleVisitAction;
 use App\Domain\Visits\Models\CustomerVisit;
@@ -936,6 +937,18 @@ class DemoDataSeeder extends Seeder
             'name' => 'Deepak Sharma', 'email' => 'deepak.vendor'.self::USER_DOMAIN, 'password' => 'password',
             'phone' => '9876500011', 'company_name' => 'Deepak Auto Traders', 'city' => 'Lucknow',
         ]);
+        // Verified partner KYC so the account can be activated (activation is gated on KYC).
+        foreach (VendorProfile::requiredMediaTypes() as $type) {
+            $active->vendorProfile->documents()->create([
+                'type' => $type,
+                'file_path' => "demo/vendor-partners/{$type}.jpg",
+                'status' => 'verified',
+                'uploaded_by' => $active->id,
+                'verified_by' => $admin->id,
+                'verified_at' => now(),
+            ]);
+        }
+        $active->vendorProfile->update(['kyc_status' => 'verified']);
         $registration->setStatus($active->vendorProfile, VendorProfileStatus::Active, $admin);
 
         $registration->register([

@@ -24,6 +24,7 @@ function approvedSubmission(): array
         'name' => 'V', 'email' => 'v'.fake()->unique()->numerify('#####').'@vs.test',
         'password' => 'Password1', 'phone' => '9800000000', 'company_name' => 'VS Motors',
     ]);
+    $vendor->vendorProfile->update(['kyc_status' => 'verified']);
     app(VendorRegistrationAction::class)->setStatus($vendor->vendorProfile, VendorProfileStatus::Active, $admin);
 
     $action = app(VendorSubmissionAction::class);
@@ -127,6 +128,7 @@ it('blocks owner-KYC before approval', function () {
     $vendor = app(VendorRegistrationAction::class)->register([
         'name' => 'V', 'email' => 'pre@vs.test', 'password' => 'Password1', 'phone' => '9800000001',
     ]);
+    $vendor->vendorProfile->update(['kyc_status' => 'verified']);
     app(VendorRegistrationAction::class)->setStatus($vendor->vendorProfile, VendorProfileStatus::Active, superAdmin());
     $submission = app(VendorSubmissionAction::class)->save(null, ['make' => 'A', 'model' => 'B', 'registration_number' => 'X', 'expected_amount' => 1], $vendor->fresh());
 
@@ -338,6 +340,7 @@ it('scopes owner-KYC submission to the submission owner', function () {
     $other = app(VendorRegistrationAction::class)->register([
         'name' => 'Other', 'email' => 'other@vs.test', 'password' => 'Password1', 'phone' => '9800000002',
     ]);
+    $other->vendorProfile->update(['kyc_status' => 'verified']);
     app(VendorRegistrationAction::class)->setStatus($other->vendorProfile, VendorProfileStatus::Active, superAdmin());
 
     $this->actingAs($other->fresh())

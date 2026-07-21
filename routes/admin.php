@@ -56,6 +56,8 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::post('vendor-partners', [VendorPartnerController::class, 'store'])->name('vendor-partners.store');
     Route::get('vendor-partners/{vendorProfile}/edit', [VendorPartnerController::class, 'edit'])->name('vendor-partners.edit');
     Route::patch('vendor-partners/{vendorProfile}', [VendorPartnerController::class, 'update'])->name('vendor-partners.update');
+    Route::post('vendor-partners/{vendorProfile}/documents', [VendorPartnerController::class, 'uploadDocument'])->name('vendor-partners.documents');
+    Route::post('vendor-partners/{vendorProfile}/documents/verify', [VendorPartnerController::class, 'verifyDocument'])->name('vendor-partners.documents.verify');
     Route::post('vendor-partners/{vendorProfile}/status', [VendorPartnerController::class, 'setStatus'])->name('vendor-partners.status');
 
     // Purchase leads + workflow.

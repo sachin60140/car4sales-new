@@ -6,7 +6,7 @@ import AppLayout from '@/layouts/AppLayout.vue';
 import type { BreadcrumbItem, Paginated } from '@/types';
 import { Head, Link, router } from '@inertiajs/vue3';
 import { Plus, Search } from 'lucide-vue-next';
-import { reactive, watch } from 'vue';
+import { reactive, ref, watch } from 'vue';
 
 interface Partner {
     id: number;
@@ -18,6 +18,7 @@ interface Partner {
     gst_number: string | null;
     status: string;
     status_label: string;
+    kyc_status: string;
     created_at: string;
 }
 
@@ -45,8 +46,19 @@ watch(filters, () => {
     }, 350);
 });
 
+const statusError = ref('');
 function setStatus(partner: Partner, status: string) {
-    router.post(`/admin/vendor-partners/${partner.id}/status`, { status }, { preserveScroll: true });
+    statusError.value = '';
+    router.post(
+        `/admin/vendor-partners/${partner.id}/status`,
+        { status },
+        {
+            preserveScroll: true,
+            onError: (errors) => {
+                statusError.value = errors.status ?? 'Could not update status.';
+            },
+        },
+    );
 }
 
 const statusStyle: Record<string, string> = {
@@ -54,6 +66,11 @@ const statusStyle: Record<string, string> = {
     active: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400',
     rejected: 'bg-brand-red/15 text-brand-red',
     suspended: 'bg-muted text-muted-foreground',
+};
+const kycStyle: Record<string, string> = {
+    pending: 'bg-brand-orange/15 text-brand-orange',
+    submitted: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400',
+    verified: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400',
 };
 </script>
 
@@ -86,20 +103,25 @@ const statusStyle: Record<string, string> = {
                 </select>
             </div>
 
+            <div v-if="statusError" class="rounded-md border border-brand-red/30 bg-brand-red/10 px-3 py-2 text-sm text-brand-red">
+                {{ statusError }}
+            </div>
+
             <div class="overflow-x-auto rounded-xl border border-sidebar-border/70 dark:border-sidebar-border">
-                <table class="w-full min-w-[880px] text-sm">
+                <table class="w-full min-w-[940px] text-sm">
                     <thead>
                         <tr class="border-b bg-muted/50 text-left">
                             <th class="px-4 py-3 font-medium">Partner</th>
                             <th class="px-4 py-3 font-medium">Contact</th>
                             <th class="px-4 py-3 font-medium">GST</th>
                             <th class="px-4 py-3 font-medium">Status</th>
+                            <th class="px-4 py-3 font-medium">KYC</th>
                             <th class="px-4 py-3 text-right font-medium">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr v-if="partners.data.length === 0">
-                            <td colspan="5" class="px-4 py-10 text-center text-muted-foreground">No vendor partners.</td>
+                            <td colspan="6" class="px-4 py-10 text-center text-muted-foreground">No vendor partners.</td>
                         </tr>
                         <tr v-for="p in partners.data" :key="p.id" class="border-b last:border-0">
                             <td class="px-4 py-3">
@@ -119,9 +141,23 @@ const statusStyle: Record<string, string> = {
                                 }}</span>
                             </td>
                             <td class="px-4 py-3">
+                                <span
+                                    class="inline-flex rounded-full px-2 py-0.5 text-xs font-medium capitalize"
+                                    :class="kycStyle[p.kyc_status] ?? 'bg-muted text-muted-foreground'"
+                                    >{{ p.kyc_status }}</span
+                                >
+                            </td>
+                            <td class="px-4 py-3">
                                 <div class="flex justify-end gap-1.5">
                                     <template v-if="can.activate">
-                                        <Button v-if="p.status !== 'active'" size="sm" @click="setStatus(p, 'active')">Activate</Button>
+                                        <Button
+                                            v-if="p.status !== 'active'"
+                                            size="sm"
+                                            :disabled="p.kyc_status !== 'verified'"
+                                            :title="p.kyc_status !== 'verified' ? 'Verify all required KYC documents first' : ''"
+                                            @click="setStatus(p, 'active')"
+                                            >Activate</Button
+                                        >
                                         <Button
                                             v-if="p.status === 'pending_activation'"
                                             size="sm"

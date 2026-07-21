@@ -8,6 +8,7 @@ use App\Domain\VendorSubmissions\Enums\VendorProfileStatus;
 use App\Domain\VendorSubmissions\Models\VendorProfile;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use RuntimeException;
 
 /**
  * Self-service vendor onboarding. A new partner can log in immediately but stays
@@ -57,17 +58,15 @@ class VendorRegistrationAction
     }
 
     /**
-     * Admin-created vendor partner. Unlike self-registration, the admin sets the
-     * initial status directly (defaults to Active) and no "awaiting activation"
-     * alert is raised — the partner is simply told their account is ready.
+     * Admin-created vendor partner. The partner always starts pending activation
+     * with KYC incomplete — an admin activates them only after their KYC
+     * documents are uploaded and verified.
      *
      * @param  array<string, mixed>  $data
      */
     public function createByAdmin(array $data, User $actor): User
     {
-        return DB::transaction(function () use ($data, $actor) {
-            $status = $data['status'] ?? VendorProfileStatus::Active->value;
-
+        return DB::transaction(function () use ($data) {
             $user = User::query()->create([
                 'name' => $data['name'],
                 'email' => $data['email'],
@@ -85,17 +84,14 @@ class VendorRegistrationAction
                 'phone' => $data['phone'] ?? null,
                 'city' => $data['city'] ?? null,
                 'gst_number' => $data['gst_number'] ?? null,
-                'status' => $status,
-                'activated_by' => $status === VendorProfileStatus::Active->value ? $actor->id : null,
-                'activated_at' => $status === VendorProfileStatus::Active->value ? now() : null,
+                'status' => VendorProfileStatus::PendingActivation->value,
+                'kyc_status' => 'pending',
             ]);
 
             $this->notifications->notify($user, 'vendor.created', 'Vendor account created', [
-                'level' => NotificationLevel::Success,
-                'body' => $status === VendorProfileStatus::Active->value
-                    ? 'Your vendor account is active — you can now submit vehicles.'
-                    : 'Your vendor account has been created and is awaiting activation.',
-                'action_url' => '/vendor',
+                'level' => NotificationLevel::Info,
+                'body' => 'Your vendor account has been created — complete your KYC documents to get activated.',
+                'action_url' => '/vendor/kyc',
             ]);
 
             return $user->fresh('vendorProfile');
@@ -139,6 +135,12 @@ class VendorRegistrationAction
      */
     public function setStatus(VendorProfile $profile, VendorProfileStatus $status, User $actor, ?string $remarks = null): VendorProfile
     {
+        // KYC gate: a partner cannot be activated until every required document
+        // has been verified.
+        if ($status === VendorProfileStatus::Active && ! $profile->kycVerified()) {
+            throw new RuntimeException('Complete and verify the partner’s KYC documents before activating.');
+        }
+
         $profile->update([
             'status' => $status->value,
             'activated_by' => $actor->id,

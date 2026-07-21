@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Domain\VendorSubmissions\Actions\VendorPartnerKycAction;
 use App\Domain\VendorSubmissions\Actions\VendorRegistrationAction;
 use App\Domain\VendorSubmissions\Enums\VendorProfileStatus;
 use App\Domain\VendorSubmissions\Models\VendorProfile;
@@ -12,6 +13,7 @@ use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 use Inertia\Inertia;
 use Inertia\Response;
+use RuntimeException;
 
 class VendorPartnerController extends Controller
 {
@@ -38,6 +40,7 @@ class VendorPartnerController extends Controller
                 'gst_number' => $p->gst_number,
                 'status' => $p->status->value,
                 'status_label' => $p->status->label(),
+                'kyc_status' => $p->kyc_status,
                 'created_at' => $p->created_at->toDateString(),
             ]);
 
@@ -62,7 +65,7 @@ class VendorPartnerController extends Controller
 
         return Inertia::render('admin/vendor-partners/Form', [
             'partner' => null,
-            'statuses' => VendorProfileStatus::options(),
+            'kyc' => null,
         ]);
     }
 
@@ -79,19 +82,21 @@ class VendorPartnerController extends Controller
             'contact_person' => ['nullable', 'string', 'max:255'],
             'city' => ['nullable', 'string', 'max:100'],
             'gst_number' => ['nullable', 'string', 'max:20'],
-            'status' => ['required', Rule::enum(VendorProfileStatus::class)],
         ]);
 
-        $action->createByAdmin($data, $request->user());
+        $user = $action->createByAdmin($data, $request->user());
 
-        return redirect()->route('admin.vendor-partners.index')->with('success', 'Vendor partner added.');
+        // Continue to the edit screen so the admin can add KYC documents next.
+        return redirect()
+            ->route('admin.vendor-partners.edit', $user->vendorProfile)
+            ->with('success', 'Vendor partner added — upload their KYC documents to activate them.');
     }
 
     public function edit(VendorProfile $vendorProfile): Response
     {
         $this->authorize('update', $vendorProfile);
 
-        $vendorProfile->load('user:id,name,email,phone');
+        $vendorProfile->load(['user:id,name,email,phone', 'documents.verifier:id,name']);
 
         return Inertia::render('admin/vendor-partners/Form', [
             'partner' => [
@@ -106,8 +111,46 @@ class VendorPartnerController extends Controller
                 'status' => $vendorProfile->status->value,
                 'status_label' => $vendorProfile->status->label(),
             ],
-            'statuses' => VendorProfileStatus::options(),
+            'kyc' => [
+                'rows' => $vendorProfile->kycRows(),
+                'status' => $vendorProfile->kyc_status,
+                'documentStatuses' => [
+                    ['value' => 'verified', 'label' => 'Verified'],
+                    ['value' => 'rejected', 'label' => 'Rejected'],
+                    ['value' => 'pending', 'label' => 'Pending'],
+                ],
+            ],
         ]);
+    }
+
+    public function uploadDocument(Request $request, VendorProfile $vendorProfile, VendorPartnerKycAction $action): RedirectResponse
+    {
+        $this->authorize('update', $vendorProfile);
+
+        $data = $request->validate([
+            'type' => ['required', Rule::in(VendorProfile::allMediaTypes())],
+            'file' => ['required', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:8192'],
+            'number' => ['nullable', 'string', 'max:100'],
+        ]);
+
+        $action->uploadDocument($vendorProfile, $data['type'], $request->file('file'), $data['number'] ?? null, $request->user());
+
+        return back()->with('success', 'Document uploaded.');
+    }
+
+    public function verifyDocument(Request $request, VendorProfile $vendorProfile, VendorPartnerKycAction $action): RedirectResponse
+    {
+        $this->authorize('update', $vendorProfile);
+
+        $data = $request->validate([
+            'type' => ['required', Rule::in(VendorProfile::allMediaTypes())],
+            'status' => ['required', Rule::in(['verified', 'rejected', 'pending'])],
+            'remarks' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        $action->verifyDocument($vendorProfile, $data['type'], $data['status'], $data['remarks'] ?? null, $request->user());
+
+        return back()->with('success', 'Document verification updated.');
     }
 
     public function update(Request $request, VendorProfile $vendorProfile, VendorRegistrationAction $action): RedirectResponse
@@ -139,7 +182,11 @@ class VendorPartnerController extends Controller
             'remarks' => ['nullable', 'string', 'max:500'],
         ]);
 
-        $action->setStatus($vendorProfile, VendorProfileStatus::from($data['status']), $request->user(), $data['remarks'] ?? null);
+        try {
+            $action->setStatus($vendorProfile, VendorProfileStatus::from($data['status']), $request->user(), $data['remarks'] ?? null);
+        } catch (RuntimeException $e) {
+            return back()->withErrors(['status' => $e->getMessage()]);
+        }
 
         return back()->with('success', 'Vendor status updated.');
     }

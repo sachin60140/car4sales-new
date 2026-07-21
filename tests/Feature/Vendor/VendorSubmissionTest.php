@@ -25,6 +25,8 @@ function registerVendor(array $overrides = []): User
 
 function activate(User $vendor): void
 {
+    // KYC must be verified before activation (see VendorRegistrationAction::setStatus).
+    $vendor->vendorProfile->update(['kyc_status' => 'verified']);
     app(VendorRegistrationAction::class)->setStatus($vendor->vendorProfile, VendorProfileStatus::Active, superAdmin());
 }
 

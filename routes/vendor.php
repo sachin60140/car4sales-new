@@ -3,6 +3,8 @@
 use App\Http\Controllers\Vendor\SubmissionController;
 use App\Http\Controllers\Vendor\SubmissionMediaController;
 use App\Http\Controllers\Vendor\VendorDashboardController;
+use App\Http\Controllers\Vendor\VendorKycController;
+use App\Http\Controllers\Vendor\VendorPartnerDocumentController;
 use App\Http\Controllers\Vendor\VendorRegistrationController;
 use Illuminate\Support\Facades\Route;
 
@@ -21,9 +23,16 @@ Route::get('submission-media/{media}', [SubmissionMediaController::class, 'show'
 Route::get('submission-agreement/{submission}', [SubmissionController::class, 'agreement'])
     ->middleware('auth')->name('submission-agreement.download');
 
+// Partner-KYC document streaming — the owner partner or a staff viewer.
+Route::get('vendor-partner-document/{document}', [VendorPartnerDocumentController::class, 'show'])
+    ->middleware('auth')->name('vendor-partner-document.view');
+
 // Vendor partner portal.
 Route::middleware(['auth', 'verified', 'role:Vendor Partner'])->prefix('vendor')->name('vendor.')->group(function () {
     Route::get('/', VendorDashboardController::class)->name('dashboard');
+
+    Route::get('kyc', [VendorKycController::class, 'edit'])->name('kyc');
+    Route::post('kyc/documents', [VendorKycController::class, 'upload'])->name('kyc.documents');
 
     Route::get('submissions', [SubmissionController::class, 'index'])->name('submissions.index');
     Route::get('submissions/create', [SubmissionController::class, 'create'])->name('submissions.create');
