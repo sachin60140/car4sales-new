@@ -48,4 +48,16 @@ class VendorSubmissionPolicy
     {
         return $user->can('vendor-submissions.review');
     }
+
+    /** Verify owner-KYC documents (a standalone right, separate from full review). */
+    public function verifyDocuments(User $user, VendorSubmission $submission): bool
+    {
+        return $user->can('vendor-submissions.verify-documents');
+    }
+
+    /** Open the staff submission page — reviewers or document verifiers. */
+    public function access(User $user, VendorSubmission $submission): bool
+    {
+        return $user->can('vendor-submissions.review') || $user->can('vendor-submissions.verify-documents');
+    }
 }

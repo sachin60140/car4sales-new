@@ -86,7 +86,8 @@ class RolePermissionSeeder extends Seeder
                 'purchase-approvals.reject',
                 'seller-payments.view', 'seller-payments.create', 'seller-payments.approve',
                 'approvals.view', 'approvals.approve', 'approvals.reject',
-                'vendor-submissions.view', 'vendor-submissions.review', 'vendor-submissions.approve',
+                'vendor-submissions.view', 'vendor-submissions.review',
+                'vendor-submissions.verify-documents', 'vendor-submissions.approve',
                 'vendor-partners.view', 'vendor-partners.activate',
                 'reports.view', 'reports.access-reports',
                 'access-mobile',
@@ -100,8 +101,15 @@ class RolePermissionSeeder extends Seeder
                 'purchase-approvals.view', 'purchase-approvals.create',
                 'vehicle-purchases.view', 'vehicle-purchases.create',
                 'possessions.view', 'possessions.create', 'possessions.update',
-                'vendor-submissions.view', 'vendor-submissions.review',
+                'vendor-submissions.view', 'vendor-submissions.review', 'vendor-submissions.verify-documents',
                 'vendor-partners.view',
+                'access-mobile',
+            ]],
+            // A focused role the admin can assign to any employee so they can verify
+            // owner-KYC documents (view submissions + set per-document status) without
+            // full review/approve authority.
+            'Document Verifier' => ['own_branch', [
+                'vendor-submissions.view', 'vendor-submissions.verify-documents',
                 'access-mobile',
             ]],
             // External sourcing vendors — self-service partner portal only.

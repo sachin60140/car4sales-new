@@ -149,6 +149,41 @@ it('verifies each document and blocks issuing the agreement until all required a
         ->and($result->kyc_approved_by)->toBe($admin->id);
 });
 
+it('lets an employee with the verify-documents permission verify a document and records who did it', function () {
+    [$submission, $vendor] = approvedSubmission();
+    submitKyc($submission, $vendor);
+    $verifier = userWithPermissions(['vendor-submissions.view', 'vendor-submissions.verify-documents'], 'all', ['name' => 'Vera Verifier']);
+
+    $this->actingAs($verifier)
+        ->post("/admin/vendor-submissions/{$submission->id}/verify-document", ['type' => 'rc', 'status' => 'verified'])
+        ->assertRedirect();
+
+    $rc = $submission->fresh()->document_verifications['rc'];
+    expect($rc['status'])->toBe('verified')
+        ->and($rc['verified_by'])->toBe($verifier->id)
+        ->and($rc['verified_by_name'])->toBe('Vera Verifier');
+});
+
+it('forbids verifying documents without the verify-documents permission', function () {
+    [$submission, $vendor] = approvedSubmission();
+    submitKyc($submission, $vendor);
+    $user = userWithPermissions(['vendor-submissions.view', 'vendor-submissions.review'], 'all');
+
+    $this->actingAs($user)
+        ->post("/admin/vendor-submissions/{$submission->id}/verify-document", ['type' => 'rc', 'status' => 'verified'])
+        ->assertForbidden();
+});
+
+it('lets a document verifier open the submission but not issue the agreement', function () {
+    [$submission, $vendor, $admin] = approvedSubmission();
+    submitKyc($submission, $vendor);
+    verifyAllDocs($submission->fresh(), $admin);
+    $verifier = userWithPermissions(['vendor-submissions.view', 'vendor-submissions.verify-documents'], 'all');
+
+    $this->actingAs($verifier)->get("/admin/vendor-submissions/{$submission->id}")->assertOk();
+    $this->actingAs($verifier)->post("/admin/vendor-submissions/{$submission->id}/approve-kyc")->assertForbidden();
+});
+
 it('requires NOC & Form 35 as required documents only under hypothecation', function () {
     expect(VendorSubmission::requiredDocKeys(false))->not->toContain('noc')->not->toContain('form_35')
         ->and(VendorSubmission::requiredDocKeys(true))->toContain('noc')->toContain('form_35');

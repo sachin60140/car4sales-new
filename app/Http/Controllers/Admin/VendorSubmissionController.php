@@ -54,7 +54,7 @@ class VendorSubmissionController extends Controller
 
     public function show(Request $request, VendorSubmission $vendorSubmission): Response
     {
-        $this->authorize('review', $vendorSubmission);
+        $this->authorize('access', $vendorSubmission);
 
         $vendorSubmission->load([
             'vendor:id,name,phone,email', 'vendor.vendorProfile:id,user_id,company_name,phone',
@@ -129,11 +129,15 @@ class VendorSubmissionController extends Controller
             ],
             'docStatuses' => ['pending', 'verified', 'rejected', 'not_applicable'],
             'can' => [
-                'review' => $vendorSubmission->status === SubmissionStatus::PendingReview,
-                'verifyDocs' => $vendorSubmission->settlement_status === SettlementStatus::KycSubmitted,
+                'review' => $vendorSubmission->status === SubmissionStatus::PendingReview
+                    && $request->user()->can('vendor-submissions.review'),
+                'verifyDocs' => $vendorSubmission->settlement_status === SettlementStatus::KycSubmitted
+                    && $request->user()->can('vendor-submissions.verify-documents'),
                 'issueAgreement' => $vendorSubmission->settlement_status === SettlementStatus::KycSubmitted
+                    && $request->user()->can('vendor-submissions.review')
                     && $this->allRequiredVerified($vendorSubmission),
-                'recordPayment' => $vendorSubmission->settlement_status === SettlementStatus::PaymentRequested,
+                'recordPayment' => $vendorSubmission->settlement_status === SettlementStatus::PaymentRequested
+                    && $request->user()->can('vendor-submissions.review'),
                 'confirmPossession' => $vendorSubmission->settlement_status === SettlementStatus::Paid
                     && $request->user()->can('possessions.create'),
             ],
@@ -161,6 +165,8 @@ class VendorSubmissionController extends Controller
                 'key' => $key, 'label' => $def['label'], 'group' => $def['group'], 'files' => $files,
                 'status' => $v['status'] ?? 'pending', 'number' => $v['number'] ?? null,
                 'valid_till' => $v['valid_till'] ?? null, 'remarks' => $v['remarks'] ?? null,
+                'verified_by' => $v['verified_by_name'] ?? null,
+                'verified_at' => isset($v['verified_at']) ? \Illuminate\Support\Carbon::parse($v['verified_at'])->toDayDateTimeString() : null,
             ];
         }
 
@@ -185,7 +191,7 @@ class VendorSubmissionController extends Controller
 
     public function verifyDocument(Request $request, VendorSubmission $vendorSubmission, VendorSettlementAction $action): RedirectResponse
     {
-        $this->authorize('review', $vendorSubmission);
+        $this->authorize('verifyDocuments', $vendorSubmission);
 
         $data = $request->validate([
             'type' => ['required', 'string', 'max:40'],

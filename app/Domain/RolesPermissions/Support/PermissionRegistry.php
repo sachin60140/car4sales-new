@@ -44,7 +44,9 @@ class PermissionRegistry
             'vendors' => [...self::CRUD, 'export'],
 
             // Vendor-sourced vehicle submissions (partner portal + staff review).
-            'vendor-submissions' => ['view', 'create', 'update', 'submit', 'review', 'approve', 'export'],
+            // 'verify-documents' is a standalone right: an employee granted it can
+            // verify owner-KYC documents without full review/approve authority.
+            'vendor-submissions' => ['view', 'create', 'update', 'submit', 'review', 'verify-documents', 'approve', 'export'],
             'vendor-partners' => ['view', 'activate', 'export'],
 
             'customers' => [...self::CRUD, 'view-kyc', 'export'],

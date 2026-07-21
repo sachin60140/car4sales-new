@@ -116,6 +116,10 @@ class VendorSettlementAction
             'number' => $data['number'] ?? null,
             'valid_till' => $data['valid_till'] ?? null,
             'remarks' => $data['remarks'] ?? null,
+            // Audit — which employee set this status and when.
+            'verified_by' => $actor->id,
+            'verified_by_name' => $actor->name,
+            'verified_at' => now()->toDateTimeString(),
         ];
 
         $submission->update(['document_verifications' => $verifications]);

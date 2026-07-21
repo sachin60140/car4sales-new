@@ -290,6 +290,7 @@ const resultStyle: Record<string, string> = { pass: 'text-emerald-600', fail: 't
                                                 <span v-if="row.number" class="text-muted-foreground"> · {{ row.number }}</span>
                                                 <span v-if="row.remarks" class="text-muted-foreground"> · {{ row.remarks }}</span>
                                             </div>
+                                            <p v-if="row.verified_by" class="mt-1 text-[11px] text-muted-foreground">Verified by {{ row.verified_by }}<span v-if="row.verified_at"> · {{ row.verified_at }}</span></p>
                                         </div>
                                     </div>
                                 </div>
