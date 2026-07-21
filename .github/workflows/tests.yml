@@ -79,11 +79,4 @@ jobs:
         run: npm run build
 
       - name: Run Tests
-        run: |
-          php artisan test --compact 2>&1 | tee test-output.log
-          code=${PIPESTATUS[0]}
-          if [ "$code" -ne 0 ]; then
-            sed 's/\x1b\[[0-9;]*m//g' test-output.log | grep -avE '^[[:space:]]*$' | head -80 \
-              | while IFS= read -r line; do echo "::error::${line}"; done
-          fi
-          exit $code
+        run: php artisan test
