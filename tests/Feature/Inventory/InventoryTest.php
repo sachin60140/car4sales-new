@@ -76,3 +76,79 @@ it('hides landed cost from users without the purchase-cost permission', function
         ->get("/admin/inventory/{$vehicle->id}")
         ->assertInertia(fn ($page) => $page->missing('vehicle.landed_cost')->missing('vehicle.purchase_price'));
 });
+
+it('adds a stock vehicle from the admin form', function () {
+    $branch = Branch::factory()->create();
+    $user = userWithPermissions(['vehicles.view', 'vehicles.create', 'vehicles.view-purchase-cost'], scope: 'all');
+
+    $response = $this->actingAs($user)->post('/admin/inventory', [
+        'make' => 'Hyundai', 'model' => 'Creta', 'variant' => 'SX',
+        'registration_number' => 'MH12XY9999', 'manufacturing_year' => 2021,
+        'fuel_type' => 'Petrol', 'transmission' => 'Manual', 'body_type' => 'SUV',
+        'odometer_km' => 28000, 'ownership_serial' => 1, 'branch_id' => $branch->id,
+        'status' => VehicleStatus::InStock->value, 'landed_cost' => 900000, 'asking_price' => 1050000,
+    ]);
+
+    $vehicle = Vehicle::query()->where('registration_number', 'MH12XY9999')->firstOrFail();
+    $response->assertRedirect("/admin/inventory/{$vehicle->id}");
+
+    expect($vehicle->stock_number)->not->toBeEmpty()
+        ->and($vehicle->status)->toBe(VehicleStatus::InStock)
+        ->and((float) $vehicle->landed_cost)->toBe(900000.0)
+        ->and($vehicle->created_by)->toBe($user->id)
+        ->and($vehicle->slug)->not->toBeEmpty();
+
+    // The initial status is recorded in history.
+    $this->assertDatabaseHas('vehicle_status_histories', [
+        'vehicle_id' => $vehicle->id, 'to_status' => VehicleStatus::InStock->value,
+    ]);
+});
+
+it('forbids adding stock without the create permission', function () {
+    $user = userWithPermissions(['vehicles.view'], scope: 'all');
+
+    $this->actingAs($user)
+        ->post('/admin/inventory', ['make' => 'Tata', 'model' => 'Punch', 'status' => VehicleStatus::InStock->value])
+        ->assertForbidden();
+
+    expect(Vehicle::query()->where('model', 'Punch')->exists())->toBeFalse();
+});
+
+it('rejects a duplicate registration number when adding stock', function () {
+    $user = userWithPermissions(['vehicles.view', 'vehicles.create'], scope: 'all');
+    Vehicle::query()->create([
+        'stock_number' => 'STK-DUP', 'make' => 'Kia', 'model' => 'Sonet',
+        'registration_number' => 'MH01AA1111', 'status' => 'in_stock',
+    ]);
+
+    $this->actingAs($user)
+        ->post('/admin/inventory', [
+            'make' => 'Kia', 'model' => 'Sonet', 'registration_number' => 'MH01AA1111',
+            'status' => VehicleStatus::InStock->value,
+        ])
+        ->assertSessionHasErrors('registration_number');
+
+    expect(Vehicle::query()->where('registration_number', 'MH01AA1111')->count())->toBe(1);
+});
+
+it('requires make and model when adding stock', function () {
+    $user = userWithPermissions(['vehicles.view', 'vehicles.create'], scope: 'all');
+
+    $this->actingAs($user)
+        ->post('/admin/inventory', ['status' => VehicleStatus::InStock->value])
+        ->assertSessionHasErrors(['make', 'model']);
+});
+
+it('ignores purchase cost fields from users without the cost permission', function () {
+    $user = userWithPermissions(['vehicles.view', 'vehicles.create'], scope: 'all');
+
+    $this->actingAs($user)->post('/admin/inventory', [
+        'make' => 'Ford', 'model' => 'EcoSport', 'status' => VehicleStatus::InStock->value,
+        'landed_cost' => 700000, 'purchase_price' => 650000, 'asking_price' => 800000,
+    ]);
+
+    $vehicle = Vehicle::query()->where('model', 'EcoSport')->firstOrFail();
+    expect((float) $vehicle->landed_cost)->toBe(0.0)
+        ->and((float) $vehicle->purchase_price)->toBe(0.0)
+        ->and((float) $vehicle->asking_price)->toBe(800000.0);
+});

@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import Pagination from '@/components/Pagination.vue';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import AppLayout from '@/layouts/AppLayout.vue';
 import type { BreadcrumbItem, Paginated } from '@/types';
-import { Head, router } from '@inertiajs/vue3';
-import { Search } from 'lucide-vue-next';
+import { Head, Link, router } from '@inertiajs/vue3';
+import { Plus, Search } from 'lucide-vue-next';
 import { reactive, watch } from 'vue';
 
 interface StockRow {
@@ -27,7 +28,7 @@ const props = defineProps<{
     branches: { id: number; name: string }[];
     statuses: { value: string; label: string }[];
     filters: { search: string; status: string | null; branch_id: number | null; published: string | null; refurb_required: boolean };
-    can: { viewCost: boolean };
+    can: { viewCost: boolean; create: boolean };
 }>();
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -79,9 +80,17 @@ function ageStyle(days: number): string {
 
     <AppLayout :breadcrumbs="breadcrumbs">
         <div class="flex h-full flex-1 flex-col gap-4 p-4">
-            <div>
-                <h1 class="text-xl font-semibold">Inventory</h1>
-                <p class="text-sm text-muted-foreground">Vehicle stock, ageing and publication.</p>
+            <div class="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                    <h1 class="text-xl font-semibold">Inventory</h1>
+                    <p class="text-sm text-muted-foreground">Vehicle stock, ageing and publication.</p>
+                </div>
+                <Button v-if="can.create" as-child>
+                    <Link href="/admin/inventory/create">
+                        <Plus class="size-4" />
+                        Add Stock
+                    </Link>
+                </Button>
             </div>
 
             <div class="flex flex-wrap items-center gap-3">

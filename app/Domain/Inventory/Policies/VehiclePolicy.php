@@ -15,6 +15,11 @@ class VehiclePolicy
         return $user->can('vehicles.view');
     }
 
+    public function create(User $user): bool
+    {
+        return $user->can('vehicles.create');
+    }
+
     public function view(User $user, Vehicle $vehicle): bool
     {
         return $user->can('vehicles.view') && $this->inScope($user, $vehicle);

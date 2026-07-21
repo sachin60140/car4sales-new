@@ -79,6 +79,8 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
 
     // Inventory (stock).
     Route::get('inventory', [InventoryController::class, 'index'])->name('inventory.index');
+    Route::get('inventory/create', [InventoryController::class, 'create'])->name('inventory.create');
+    Route::post('inventory', [InventoryController::class, 'store'])->name('inventory.store');
     Route::get('inventory/{vehicle}', [InventoryController::class, 'show'])->name('inventory.show');
     Route::patch('inventory/{vehicle}', [InventoryController::class, 'update'])->name('inventory.update');
     Route::post('inventory/{vehicle}/media', [InventoryActionController::class, 'uploadMedia'])->name('inventory.media');

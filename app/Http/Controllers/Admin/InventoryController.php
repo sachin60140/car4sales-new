@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Domain\Branches\Models\Branch;
+use App\Domain\Inventory\Actions\CreateStockAction;
 use App\Domain\Inventory\Enums\ExpenseCategory;
 use App\Domain\Inventory\Enums\MovementType;
 use App\Domain\Inventory\Enums\VehicleStatus;
@@ -12,6 +13,7 @@ use App\Domain\Vendors\Models\Vendor;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -66,8 +68,67 @@ class InventoryController extends Controller
                 'published' => $request->string('published')->toString() ?: null,
                 'refurb_required' => $request->boolean('refurb_required'),
             ],
-            'can' => ['viewCost' => $canCost],
+            'can' => [
+                'viewCost' => $canCost,
+                'create' => $request->user()->can('create', Vehicle::class),
+            ],
         ]);
+    }
+
+    public function create(Request $request): Response
+    {
+        $this->authorize('create', Vehicle::class);
+
+        return Inertia::render('admin/inventory/Create', [
+            'branches' => Branch::query()->where('is_active', true)->orderBy('name')->get(['id', 'name']),
+            'statuses' => array_map(
+                fn (VehicleStatus $s) => ['value' => $s->value, 'label' => $s->label()],
+                [VehicleStatus::InStock, VehicleStatus::InwardPending, VehicleStatus::InspectionPending, VehicleStatus::UnderRefurbishment],
+            ),
+            'canCost' => $request->user()->can('vehicles.view-purchase-cost'),
+        ]);
+    }
+
+    public function store(Request $request, CreateStockAction $action): RedirectResponse
+    {
+        $this->authorize('create', Vehicle::class);
+
+        $data = $request->validate([
+            'make' => ['required', 'string', 'max:100'],
+            'model' => ['required', 'string', 'max:100'],
+            'variant' => ['nullable', 'string', 'max:100'],
+            'registration_number' => ['nullable', 'string', 'max:20'],
+            'chassis_number' => ['nullable', 'string', 'max:40'],
+            'engine_number' => ['nullable', 'string', 'max:40'],
+            'manufacturing_year' => ['nullable', 'integer', 'min:1980', 'max:'.(now()->year + 1)],
+            'registration_state' => ['nullable', 'string', 'max:100'],
+            'fuel_type' => ['nullable', 'string', 'max:30'],
+            'transmission' => ['nullable', 'string', 'max:30'],
+            'body_type' => ['nullable', 'string', 'max:30'],
+            'color' => ['nullable', 'string', 'max:40'],
+            'odometer_km' => ['nullable', 'integer', 'min:0', 'max:2000000'],
+            'ownership_serial' => ['nullable', 'integer', 'min:1', 'max:20'],
+            'branch_id' => ['nullable', 'exists:branches,id'],
+            'status' => ['required', Rule::in([
+                VehicleStatus::InStock->value, VehicleStatus::InwardPending->value,
+                VehicleStatus::InspectionPending->value, VehicleStatus::UnderRefurbishment->value,
+            ])],
+            'purchase_price' => ['nullable', 'numeric', 'min:0', 'max:99999999'],
+            'landed_cost' => ['nullable', 'numeric', 'min:0', 'max:99999999'],
+            'asking_price' => ['nullable', 'numeric', 'min:0', 'max:99999999'],
+            'refurb_required' => ['boolean'],
+        ]);
+
+        // Only cost-privileged users may set purchase figures.
+        if (! $request->user()->can('vehicles.view-purchase-cost')) {
+            unset($data['purchase_price'], $data['landed_cost']);
+        }
+
+        $vehicle = $action->execute($data, $request->user());
+
+        return redirect()
+            ->route('admin.inventory.show', $vehicle)
+            ->with('success', "Stock {$vehicle->stock_number} added.");
     }
 
     public function show(Request $request, Vehicle $vehicle): Response
