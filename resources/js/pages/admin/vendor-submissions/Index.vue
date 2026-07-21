@@ -11,11 +11,15 @@ interface Row {
     id: number;
     submission_number: string;
     title: string;
+    registration_number: string | null;
+    manufacturing_year: number | null;
     vendor?: { id: number; name: string } | null;
     expected_amount: string;
     overall_rating: number | null;
     status: string;
     status_label: string;
+    stage: string;
+    stage_label: string;
     created_at: string;
 }
 
@@ -46,12 +50,25 @@ function money(v: string): string {
     return '₹' + Number(v).toLocaleString('en-IN');
 }
 
-const statusStyle: Record<string, string> = {
+// Styling for every stage a submission can be in — its own status plus the
+// settlement stages it moves through once approved.
+const stageStyle: Record<string, string> = {
     draft: 'bg-muted text-muted-foreground',
     pending_review: 'bg-brand-orange/15 text-brand-orange',
-    approved: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400',
     rejected: 'bg-brand-red/15 text-brand-red',
+    approved: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400',
+    not_started: 'bg-muted text-muted-foreground',
+    kyc_pending: 'bg-brand-orange/15 text-brand-orange',
+    kyc_submitted: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400',
+    agreement_ready: 'bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-400',
+    payment_requested: 'bg-brand-orange/15 text-brand-orange',
+    paid: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400',
+    stocked: 'bg-emerald-600/15 text-emerald-700 dark:text-emerald-400',
 };
+
+function vehicleDetails(s: Row): string {
+    return [s.registration_number, s.manufacturing_year].filter(Boolean).join('  ·  ');
+}
 </script>
 
 <template>
@@ -84,18 +101,21 @@ const statusStyle: Record<string, string> = {
                             <th class="px-4 py-3 font-medium">Vendor</th>
                             <th class="px-4 py-3 font-medium">Expected</th>
                             <th class="px-4 py-3 font-medium">Rating</th>
-                            <th class="px-4 py-3 font-medium">Status</th>
+                            <th class="px-4 py-3 font-medium">Current Status</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr v-if="submissions.data.length === 0"><td colspan="6" class="px-4 py-10 text-center text-muted-foreground">No vendor submissions.</td></tr>
                         <tr v-for="s in submissions.data" :key="s.id" class="cursor-pointer border-b last:border-0 hover:bg-muted/30" @click="router.get(`/admin/vendor-submissions/${s.id}`)">
                             <td class="px-4 py-3 font-mono text-xs">{{ s.submission_number }}</td>
-                            <td class="px-4 py-3 font-medium">{{ s.title }}</td>
+                            <td class="px-4 py-3">
+                                <p class="font-medium">{{ s.title }}</p>
+                                <p v-if="vehicleDetails(s)" class="text-xs text-muted-foreground">{{ vehicleDetails(s) }}</p>
+                            </td>
                             <td class="px-4 py-3">{{ s.vendor?.name ?? '—' }}</td>
                             <td class="px-4 py-3">{{ money(s.expected_amount) }}</td>
                             <td class="px-4 py-3">{{ s.overall_rating ? s.overall_rating + '★' : '—' }}</td>
-                            <td class="px-4 py-3"><span class="inline-flex rounded-full px-2 py-0.5 text-xs font-medium" :class="statusStyle[s.status]">{{ s.status_label }}</span></td>
+                            <td class="px-4 py-3"><span class="inline-flex rounded-full px-2 py-0.5 text-xs font-medium" :class="stageStyle[s.stage] ?? 'bg-muted text-muted-foreground'">{{ s.stage_label }}</span></td>
                         </tr>
                     </tbody>
                 </table>

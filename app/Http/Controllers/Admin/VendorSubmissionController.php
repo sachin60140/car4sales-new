@@ -31,17 +31,27 @@ class VendorSubmissionController extends Controller
             ->latest()
             ->paginate(15)
             ->withQueryString()
-            ->through(fn (VendorSubmission $s) => [
-                'id' => $s->id,
-                'submission_number' => $s->submission_number,
-                'title' => $s->title(),
-                'vendor' => $s->vendor?->only(['id', 'name']),
-                'expected_amount' => $s->expected_amount,
-                'overall_rating' => $s->overall_rating,
-                'status' => $s->status->value,
-                'status_label' => $s->status->label(),
-                'created_at' => $s->created_at->toDateString(),
-            ]);
+            ->through(function (VendorSubmission $s) {
+                // The "current stage" is the settlement stage once approved, otherwise
+                // the submission's own status (draft / pending review / rejected).
+                $approved = $s->status === SubmissionStatus::Approved;
+
+                return [
+                    'id' => $s->id,
+                    'submission_number' => $s->submission_number,
+                    'title' => $s->title(),
+                    'registration_number' => $s->registration_number,
+                    'manufacturing_year' => $s->manufacturing_year,
+                    'vendor' => $s->vendor?->only(['id', 'name']),
+                    'expected_amount' => $s->expected_amount,
+                    'overall_rating' => $s->overall_rating,
+                    'status' => $s->status->value,
+                    'status_label' => $s->status->label(),
+                    'stage' => $approved ? $s->settlement_status->value : $s->status->value,
+                    'stage_label' => $approved ? $s->settlement_status->label() : $s->status->label(),
+                    'created_at' => $s->created_at->toDateString(),
+                ];
+            });
 
         return Inertia::render('admin/vendor-submissions/Index', [
             'submissions' => $submissions,
