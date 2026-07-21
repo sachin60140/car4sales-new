@@ -916,7 +916,7 @@ class DemoDataSeeder extends Seeder
             'owner_name' => 'Rakesh Kumar', 'owner_phone' => '9876540000', 'owner_email' => 'rakesh.owner@example.test',
             'owner_address' => '14 Civil Lines, Lucknow, UP 226001', 'owner_pan' => 'ABCDE1234F',
             'kyc_submitted_at' => now()->subDays(3), 'kyc_approved_at' => now()->subDays(2), 'kyc_approved_by' => $admin->id,
-            'bank_account_name' => 'Deepak Auto Traders', 'bank_account_number' => '50100123456',
+            'bank_account_name' => 'Rakesh Kumar', 'bank_account_number' => '50100123456',
             'bank_ifsc' => 'HDFC0000123', 'bank_name' => 'HDFC Bank', 'payment_requested_at' => now()->subDays(2),
             'payment_amount' => 710000, 'payment_mode' => 'neft', 'payment_reference' => 'UTRDEMO0001',
             'payment_date' => now()->subDay()->toDateString(), 'paid_by' => $admin->id, 'paid_at' => now()->subDay(),

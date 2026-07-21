@@ -206,9 +206,9 @@ const resultStyle: Record<string, string> = { pass: 'text-emerald-600', fail: 't
                                 <p v-if="s.owner.pan" class="text-muted-foreground">PAN {{ s.owner.pan }}</p>
                             </div>
 
-                            <!-- Vendor bank -->
+                            <!-- Owner payout bank -->
                             <div v-if="s.bank" class="rounded-lg border border-sidebar-border/60 p-2">
-                                <p class="text-xs font-medium uppercase text-muted-foreground">Payout bank</p>
+                                <p class="text-xs font-medium uppercase text-muted-foreground">Owner's bank account (payout)</p>
                                 <p>{{ s.bank.account_name }}</p>
                                 <p class="text-muted-foreground">A/c {{ s.bank.account_number }} · {{ s.bank.ifsc }}<span v-if="s.bank.bank_name"> · {{ s.bank.bank_name }}</span></p>
                             </div>

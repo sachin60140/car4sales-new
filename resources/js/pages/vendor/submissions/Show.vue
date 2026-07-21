@@ -137,9 +137,10 @@ const resultStyle: Record<string, string> = {
                         <div class="grid gap-1.5 sm:col-span-2"><Label class="text-xs">Owner Address *</Label><Input v-model="kycForm.owner_address" class="h-9" /></div>
                     </div>
 
-                    <p class="mb-2 mt-4 text-xs font-semibold uppercase text-muted-foreground">Payout bank</p>
+                    <p class="mb-1 mt-4 text-xs font-semibold uppercase text-muted-foreground">Owner's bank account (payout)</p>
+                    <p class="mb-2 text-xs text-muted-foreground">Payment is made to the vehicle owner's account. Enter the owner's bank details.</p>
                     <div class="grid gap-3 sm:grid-cols-2">
-                        <div class="grid gap-1.5"><Label class="text-xs">Account Holder *</Label><Input v-model="kycForm.bank_account_name" class="h-9" /></div>
+                        <div class="grid gap-1.5"><Label class="text-xs">Account Holder (Owner) *</Label><Input v-model="kycForm.bank_account_name" :placeholder="kycForm.owner_name || 'Owner name'" class="h-9" /></div>
                         <div class="grid gap-1.5"><Label class="text-xs">Account Number *</Label><Input v-model="kycForm.bank_account_number" class="h-9" /></div>
                         <div class="grid gap-1.5"><Label class="text-xs">IFSC *</Label><Input v-model="kycForm.bank_ifsc" class="h-9" /></div>
                         <div class="grid gap-1.5"><Label class="text-xs">Bank Name</Label><Input v-model="kycForm.bank_name" class="h-9" /></div>
@@ -179,7 +180,7 @@ const resultStyle: Record<string, string> = {
                             <p class="text-muted-foreground">{{ s.owner_address }}</p>
                         </div>
                         <div class="rounded-lg border border-sidebar-border/60 p-3 text-sm">
-                            <p class="mb-1 text-xs font-medium uppercase text-muted-foreground">Payout bank</p>
+                            <p class="mb-1 text-xs font-medium uppercase text-muted-foreground">Owner's bank account</p>
                             <p>{{ s.bank_account_name }}</p>
                             <p class="text-muted-foreground">A/c {{ s.bank_account_number }} · {{ s.bank_ifsc }}<span v-if="s.bank_name"> · {{ s.bank_name }}</span></p>
                         </div>
@@ -195,7 +196,7 @@ const resultStyle: Record<string, string> = {
                 <template v-else>
                     <div class="grid gap-4 sm:grid-cols-2">
                         <div class="rounded-lg border border-sidebar-border/60 p-3 text-sm">
-                            <p class="mb-1 text-xs font-medium uppercase text-muted-foreground">Owner &amp; bank</p>
+                            <p class="mb-1 text-xs font-medium uppercase text-muted-foreground">Owner &amp; payout account</p>
                             <p v-if="s.owner_name">{{ s.owner_name }} · {{ s.owner_phone }}</p>
                             <p>{{ s.bank_account_name }}</p>
                             <p class="text-muted-foreground">A/c {{ s.bank_account_number }} · {{ s.bank_ifsc }}<span v-if="s.bank_name"> · {{ s.bank_name }}</span></p>

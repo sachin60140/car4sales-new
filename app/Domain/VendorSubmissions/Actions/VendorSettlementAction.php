@@ -30,11 +30,11 @@ class VendorSettlementAction
     ) {}
 
     /**
-     * Vendor submits the vehicle owner's details, payout bank details, and the
-     * required KYC documents (RC, PAN, Aadhaar, NOC, key/owner photos, cheque, …).
+     * Vendor submits the vehicle owner's details, the owner's payout bank account,
+     * and the required KYC documents (RC, PAN, Aadhaar, NOC, key/owner photos, cheque, …).
      *
      * @param  array<string, mixed>  $owner   owner_name, owner_phone, owner_email, owner_address, owner_pan
-     * @param  array<string, mixed>  $bank    bank_account_name, bank_account_number, bank_ifsc, bank_name
+     * @param  array<string, mixed>  $bank    the owner's account: bank_account_name, bank_account_number, bank_ifsc, bank_name
      * @param  array<string, UploadedFile>  $documents  single files keyed by type
      * @param  array<int, UploadedFile>  $extraDocuments  optional additional docs
      */

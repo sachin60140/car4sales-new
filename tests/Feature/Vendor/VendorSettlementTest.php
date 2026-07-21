@@ -44,7 +44,7 @@ function submitKyc(VendorSubmission $submission, User $vendor): VendorSubmission
     return app(VendorSettlementAction::class)->submitOwnerKyc($submission->fresh(), [
         'owner_name' => 'Rakesh Kumar', 'owner_phone' => '9876540000', 'owner_address' => '14 Civil Lines, Lucknow',
     ], [
-        'bank_account_name' => 'VS Motors', 'bank_account_number' => '1234567890',
+        'bank_account_name' => 'Rakesh Kumar', 'bank_account_number' => '1234567890',
         'bank_ifsc' => 'HDFC0001234', 'bank_name' => 'HDFC Bank',
     ], $documents, $vendor);
 }

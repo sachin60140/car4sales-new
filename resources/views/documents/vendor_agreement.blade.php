@@ -69,6 +69,10 @@
         <h2>Consideration</h2>
         <table class="kv">
             <tr><td class="label">Agreed Amount</td><td><strong>₹ {{ $amount }}</strong> (Rupees {{ ucwords(\Illuminate\Support\Str::of((string) (int) $submission->expected_amount)) }} only)</td></tr>
+            @if($submission->bank_account_number)
+                <tr><td class="label">Payable To (Seller's Account)</td><td>{{ $submission->bank_account_name ?: $sellerName }}</td></tr>
+                <tr><td class="label">Bank / A/c / IFSC</td><td>{{ $submission->bank_name ?? '—' }} · A/c {{ $submission->bank_account_number }} · {{ $submission->bank_ifsc }}</td></tr>
+            @endif
         </table>
 
         <h2>Terms &amp; Conditions</h2>

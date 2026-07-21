@@ -12,7 +12,7 @@ return new class extends Migration
             // not_started | agreement_ready | payment_requested | paid
             $table->string('settlement_status', 20)->default('not_started')->after('purchase_lead_id')->index();
 
-            // Vendor's payout bank details (captured at payment request).
+            // Owner's payout bank details (captured during owner-KYC).
             $table->string('bank_account_name')->nullable()->after('settlement_status');
             $table->string('bank_account_number', 30)->nullable()->after('bank_account_name');
             $table->string('bank_ifsc', 15)->nullable()->after('bank_account_number');
