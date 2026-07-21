@@ -100,8 +100,20 @@ class PurchaseLeadController extends Controller
             'documents' => fn ($q) => $q->latest(),
         ]);
 
+        // The purchase-approval request is attached to the lead itself (the
+        // VehiclePurchase only exists once approved), so surface the latest one
+        // directly — the Approval tab decides on this, not lead.purchase.
+        $approvalRequest = \App\Domain\Approvals\Models\ApprovalRequest::query()
+            ->where('module', 'purchase-approval')
+            ->where('subject_type', $purchaseLead->getMorphClass())
+            ->where('subject_id', $purchaseLead->id)
+            ->with('steps.role:id,name')
+            ->latest('id')
+            ->first();
+
         return Inertia::render('admin/purchase/leads/Show', [
             'lead' => $purchaseLead,
+            'approvalRequest' => $approvalRequest,
             'statuses' => PurchaseLeadStatus::options(),
             'allowedTransitions' => array_values(array_map(
                 fn (PurchaseLeadStatus $s) => ['value' => $s->value, 'label' => $s->label()],
@@ -153,9 +165,11 @@ class PurchaseLeadController extends Controller
         // Guard the record-creating milestones: these must go through their
         // dedicated action so the VehiclePurchase / stock entry is actually created.
         if ($target->requiresDedicatedAction()) {
-            $message = $target === PurchaseLeadStatus::Purchased
-                ? 'Use “Confirm Possession” to complete the purchase — that step creates the stock entry.'
-                : 'Approve the purchase from its approval request — that step creates the purchase record.';
+            $message = match ($target) {
+                PurchaseLeadStatus::PurchaseApprovalPending => 'Use “Request Purchase Approval” — that opens the approval so it can be decided.',
+                PurchaseLeadStatus::Purchased => 'Use “Confirm Possession” to complete the purchase — that step creates the stock entry.',
+                default => 'Approve the purchase from its approval request — that step creates the purchase record.',
+            };
 
             return back()->with('error', $message);
         }

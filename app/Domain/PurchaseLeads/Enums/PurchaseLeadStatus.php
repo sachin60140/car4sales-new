@@ -75,7 +75,14 @@ enum PurchaseLeadStatus: string implements HasTransitions
      */
     public function requiresDedicatedAction(): bool
     {
-        return in_array($this, [self::PurchaseApproved, self::Purchased], true);
+        return in_array($this, [
+            // Opened via "Request Purchase Approval" (which creates the approval request).
+            self::PurchaseApprovalPending,
+            // Set by the approval decision (creates the VehiclePurchase).
+            self::PurchaseApproved,
+            // Set by Confirm Possession (creates the stock entry).
+            self::Purchased,
+        ], true);
     }
 
     public function label(): string

@@ -13,11 +13,20 @@ interface StatusOption { value: string; label: string }
 
 const props = defineProps<{
     lead: Record<string, any>;
+    approvalRequest: Record<string, any> | null;
     statuses: StatusOption[];
     allowedTransitions: StatusOption[];
     employees: { id: number; name: string }[];
     can: Record<string, boolean>;
 }>();
+
+// The purchase-approval request lives on the lead (not on lead.purchase, which
+// only exists once approved). Drive the whole Approval tab from this.
+const approval_request = computed(() => props.approvalRequest);
+const hasPendingApproval = computed(() => approval_request.value?.status === 'pending');
+const canRequestApproval = computed(
+    () => props.can.requestApproval && (!approval_request.value || approval_request.value.status === 'rejected'),
+);
 
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Dashboard', href: '/dashboard' },
@@ -395,7 +404,7 @@ const verificationStatuses = ['pending', 'received', 'verified', 'rejected', 'ex
 
             <!-- Approval -->
             <div v-show="activeTab === 'Approval'" class="grid gap-4">
-                <Card v-if="can.requestApproval && !lead.purchase?.approval_request">
+                <Card v-if="canRequestApproval">
                     <CardHeader><CardTitle>Request Purchase Approval</CardTitle></CardHeader>
                     <CardContent class="flex flex-wrap items-end gap-3">
                         <div class="grid gap-1">
@@ -410,29 +419,30 @@ const verificationStatuses = ['pending', 'received', 'verified', 'rejected', 'ex
                     </CardContent>
                 </Card>
 
-                <Card v-if="lead.purchase?.approval_request">
-                    <CardHeader><CardTitle>Approval {{ lead.purchase.approval_request.approval_number }}</CardTitle></CardHeader>
+                <Card v-if="approval_request">
+                    <CardHeader><CardTitle>Approval {{ approval_request.approval_number }}</CardTitle></CardHeader>
                     <CardContent class="grid gap-3 text-sm">
                         <div class="flex items-center gap-2">
-                            <span class="rounded-full bg-muted px-2 py-0.5 text-xs capitalize">{{ lead.purchase.approval_request.status }}</span>
-                            <span>Requested: {{ money(lead.purchase.approval_request.requested_amount) }}</span>
-                            <span v-if="lead.purchase.approval_request.approved_amount">· Approved: {{ money(lead.purchase.approval_request.approved_amount) }}</span>
+                            <span class="rounded-full bg-muted px-2 py-0.5 text-xs capitalize">{{ approval_request.status }}</span>
+                            <span>Requested: {{ money(approval_request.requested_amount) }}</span>
+                            <span v-if="approval_request.approved_amount">· Approved: {{ money(approval_request.approved_amount) }}</span>
                         </div>
-                        <div v-if="lead.purchase.approval_request.reasons?.length" class="flex flex-wrap gap-1">
-                            <span v-for="r in lead.purchase.approval_request.reasons" :key="r" class="rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-700 dark:bg-amber-900/40 dark:text-amber-400">
+                        <div v-if="approval_request.reasons?.length" class="flex flex-wrap gap-1">
+                            <span v-for="r in approval_request.reasons" :key="r" class="rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-700 dark:bg-amber-900/40 dark:text-amber-400">
                                 {{ r.replace(/_/g, ' ') }}
                             </span>
                         </div>
                         <ol class="divide-y">
-                            <li v-for="step in lead.purchase.approval_request.steps" :key="step.id" class="flex items-center justify-between py-2">
+                            <li v-for="step in approval_request.steps" :key="step.id" class="flex items-center justify-between py-2">
                                 <span>Step {{ step.sequence }}: {{ step.role?.name ?? 'Manager' }}</span>
                                 <span class="rounded-full bg-muted px-2 py-0.5 text-xs capitalize">{{ step.status }}</span>
                             </li>
                         </ol>
-                        <div v-if="can.decideApproval && lead.purchase.approval_request.status === 'pending'" class="flex gap-2">
-                            <Button size="sm" @click="decide(lead.purchase.approval_request.id, 'approve')">Approve</Button>
-                            <Button size="sm" variant="destructive" @click="decide(lead.purchase.approval_request.id, 'reject')">Reject</Button>
+                        <div v-if="can.decideApproval && hasPendingApproval" class="flex gap-2">
+                            <Button size="sm" @click="decide(approval_request.id, 'approve')">Approve</Button>
+                            <Button size="sm" variant="destructive" @click="decide(approval_request.id, 'reject')">Reject</Button>
                         </div>
+                        <p v-else-if="hasPendingApproval" class="text-xs text-muted-foreground">Awaiting decision by {{ approval_request.steps?.find((s: Record<string, any>) => s.status === 'pending')?.role?.name ?? 'the approver' }}.</p>
                     </CardContent>
                 </Card>
                 <Card v-else-if="!can.requestApproval">

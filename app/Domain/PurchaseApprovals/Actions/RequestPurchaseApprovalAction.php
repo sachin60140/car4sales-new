@@ -2,6 +2,7 @@
 
 namespace App\Domain\PurchaseApprovals\Actions;
 
+use App\Domain\Approvals\Enums\ApprovalStatus;
 use App\Domain\Approvals\Models\ApprovalRequest;
 use App\Domain\Approvals\Services\ApprovalEngine;
 use App\Domain\PurchaseLeads\Enums\PurchaseLeadStatus;
@@ -9,6 +10,7 @@ use App\Domain\PurchaseLeads\Models\PurchaseLead;
 use App\Models\User;
 use App\Support\Workflow\WorkflowService;
 use Illuminate\Support\Facades\DB;
+use RuntimeException;
 
 /**
  * Raises a purchase approval for a lead. Evaluates risk flags to decide whether
@@ -23,6 +25,19 @@ class RequestPurchaseApprovalAction
 
     public function execute(PurchaseLead $lead, float $requestedAmount, User $requester, ?string $reason = null): ApprovalRequest
     {
+        // One open approval per lead — prevents duplicate pending requests when
+        // the button is clicked twice.
+        $existing = ApprovalRequest::query()
+            ->where('module', 'purchase-approval')
+            ->where('subject_type', $lead->getMorphClass())
+            ->where('subject_id', $lead->id)
+            ->where('status', ApprovalStatus::Pending->value)
+            ->exists();
+
+        if ($existing) {
+            throw new RuntimeException('A purchase approval is already pending for this lead.');
+        }
+
         return DB::transaction(function () use ($lead, $requestedAmount, $requester, $reason) {
             $lead->loadMissing(['valuation', 'verifications', 'latestInspection']);
 

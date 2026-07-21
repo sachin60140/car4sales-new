@@ -114,7 +114,11 @@ class PurchaseWorkflowController extends Controller
             'reason' => ['nullable', 'string', 'max:1000'],
         ]);
 
-        $action->execute($purchaseLead, (float) $data['requested_amount'], $request->user(), $data['reason'] ?? null);
+        try {
+            $action->execute($purchaseLead, (float) $data['requested_amount'], $request->user(), $data['reason'] ?? null);
+        } catch (\RuntimeException $e) {
+            return back()->with('error', $e->getMessage());
+        }
 
         return back()->with('success', 'Purchase approval requested.');
     }

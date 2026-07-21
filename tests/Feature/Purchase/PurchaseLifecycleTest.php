@@ -228,3 +228,45 @@ it('omits the dedicated-action statuses from the generic transition dropdown', f
         ->get("/admin/purchase-leads/{$lead->id}")
         ->assertInertia(fn ($p) => $p->where('allowedTransitions', fn ($t) => collect($t)->pluck('value')->doesntContain('purchased')));
 });
+
+it('surfaces the lead pending purchase approval on the workbench so it can be decided', function () {
+    seedApprovalChain();
+    $admin = superAdmin();
+    $lead = PurchaseLead::factory()->create();
+    $request = app(RequestPurchaseApprovalAction::class)->execute($lead, 250000, $admin);
+
+    $this->actingAs($admin)
+        ->get("/admin/purchase-leads/{$lead->id}")
+        ->assertOk()
+        ->assertInertia(fn ($p) => $p
+            ->where('approvalRequest.id', $request->id)
+            ->where('approvalRequest.status', 'pending')
+            ->has('approvalRequest.steps'));
+});
+
+it('refuses a duplicate purchase approval request for the same lead', function () {
+    seedApprovalChain();
+    $admin = superAdmin();
+    $lead = PurchaseLead::factory()->create();
+    app(RequestPurchaseApprovalAction::class)->execute($lead, 250000, $admin);
+
+    expect(fn () => app(RequestPurchaseApprovalAction::class)->execute($lead->fresh(), 250000, $admin))
+        ->toThrow(RuntimeException::class, 'already pending');
+
+    expect(ApprovalRequest::query()
+        ->where('module', 'purchase-approval')
+        ->where('subject_id', $lead->id)
+        ->count())->toBe(1);
+});
+
+it('refuses to reach PurchaseApprovalPending through the generic status control', function () {
+    $admin = superAdmin();
+    $lead = PurchaseLead::factory()->create(['status' => PurchaseLeadStatus::Negotiation->value]);
+
+    $this->actingAs($admin)
+        ->from("/admin/purchase-leads/{$lead->id}")
+        ->post("/admin/purchase-leads/{$lead->id}/transition", ['status' => 'purchase_approval_pending'])
+        ->assertSessionHas('error');
+
+    expect($lead->fresh()->status)->toBe(PurchaseLeadStatus::Negotiation);
+});
