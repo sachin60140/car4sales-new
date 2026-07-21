@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Domain\Bookings\Actions\CancelBookingAction;
 use App\Domain\Bookings\Actions\ConfirmBookingAction;
 use App\Domain\Bookings\Actions\CreateBookingAction;
+use App\Domain\Bookings\Actions\GenerateBookingSlipAction;
 use App\Domain\Bookings\Actions\RefundAction;
 use App\Domain\Bookings\Enums\BookingStatus;
 use App\Domain\Bookings\Models\Booking;
@@ -141,6 +142,7 @@ class BookingController extends Controller
                 'refund' => $request->user()->can('payments.reverse-payment') || $request->user()->hasRole('Accounts Manager') || $request->user()->hasRole('Super Admin'),
                 'reversePayment' => $request->user()->can('payments.reverse-payment') || $request->user()->hasRole('Accounts Manager') || $request->user()->hasRole('Super Admin'),
                 'invoice' => $request->user()->can('bookings.print'),
+                'slip' => $request->user()->can('bookings.print'),
                 'finance' => $request->user()->can('finance.create'),
             ],
         ]);
@@ -153,6 +155,14 @@ class BookingController extends Controller
         $invoices->generate($booking, $request->user());
 
         return back()->with('success', 'Invoice generated.');
+    }
+
+    public function bookingSlip(Request $request, Booking $booking, GenerateBookingSlipAction $action): \Symfony\Component\HttpFoundation\Response
+    {
+        $this->authorize('view', $booking);
+        abort_unless($request->user()->can('bookings.print'), 403);
+
+        return $action->pdf($booking)->download("booking-slip-{$booking->booking_number}.pdf");
     }
 
     public function confirm(Request $request, Booking $booking, ConfirmBookingAction $action): RedirectResponse

@@ -150,6 +150,7 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::get('bookings', [BookingController::class, 'index'])->name('bookings.index');
     Route::post('bookings', [BookingController::class, 'store'])->name('bookings.store');
     Route::get('bookings/{booking}', [BookingController::class, 'show'])->name('bookings.show');
+    Route::get('bookings/{booking}/slip', [BookingController::class, 'bookingSlip'])->name('bookings.slip');
     Route::post('bookings/{booking}/confirm', [BookingController::class, 'confirm'])->name('bookings.confirm');
     Route::post('bookings/{booking}/payment', [BookingController::class, 'payment'])->name('bookings.payment');
     Route::post('bookings/{booking}/cancel', [BookingController::class, 'requestCancellation'])->name('bookings.cancel');

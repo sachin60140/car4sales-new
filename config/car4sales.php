@@ -49,6 +49,10 @@ return [
         'phone' => env('PUBLIC_PHONE', '+91 90000 00000'),
         'whatsapp' => env('PUBLIC_WHATSAPP', '919000000000'),
         'email' => env('PUBLIC_EMAIL', 'hello@car4sales.in'),
+        // Used on printed/legal documents (booking slip, agreements).
+        'address' => env('PUBLIC_ADDRESS', 'Car4Sales Motors, Main Road, Lucknow, Uttar Pradesh 226001'),
+        'gstin' => env('PUBLIC_GSTIN', ''),
+        'jurisdiction' => env('PUBLIC_JURISDICTION', 'Lucknow'),
         // OTP verification for public forms. Off by default in local/testing;
         // enable in production via PUBLIC_REQUIRE_OTP=true.
         'require_otp' => env('PUBLIC_REQUIRE_OTP', false),

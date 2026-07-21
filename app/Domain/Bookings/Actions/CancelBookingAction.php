@@ -51,13 +51,25 @@ class CancelBookingAction
 
             $cancellation->update(['status' => 'approved', 'approved_by' => $approver->id, 'approved_at' => now()]);
 
-            // Release the vehicle back to stock.
+            // A vehicle can hold several bookings — only release it back to stock
+            // when no *other* active booking is still holding it.
             $vehicle = Vehicle::query()->whereKey($booking->vehicle_id)->lockForUpdate()->first();
             if ($vehicle !== null) {
-                $vehicle->update(['reserved_booking_id' => null]);
-                $target = $vehicle->published_web ? VehicleStatus::Published : VehicleStatus::ReadyForSale;
-                if (in_array($vehicle->status, [VehicleStatus::Reserved, VehicleStatus::Booked, VehicleStatus::DeliveryPending], true)) {
-                    $this->workflow->transition($vehicle, $target, $approver, 'Booking cancelled', force: true);
+                $otherHold = Booking::query()
+                    ->where('vehicle_id', $vehicle->id)
+                    ->where('id', '!=', $booking->id)
+                    ->whereIn('status', $this->heldStatuses())
+                    ->first();
+
+                if ($otherHold === null) {
+                    $vehicle->update(['reserved_booking_id' => null]);
+                    $target = $vehicle->published_web ? VehicleStatus::Published : VehicleStatus::ReadyForSale;
+                    if (in_array($vehicle->status, [VehicleStatus::Reserved, VehicleStatus::Booked, VehicleStatus::DeliveryPending], true)) {
+                        $this->workflow->transition($vehicle, $target, $approver, 'Booking cancelled', force: true);
+                    }
+                } elseif ($vehicle->reserved_booking_id === $booking->id) {
+                    // Hand the reservation to a remaining active booking.
+                    $vehicle->update(['reserved_booking_id' => $otherHold->id]);
                 }
             }
 
@@ -72,5 +84,13 @@ class CancelBookingAction
 
             return $cancellation;
         });
+    }
+
+    /** @return array<int, string> */
+    private function heldStatuses(): array
+    {
+        return array_values(array_filter(
+            array_map(fn (BookingStatus $s) => $s->holdsVehicle() ? $s->value : null, BookingStatus::cases()),
+        ));
     }
 }

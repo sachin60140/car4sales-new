@@ -16,9 +16,11 @@ use Illuminate\Support\Facades\DB;
 use RuntimeException;
 
 /**
- * Confirms a booking under a row lock on the vehicle. Guarantees a single active
- * booking per vehicle (double-booking block), reserves/locks the vehicle, and
- * routes excess discounts through the approval engine before confirming.
+ * Confirms a booking under a row lock on the vehicle. A vehicle may carry several
+ * concurrent bookings (multiple tentative/token bookings are allowed); the
+ * exclusive step is delivery, not booking. Reserves the vehicle (marking it
+ * Booked) and routes excess discounts through the approval engine before
+ * confirming.
  */
 class ConfirmBookingAction
 {
@@ -34,18 +36,13 @@ class ConfirmBookingAction
             /** @var Vehicle $vehicle */
             $vehicle = Vehicle::query()->whereKey($booking->vehicle_id)->lockForUpdate()->firstOrFail();
 
-            // Double-booking guard: no other active booking may hold this vehicle.
-            $conflict = Booking::query()
-                ->where('vehicle_id', $vehicle->id)
-                ->where('id', '!=', $booking->id)
-                ->whereIn('status', $this->heldStatuses())
-                ->exists();
-
-            if ($conflict || ($vehicle->reserved_booking_id !== null && $vehicle->reserved_booking_id !== $booking->id)) {
-                throw new RuntimeException('This vehicle already has an active booking.');
-            }
-
-            if (! in_array($vehicle->status, [VehicleStatus::ReadyForSale, VehicleStatus::Published, VehicleStatus::Reserved], true)) {
+            // Multiple bookings per vehicle are allowed, so a vehicle that is
+            // already Booked/Reserved can still take another booking. Only a
+            // vehicle that has left the sales floor (delivered, blocked, etc.)
+            // cannot be booked.
+            if (! in_array($vehicle->status, [
+                VehicleStatus::ReadyForSale, VehicleStatus::Published, VehicleStatus::Reserved, VehicleStatus::Booked,
+            ], true)) {
                 throw new RuntimeException('The vehicle is not available for booking.');
             }
 
@@ -127,6 +124,17 @@ class ConfirmBookingAction
 
     private function releaseVehicle(Vehicle $vehicle, User $actor): void
     {
+        // Only release the vehicle if no other active booking still holds it.
+        $stillHeld = Booking::query()
+            ->where('vehicle_id', $vehicle->id)
+            ->where('id', '!=', $vehicle->reserved_booking_id)
+            ->whereIn('status', $this->heldStatuses())
+            ->exists();
+
+        if ($stillHeld) {
+            return;
+        }
+
         $vehicle->update(['reserved_booking_id' => null]);
         $target = $vehicle->published_web ? VehicleStatus::Published : VehicleStatus::ReadyForSale;
         if ($vehicle->status !== $target) {

@@ -95,7 +95,12 @@ const pendingRefund = computed(() => (b.value.refunds ?? []).find((r: any) => r.
                         {{ booking.vehicle ? `${booking.vehicle.make} ${booking.vehicle.model}` : '' }}
                     </p>
                 </div>
-                <Button variant="outline" as-child><Link href="/admin/bookings">Back</Link></Button>
+                <div class="flex items-center gap-2">
+                    <Button v-if="can.slip" as-child>
+                        <a :href="`/admin/bookings/${booking.id}/slip`" target="_blank">Booking Slip</a>
+                    </Button>
+                    <Button variant="outline" as-child><Link href="/admin/bookings">Back</Link></Button>
+                </div>
             </div>
 
             <!-- Money summary -->

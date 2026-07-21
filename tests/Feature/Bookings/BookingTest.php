@@ -1,6 +1,7 @@
 <?php
 
 use App\Domain\Approvals\Services\ApprovalEngine;
+use App\Domain\Bookings\Actions\CancelBookingAction;
 use App\Domain\Bookings\Actions\ConfirmBookingAction;
 use App\Domain\Bookings\Actions\CreateBookingAction;
 use App\Domain\Bookings\Enums\BookingStatus;
@@ -50,7 +51,7 @@ it('confirms a booking within discount authority, locking the vehicle', function
         ->and($lead->fresh()->status)->toBe(SalesLeadStatus::Booking);
 });
 
-it('prevents double-booking the same vehicle', function () {
+it('allows multiple concurrent bookings on the same vehicle', function () {
     $admin = superAdmin();
     $vehicle = bookingVehicle();
 
@@ -58,9 +59,48 @@ it('prevents double-booking the same vehicle', function () {
     app(ConfirmBookingAction::class)->execute($first, $admin);
 
     $second = app(CreateBookingAction::class)->execute(bookingLead($admin), $vehicle, ['selling_price' => 800000], $admin);
+    app(ConfirmBookingAction::class)->execute($second, $admin);
 
-    expect(fn () => app(ConfirmBookingAction::class)->execute($second, $admin))
-        ->toThrow(RuntimeException::class, 'already has an active booking');
+    expect($first->fresh()->status)->toBe(BookingStatus::Confirmed)
+        ->and($second->fresh()->status)->toBe(BookingStatus::Confirmed)
+        ->and($vehicle->fresh()->status)->toBe(VehicleStatus::Booked);
+});
+
+it('keeps the vehicle booked while another booking still holds it, releasing only when the last is cancelled', function () {
+    $admin = superAdmin();
+    $vehicle = bookingVehicle();
+    $cancel = app(CancelBookingAction::class);
+
+    $first = app(CreateBookingAction::class)->execute(bookingLead($admin), $vehicle, ['selling_price' => 790000], $admin);
+    app(ConfirmBookingAction::class)->execute($first, $admin);
+    $second = app(CreateBookingAction::class)->execute(bookingLead($admin), $vehicle, ['selling_price' => 800000], $admin);
+    app(ConfirmBookingAction::class)->execute($second, $admin);
+
+    // Cancel the first — the vehicle stays booked because the second still holds it.
+    $c1 = $cancel->request($first->fresh(), 'Changed mind', 0, 0, $admin);
+    $cancel->approve($c1, $admin);
+    expect($vehicle->fresh()->status)->toBe(VehicleStatus::Booked)
+        ->and($vehicle->fresh()->reserved_booking_id)->toBe($second->id);
+
+    // Cancel the second — now nothing holds it, so it returns to stock.
+    $c2 = $cancel->request($second->fresh(), 'Changed mind', 0, 0, $admin);
+    $cancel->approve($c2, $admin);
+    expect($vehicle->fresh()->status)->toBe(VehicleStatus::ReadyForSale)
+        ->and($vehicle->fresh()->reserved_booking_id)->toBeNull();
+});
+
+it('downloads a booking slip PDF', function () {
+    $admin = superAdmin();
+    $vehicle = bookingVehicle(['registration_number' => 'UP32 AB 1234', 'chassis_number' => 'CH123', 'fuel_type' => 'Petrol']);
+    $booking = app(CreateBookingAction::class)->execute(bookingLead($admin), $vehicle, [
+        'selling_price' => 790000, 'discount_amount' => 10000, 'booking_amount' => 20000,
+    ], $admin);
+
+    $response = $this->actingAs($admin)->get("/admin/bookings/{$booking->id}/slip");
+
+    $response->assertOk();
+    expect($response->headers->get('content-type'))->toContain('application/pdf')
+        ->and($response->headers->get('content-disposition'))->toContain("booking-slip-{$booking->booking_number}.pdf");
 });
 
 it('routes an excess discount through approval and reserves the vehicle', function () {
