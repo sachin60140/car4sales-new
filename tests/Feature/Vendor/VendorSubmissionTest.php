@@ -1,10 +1,12 @@
 <?php
 
 use App\Domain\PurchaseLeads\Models\PurchaseLead;
+use App\Domain\VendorSubmissions\Actions\VendorPartnerKycAction;
 use App\Domain\VendorSubmissions\Actions\VendorRegistrationAction;
 use App\Domain\VendorSubmissions\Actions\VendorSubmissionAction;
 use App\Domain\VendorSubmissions\Enums\SubmissionStatus;
 use App\Domain\VendorSubmissions\Enums\VendorProfileStatus;
+use App\Domain\VendorSubmissions\Models\VendorProfile;
 use App\Domain\VendorSubmissions\Models\VendorSubmission;
 use App\Models\User;
 use Database\Seeders\RolePermissionSeeder;
@@ -40,6 +42,32 @@ it('registers a vendor as pending activation with the Vendor Partner role', func
 
     expect($vendor->hasRole('Vendor Partner'))->toBeTrue()
         ->and($vendor->vendorProfile->status)->toBe(VendorProfileStatus::PendingActivation);
+});
+
+it('shows KYC completeness on the vendor dashboard', function () {
+    Storage::fake('private');
+    $vendor = registerVendor();
+    $profile = $vendor->vendorProfile;
+    $kyc = app(VendorPartnerKycAction::class);
+    $required = VendorProfile::requiredMediaTypes();
+
+    // Upload every required document, but verify only the first two.
+    foreach ($required as $i => $type) {
+        $kyc->uploadDocument($profile, $type, UploadedFile::fake()->image("{$type}.jpg"), null, $vendor);
+        if ($i < 2) {
+            $kyc->verifyDocument($profile, $type, 'verified', null, superAdmin());
+        }
+    }
+
+    $this->actingAs($vendor->fresh())
+        ->get('/vendor')
+        ->assertOk()
+        ->assertInertia(fn ($p) => $p
+            ->component('vendor/Dashboard')
+            ->where('kyc.required_total', count($required))
+            ->where('kyc.required_uploaded', count($required))
+            ->where('kyc.required_verified', 2)
+            ->where('kyc.status', 'submitted'));
 });
 
 it('blocks submitting a vehicle until the vendor is activated', function () {

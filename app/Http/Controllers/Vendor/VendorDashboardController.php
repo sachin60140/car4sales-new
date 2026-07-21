@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Vendor;
 
+use App\Domain\VendorSubmissions\Models\VendorProfile;
 use App\Domain\VendorSubmissions\Models\VendorSubmission;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
@@ -20,6 +21,12 @@ class VendorDashboardController extends Controller
             ->selectRaw('status, COUNT(*) as total')
             ->groupBy('status')
             ->pluck('total', 'status');
+
+        // KYC completeness — how many required documents are verified.
+        $requiredTypes = VendorProfile::requiredMediaTypes();
+        $requiredDocs = $profile
+            ? $profile->documents()->whereIn('type', $requiredTypes)->get()
+            : collect();
 
         $recent = VendorSubmission::query()
             ->where('vendor_user_id', $user->id)
@@ -49,6 +56,12 @@ class VendorDashboardController extends Controller
                 'pending_review' => (int) ($counts['pending_review'] ?? 0),
                 'approved' => (int) ($counts['approved'] ?? 0),
                 'rejected' => (int) ($counts['rejected'] ?? 0),
+            ],
+            'kyc' => [
+                'status' => $profile?->kyc_status ?? 'pending',
+                'required_total' => count($requiredTypes),
+                'required_verified' => $requiredDocs->where('status', 'verified')->pluck('type')->unique()->count(),
+                'required_uploaded' => $requiredDocs->pluck('type')->unique()->count(),
             ],
             'recent' => $recent,
         ]);
