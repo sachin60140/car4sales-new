@@ -242,13 +242,29 @@ class SubmissionController extends Controller
 
     private function row(VendorSubmission $s): array
     {
+        // The "current stage" is the settlement stage once approved, otherwise the
+        // submission's own status (draft / pending review / rejected).
+        $approved = $s->status === SubmissionStatus::Approved;
+
         return [
             'id' => $s->id,
             'submission_number' => $s->submission_number,
             'title' => $s->title(),
+            'make' => $s->make,
+            'model' => $s->model,
+            'variant' => $s->variant,
+            'manufacturing_year' => $s->manufacturing_year,
+            'registration_number' => $s->registration_number,
+            'fuel_type' => $s->fuel_type,
+            'transmission' => $s->transmission,
+            'odometer_km' => $s->odometer_km,
             'expected_amount' => $s->expected_amount,
             'status' => $s->status->value,
             'status_label' => $s->status->label(),
+            'settlement_status' => $s->settlement_status->value,
+            'settlement_label' => $s->settlement_status->label(),
+            'stage' => $approved ? $s->settlement_status->value : $s->status->value,
+            'stage_label' => $approved ? $s->settlement_status->label() : $s->status->label(),
             'created_at' => $s->created_at->toDateString(),
         ];
     }

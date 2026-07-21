@@ -11,9 +11,21 @@ interface Row {
     id: number;
     submission_number: string;
     title: string;
+    make: string | null;
+    model: string | null;
+    variant: string | null;
+    manufacturing_year: number | null;
+    registration_number: string | null;
+    fuel_type: string | null;
+    transmission: string | null;
+    odometer_km: number | null;
     expected_amount: string;
     status: string;
     status_label: string;
+    settlement_status: string;
+    settlement_label: string;
+    stage: string;
+    stage_label: string;
     created_at: string;
 }
 
@@ -32,12 +44,31 @@ function money(v: string): string {
     return '₹' + Number(v).toLocaleString('en-IN');
 }
 
-const statusStyle: Record<string, string> = {
+// Styling for every stage a submission can be in — its own status plus the
+// settlement stages it moves through once approved.
+const stageStyle: Record<string, string> = {
     draft: 'bg-muted text-muted-foreground',
     pending_review: 'bg-brand-orange/15 text-brand-orange',
-    approved: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400',
     rejected: 'bg-brand-red/15 text-brand-red',
+    approved: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400',
+    not_started: 'bg-muted text-muted-foreground',
+    kyc_pending: 'bg-brand-orange/15 text-brand-orange',
+    kyc_submitted: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400',
+    agreement_ready: 'bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-400',
+    payment_requested: 'bg-brand-orange/15 text-brand-orange',
+    paid: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400',
+    stocked: 'bg-emerald-600/15 text-emerald-700 dark:text-emerald-400',
 };
+
+function details(s: Row): string {
+    const bits = [
+        s.registration_number,
+        s.manufacturing_year,
+        [s.fuel_type, s.transmission].filter(Boolean).join(' · ') || null,
+        s.odometer_km ? Number(s.odometer_km).toLocaleString('en-IN') + ' km' : null,
+    ].filter(Boolean);
+    return bits.join('  ·  ');
+}
 </script>
 
 <template>
@@ -64,13 +95,14 @@ const statusStyle: Record<string, string> = {
             <ul v-else class="divide-y">
                 <li v-for="s in submissions.data" :key="s.id">
                     <Link :href="`/vendor/submissions/${s.id}`" class="flex items-center justify-between gap-3 px-4 py-3 transition hover:bg-muted/40">
-                        <div>
+                        <div class="min-w-0">
                             <p class="font-medium">{{ s.title }}</p>
-                            <p class="text-xs text-muted-foreground">{{ s.submission_number }} · {{ s.created_at }}</p>
+                            <p v-if="details(s)" class="truncate text-xs text-muted-foreground">{{ details(s) }}</p>
+                            <p class="text-[11px] text-muted-foreground/80">{{ s.submission_number }} · {{ s.created_at }}</p>
                         </div>
-                        <div class="flex items-center gap-3">
+                        <div class="flex shrink-0 flex-col items-end gap-1">
                             <span class="text-sm font-semibold">{{ money(s.expected_amount) }}</span>
-                            <span class="rounded-full px-2 py-0.5 text-xs font-medium" :class="statusStyle[s.status]">{{ s.status_label }}</span>
+                            <span class="rounded-full px-2 py-0.5 text-xs font-medium" :class="stageStyle[s.stage] ?? 'bg-muted text-muted-foreground'">{{ s.stage_label }}</span>
                         </div>
                     </Link>
                 </li>
