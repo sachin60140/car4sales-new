@@ -865,7 +865,7 @@ class DemoDataSeeder extends Seeder
             ['section' => 'Tyres', 'label' => 'Tyre condition', 'result' => 'na', 'rating' => null],
         ];
 
-        // Pending review.
+        // Pending review — with vehicle photos + a damage shot (required to submit).
         $s1 = $submissions->save(null, [
             'make' => 'Maruti', 'model' => 'Baleno', 'variant' => 'Zeta', 'manufacturing_year' => 2020,
             'fuel_type' => 'Petrol', 'transmission' => 'Manual', 'color' => 'Grey', 'odometer_km' => 42000,
@@ -873,6 +873,8 @@ class DemoDataSeeder extends Seeder
             'overall_remark' => 'Well maintained, single owner.', 'branch_id' => $branches[0]->id ?? null,
             'items' => $items(),
         ], $active->fresh());
+        $this->attachDemoMedia($s1, 'gallery', 3);
+        $this->attachDemoMedia($s1, 'damage', 1);
         $submissions->submit($s1->fresh(), $active->fresh());
 
         // Draft (not yet submitted).
@@ -884,6 +886,32 @@ class DemoDataSeeder extends Seeder
         ], $active->fresh());
 
         return [2, 2];
+    }
+
+    /**
+     * Attach demo images to a submission. All rows point at a single shared
+     * placeholder on the private disk, so re-seeding never accumulates files
+     * (the media rows cascade away with the submission on clear()).
+     */
+    private function attachDemoMedia(\App\Domain\VendorSubmissions\Models\VendorSubmission $submission, string $type, int $count): void
+    {
+        $path = 'vendor-submissions/demo/placeholder.svg';
+        $disk = \Illuminate\Support\Facades\Storage::disk('private');
+
+        if (! $disk->exists($path) && is_file(public_path('logo.svg'))) {
+            $disk->put($path, (string) file_get_contents(public_path('logo.svg')));
+        }
+
+        for ($i = 0; $i < $count; $i++) {
+            $submission->media()->create([
+                'type' => $type,
+                'file_path' => $path,
+                'caption' => ucfirst($type).' image '.($i + 1).' (demo)',
+                'original_name' => 'demo.svg',
+                'mime_type' => 'image/svg+xml',
+                'size_bytes' => $disk->exists($path) ? $disk->size($path) : 0,
+            ]);
+        }
     }
 
     /**

@@ -24,6 +24,11 @@ function activate(User $vendor): void
     app(VendorRegistrationAction::class)->setStatus($vendor->vendorProfile, VendorProfileStatus::Active, superAdmin());
 }
 
+function withPhoto(\App\Domain\VendorSubmissions\Models\VendorSubmission $submission, string $type = 'gallery'): void
+{
+    $submission->media()->create(['type' => $type, 'file_path' => "demo/{$type}.jpg"]);
+}
+
 it('registers a vendor as pending activation with the Vendor Partner role', function () {
     $vendor = registerVendor();
 
@@ -62,6 +67,7 @@ it('lets an activated vendor submit and staff approve it into a purchase lead', 
     expect($submission->submission_number)->toStartWith('VSUB-')
         ->and($submission->items)->toHaveCount(1);
 
+    withPhoto($submission);
     $action->submit($submission->fresh(), $vendor->fresh());
     expect($submission->fresh()->status)->toBe(SubmissionStatus::PendingReview);
 
@@ -83,11 +89,42 @@ it('rejects a submission with a required reason', function () {
 
     $action = app(VendorSubmissionAction::class);
     $submission = $action->save(null, ['make' => 'A', 'model' => 'B', 'expected_amount' => 100000], $vendor->fresh());
+    withPhoto($submission);
     $action->submit($submission->fresh(), $vendor->fresh());
     $action->reject($submission->fresh(), $admin, 'Price too high');
 
     expect($submission->fresh()->status)->toBe(SubmissionStatus::Rejected)
         ->and($submission->fresh()->review_remarks)->toBe('Price too high');
+});
+
+it('requires at least one vehicle photo before submitting', function () {
+    $vendor = registerVendor();
+    activate($vendor);
+    $submission = app(VendorSubmissionAction::class)->save(null, ['make' => 'Tata', 'model' => 'Nexon', 'expected_amount' => 500000], $vendor->fresh());
+
+    expect(fn () => app(VendorSubmissionAction::class)->submit($submission->fresh(), $vendor->fresh()))
+        ->toThrow(RuntimeException::class, 'vehicle photo');
+
+    withPhoto($submission);
+    app(VendorSubmissionAction::class)->submit($submission->fresh(), $vendor->fresh());
+    expect($submission->fresh()->status)->toBe(SubmissionStatus::PendingReview);
+});
+
+it('requires a damage photo when a checklist item is failed', function () {
+    $vendor = registerVendor();
+    activate($vendor);
+    $submission = app(VendorSubmissionAction::class)->save(null, [
+        'make' => 'Tata', 'model' => 'Punch', 'expected_amount' => 500000,
+        'items' => [['section' => 'Exterior', 'label' => 'Body & paint', 'result' => 'fail', 'rating' => 2]],
+    ], $vendor->fresh());
+    withPhoto($submission, 'gallery');
+
+    expect(fn () => app(VendorSubmissionAction::class)->submit($submission->fresh(), $vendor->fresh()))
+        ->toThrow(RuntimeException::class, 'damage');
+
+    withPhoto($submission, 'damage');
+    app(VendorSubmissionAction::class)->submit($submission->fresh(), $vendor->fresh());
+    expect($submission->fresh()->status)->toBe(SubmissionStatus::PendingReview);
 });
 
 it('registers a vendor through the web and lands on the portal', function () {
@@ -117,6 +154,7 @@ it('approves a submission through the admin endpoint, creating the lead', functi
 
     $action = app(VendorSubmissionAction::class);
     $submission = $action->save(null, ['make' => 'Kia', 'model' => 'Seltos', 'expected_amount' => 700000], $vendor->fresh());
+    withPhoto($submission);
     $action->submit($submission->fresh(), $vendor->fresh());
 
     $this->actingAs($admin)

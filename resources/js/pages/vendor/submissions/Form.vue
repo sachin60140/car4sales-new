@@ -77,6 +77,16 @@ const gallery = computed<Media[]>(() => props.submission?.gallery ?? []);
 const damage = computed<Media[]>(() => props.submission?.damage ?? []);
 const uploading = ref<'gallery' | 'damage' | null>(null);
 
+// Submit gates (mirror the server rules): at least one vehicle photo, and a
+// damage photo whenever any checklist item was marked "fail".
+const hasFail = computed<boolean>(() => (props.submission?.items ?? []).some((i: Item) => i.result === 'fail'));
+const needsDamagePhoto = computed(() => hasFail.value && damage.value.length === 0);
+const submitBlockedReason = computed<string | null>(() => {
+    if (gallery.value.length === 0) return 'Upload at least one vehicle photo to submit.';
+    if (needsDamagePhoto.value) return 'You marked an item as failed — add a photo of the damage to submit.';
+    return null;
+});
+
 function pickAndUpload(type: 'gallery' | 'damage', event: Event) {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
@@ -224,11 +234,11 @@ const resultStyle: Record<string, string> = {
 
             <!-- Images + submit (edit only) -->
             <template v-if="isEdit">
-                <Card>
-                    <CardHeader><CardTitle class="text-base">Vehicle Photos</CardTitle></CardHeader>
+                <Card :class="gallery.length === 0 ? 'border-brand-orange/40' : ''">
+                    <CardHeader><CardTitle class="text-base">Vehicle Photos <span class="text-brand-red">*</span></CardTitle></CardHeader>
                     <CardContent>
                         <div class="mb-2 flex items-center justify-between">
-                            <p class="text-sm text-muted-foreground">General gallery images.</p>
+                            <p class="text-sm text-muted-foreground">At least one vehicle photo is required.</p>
                             <label class="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-input px-3 py-1.5 text-sm hover:bg-muted">
                                 <Upload class="size-4" /> {{ uploading === 'gallery' ? 'Uploading…' : 'Add image' }}
                                 <input type="file" accept="image/*" class="hidden" @change="pickAndUpload('gallery', $event)" />
@@ -269,8 +279,9 @@ const resultStyle: Record<string, string> = {
                         <div>
                             <p class="font-medium">Ready to submit?</p>
                             <p class="text-sm text-muted-foreground">Once submitted, our team will review it. You can't edit while it's under review.</p>
+                            <p v-if="submitBlockedReason" class="mt-1 text-sm font-medium text-brand-orange">{{ submitBlockedReason }}</p>
                         </div>
-                        <Button @click="submitForReview">Submit for Review</Button>
+                        <Button :disabled="!!submitBlockedReason" @click="submitForReview">Submit for Review</Button>
                     </CardContent>
                 </Card>
             </template>

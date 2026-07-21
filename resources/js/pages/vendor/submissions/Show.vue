@@ -77,7 +77,7 @@ const resultStyle: Record<string, string> = {
                     <CardContent>
                         <ul class="divide-y text-sm">
                             <li v-for="it in s.items" :key="it.id" class="flex items-center justify-between gap-2 py-2">
-                                <span>{{ it.label }} <span class="text-xs text-muted-foreground">· {{ it.section }}</span></span>
+                                <span>{{ it.label }} <span class="text-xs text-muted-foreground">· {{ it.section }}</span><span v-if="it.remarks" class="text-xs text-muted-foreground"> — {{ it.remarks }}</span></span>
                                 <span class="flex items-center gap-2">
                                     <span v-if="it.rating" class="text-xs text-muted-foreground">{{ it.rating }}★</span>
                                     <span class="font-medium uppercase" :class="resultStyle[it.result]">{{ it.result === 'na' ? 'N/A' : it.result }}</span>

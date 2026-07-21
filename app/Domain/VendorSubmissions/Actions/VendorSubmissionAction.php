@@ -88,6 +88,16 @@ class VendorSubmissionAction
             throw new RuntimeException('Enter the expected amount before submitting.');
         }
 
+        // Vehicle photos are mandatory so the reviewer can actually assess the car.
+        if ($submission->galleryMedia()->count() === 0) {
+            throw new RuntimeException('Upload at least one vehicle photo before submitting.');
+        }
+
+        // Any failed checklist item must be backed by a damage photo.
+        if ($submission->items()->where('result', 'fail')->exists() && $submission->damageMedia()->count() === 0) {
+            throw new RuntimeException('You marked one or more items as failed — upload a photo of the damage before submitting.');
+        }
+
         $submission->update(['status' => SubmissionStatus::PendingReview->value, 'review_remarks' => null]);
 
         $reviewers = $this->notifications->usersWithPermission('vendor-submissions.review', $submission->branch_id);
