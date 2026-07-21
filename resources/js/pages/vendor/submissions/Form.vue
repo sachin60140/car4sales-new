@@ -95,10 +95,10 @@ const submitBlockedReason = computed<string | null>(() => {
 
 function pickAndUpload(type: 'gallery' | 'damage', event: Event) {
     const input = event.target as HTMLInputElement;
-    const file = input.files?.[0];
-    if (!file) return;
+    const files = Array.from(input.files ?? []);
+    if (files.length === 0) return;
     uploading.value = type;
-    router.post(`/vendor/submissions/${props.submission!.id}/media`, { file, type }, {
+    router.post(`/vendor/submissions/${props.submission!.id}/media`, { files, type }, {
         preserveScroll: true,
         forceFormData: true,
         onFinish: () => {
@@ -247,8 +247,8 @@ const resultStyle: Record<string, string> = {
                         <div class="mb-2 flex items-center justify-between">
                             <p class="text-sm text-muted-foreground">At least one vehicle photo is required.</p>
                             <label class="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-input px-3 py-1.5 text-sm hover:bg-muted">
-                                <Upload class="size-4" /> {{ uploading === 'gallery' ? 'Uploading…' : 'Add image' }}
-                                <input type="file" accept="image/*" class="hidden" @change="pickAndUpload('gallery', $event)" />
+                                <Upload class="size-4" /> {{ uploading === 'gallery' ? 'Uploading…' : 'Add images' }}
+                                <input type="file" accept="image/*" multiple class="hidden" @change="pickAndUpload('gallery', $event)" />
                             </label>
                         </div>
                         <div v-if="gallery.length" class="grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -267,8 +267,8 @@ const resultStyle: Record<string, string> = {
                         <div class="mb-2 flex items-center justify-between">
                             <p class="text-sm text-muted-foreground">Close-ups of any dents, scratches or damage.</p>
                             <label class="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-input px-3 py-1.5 text-sm hover:bg-muted">
-                                <Upload class="size-4" /> {{ uploading === 'damage' ? 'Uploading…' : 'Add image' }}
-                                <input type="file" accept="image/*" class="hidden" @change="pickAndUpload('damage', $event)" />
+                                <Upload class="size-4" /> {{ uploading === 'damage' ? 'Uploading…' : 'Add images' }}
+                                <input type="file" accept="image/*" multiple class="hidden" @change="pickAndUpload('damage', $event)" />
                             </label>
                         </div>
                         <div v-if="damage.length" class="grid grid-cols-2 gap-2 sm:grid-cols-4">

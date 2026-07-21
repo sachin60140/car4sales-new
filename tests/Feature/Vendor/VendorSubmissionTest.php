@@ -145,6 +145,26 @@ it('requires a damage photo when a checklist item is failed', function () {
     expect($submission->fresh()->status)->toBe(SubmissionStatus::PendingReview);
 });
 
+it('uploads multiple vehicle images in one request', function () {
+    \Illuminate\Support\Facades\Storage::fake('private');
+    $vendor = registerVendor();
+    activate($vendor);
+    $submission = app(VendorSubmissionAction::class)->save(null, ['make' => 'A', 'model' => 'B', 'expected_amount' => 1], $vendor->fresh());
+
+    $this->actingAs($vendor->fresh())
+        ->post("/vendor/submissions/{$submission->id}/media", [
+            'type' => 'gallery',
+            'files' => [
+                \Illuminate\Http\UploadedFile::fake()->image('a.jpg'),
+                \Illuminate\Http\UploadedFile::fake()->image('b.jpg'),
+                \Illuminate\Http\UploadedFile::fake()->image('c.jpg'),
+            ],
+        ])
+        ->assertRedirect();
+
+    expect($submission->galleryMedia()->count())->toBe(3);
+});
+
 it('registers a vendor through the web and lands on the portal', function () {
     $this->post('/vendor/register', [
         'name' => 'Web Vendor', 'phone' => '9811111111', 'email' => 'webv@vend.test',

@@ -87,25 +87,28 @@ class SubmissionController extends Controller
         $this->authorize('update', $submission);
 
         $data = $request->validate([
-            'file' => ['required', 'image', 'max:5120'],
+            'files' => ['required', 'array', 'max:20'],
+            'files.*' => ['image', 'max:5120'],
             'type' => ['required', 'in:gallery,damage'],
-            'caption' => ['nullable', 'string', 'max:255'],
         ]);
 
-        $stored = $media->store($request->file('file'), "vendor-submissions/{$submission->id}");
+        foreach ($request->file('files') as $file) {
+            $stored = $media->store($file, "vendor-submissions/{$submission->id}");
 
-        $submission->media()->create([
-            'type' => $data['type'],
-            'file_path' => $stored['path'],
-            'thumbnail_path' => $stored['thumbnail_path'] ?? null,
-            'caption' => $data['caption'] ?? null,
-            'original_name' => $stored['original_name'] ?? null,
-            'mime_type' => $stored['mime_type'] ?? null,
-            'size_bytes' => $stored['size_bytes'] ?? null,
-            'uploaded_by' => $request->user()->id,
-        ]);
+            $submission->media()->create([
+                'type' => $data['type'],
+                'file_path' => $stored['path'],
+                'thumbnail_path' => $stored['thumbnail_path'] ?? null,
+                'original_name' => $stored['original_name'] ?? null,
+                'mime_type' => $stored['mime_type'] ?? null,
+                'size_bytes' => $stored['size_bytes'] ?? null,
+                'uploaded_by' => $request->user()->id,
+            ]);
+        }
 
-        return back()->with('success', 'Image uploaded.');
+        $count = count($data['files']);
+
+        return back()->with('success', $count.' '.($count === 1 ? 'image' : 'images').' uploaded.');
     }
 
     public function deleteMedia(Request $request, \App\Domain\VendorSubmissions\Models\VendorSubmissionMedia $media): RedirectResponse
