@@ -263,6 +263,27 @@ class DemoDataSeeder extends Seeder
             }
         }
 
+        // A named Document Verifier the admin can sign in as to try the owner-KYC
+        // document-verification flow (arman@demo.car4sales.test / password).
+        if (($verifierRole = Role::query()->where('name', 'Document Verifier')->first()) !== null) {
+            $arman = User::query()->create([
+                'name' => 'Arman',
+                'email' => 'arman'.self::USER_DOMAIN,
+                'password' => 'password',
+                'branch_id' => $branches[0]->id ?? null,
+                'department_id' => $purchaseDept,
+                'is_active' => true,
+                'email_verified_at' => now(),
+            ]);
+            $arman->assignRole($verifierRole);
+            $arman->employeeProfile()->create([
+                'employee_code' => self::EMP_PREFIX.str_pad((string) (++$n), 3, '0', STR_PAD_LEFT),
+                'designation' => 'Document Verifier',
+                'date_of_joining' => now()->subMonths(2),
+            ]);
+            $byRole['Document Verifier'][] = $arman;
+        }
+
         return $byRole;
     }
 
@@ -936,7 +957,37 @@ class DemoDataSeeder extends Seeder
         ]);
         $this->attachDemoMedia($s3, 'payment_proof', 1);
 
-        return [2, 3];
+        // Awaiting document verification — owner details + documents submitted, every
+        // document pending, so the demo Document Verifier (Arman) has work to do.
+        $s4 = $submissions->save(null, [
+            'make' => 'Honda', 'model' => 'City', 'variant' => 'VX', 'manufacturing_year' => 2020,
+            'registration_number' => 'UP32 KL 3344', 'keys_available' => 'both',
+            'fuel_type' => 'Petrol', 'transmission' => 'Automatic', 'color' => 'Silver', 'odometer_km' => 38000,
+            'ownership_serial' => 1, 'expected_amount' => 780000, 'branch_id' => $branches[0]->id ?? null,
+            'items' => $items(),
+        ], $active->fresh());
+        $this->attachDemoMedia($s4, 'gallery', 2);
+        $this->attachDemoMedia($s4, 'damage', 1);
+        $submissions->submit($s4->fresh(), $active->fresh());
+        $submissions->approve($s4->fresh(), $admin);
+        foreach (['rc_front', 'rc_back', 'aadhaar_front', 'aadhaar_back', 'pan', 'chassis_photo', 'owner_photo', 'cancelled_cheque'] as $docType) {
+            $this->attachDemoMedia($s4, $docType, 1);
+        }
+        $pending = [];
+        foreach (['rc', 'aadhaar', 'pan', 'chassis_photo', 'owner_photo', 'cancelled_cheque'] as $key) {
+            $pending[$key] = ['status' => 'pending', 'number' => null, 'valid_till' => null, 'remarks' => null];
+        }
+        $s4->update([
+            'settlement_status' => \App\Domain\VendorSubmissions\Enums\SettlementStatus::KycSubmitted->value,
+            'owner_name' => 'Sunita Devi', 'owner_phone' => '9811122233', 'owner_email' => 'sunita.owner@example.test',
+            'owner_address' => '22 Ashok Nagar, Kanpur, UP 208012', 'owner_pan' => 'PQRSX6789K',
+            'chassis_number' => 'MRHGM1234L5678901', 'has_hypothecation' => false,
+            'document_verifications' => $pending, 'kyc_submitted_at' => now()->subDay(),
+            'bank_account_name' => 'Sunita Devi', 'bank_account_number' => '60200987654',
+            'bank_ifsc' => 'SBIN0001234', 'bank_name' => 'State Bank of India',
+        ]);
+
+        return [2, 4];
     }
 
     /**
