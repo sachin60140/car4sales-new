@@ -73,6 +73,12 @@ Cross-cutting concerns:
 | 8. Delivery & RTO | Delivery approval checklist (auto + manual), row-safe handover → vehicle/booking/lead Delivered, auto-spawned RTO transfer case (17-state), document custody tracking, RTO expenses + payment holds, RC upload, delivery challan PDF, mobile delivery + RTO API | **Done** |
 | 9. Reports & Notifications | Multi-channel notifications (in-app + mail/SMS/WhatsApp/push behind pluggable drivers), event wiring across the workflow engine, header bell + inbox + mobile API, report engine (6 scoped reports) with CSV/PDF export, enriched sales/finance/delivery dashboards + collections trend, scheduled daily manager digest | **Done** (SMS/WhatsApp/FCM ship as log-driver stubs — swap the driver in production; enable the scheduler with `schedule:work` off XAMPP) |
 
+### Post-phase feature additions
+
+| Feature | Scope | Status |
+|---|---|---|
+| Purchase by Vendor | Self-service **vendor partner portal** (`/vendor`): register → admin activates → submit vehicles with vehicle details, gallery + damaged-part images, a Pass/Fail/NA condition checklist with ratings, and an expected amount. Staff review queue (`/admin/vendor-submissions`) + partner activation (`/admin/vendor-partners`); **approval creates a purchase lead** (`source = vendor`) that enters the existing purchase pipeline. Vendor Partner role, scoped policies, multi-channel notifications on register/submit/review. | **Done** |
+
 Flutter app work is embedded in each phase (foundation in Phase 1 docs; feature screens land with
 their backend phase). The mobile project lives in a separate repository/folder `car4sales-mobile`
 (see `docs/mobile-app-plan.md`).

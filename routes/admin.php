@@ -39,6 +39,14 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::get('audit/activity', [AuditLogController::class, 'activity'])->name('audit.activity');
     Route::get('audit/logins', [AuditLogController::class, 'logins'])->name('audit.logins');
 
+    // Vendor-sourced submissions (staff review) + vendor partner activation.
+    Route::get('vendor-submissions', [\App\Http\Controllers\Admin\VendorSubmissionController::class, 'index'])->name('vendor-submissions.index');
+    Route::get('vendor-submissions/{vendorSubmission}', [\App\Http\Controllers\Admin\VendorSubmissionController::class, 'show'])->name('vendor-submissions.show');
+    Route::post('vendor-submissions/{vendorSubmission}/approve', [\App\Http\Controllers\Admin\VendorSubmissionController::class, 'approve'])->name('vendor-submissions.approve');
+    Route::post('vendor-submissions/{vendorSubmission}/reject', [\App\Http\Controllers\Admin\VendorSubmissionController::class, 'reject'])->name('vendor-submissions.reject');
+    Route::get('vendor-partners', [\App\Http\Controllers\Admin\VendorPartnerController::class, 'index'])->name('vendor-partners.index');
+    Route::post('vendor-partners/{vendorProfile}/status', [\App\Http\Controllers\Admin\VendorPartnerController::class, 'setStatus'])->name('vendor-partners.status');
+
     // Purchase leads + workflow.
     Route::resource('purchase-leads', PurchaseLeadController::class)->only(['index', 'create', 'store', 'show', 'update']);
     Route::post('purchase-leads/{purchaseLead}/transition', [PurchaseLeadController::class, 'transition'])->name('purchase-leads.transition');

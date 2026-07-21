@@ -33,6 +33,11 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
+        // External sourcing vendors land in their partner portal, not the panel.
+        if ($request->user()->isVendorPartner()) {
+            return redirect()->intended(route('vendor.dashboard', absolute: false));
+        }
+
         return redirect()->intended(route('dashboard', absolute: false));
     }
 

@@ -86,6 +86,8 @@ class RolePermissionSeeder extends Seeder
                 'purchase-approvals.reject',
                 'seller-payments.view', 'seller-payments.create', 'seller-payments.approve',
                 'approvals.view', 'approvals.approve', 'approvals.reject',
+                'vendor-submissions.view', 'vendor-submissions.review', 'vendor-submissions.approve',
+                'vendor-partners.view', 'vendor-partners.activate',
                 'reports.view', 'reports.access-reports',
                 'access-mobile',
             ]],
@@ -98,7 +100,14 @@ class RolePermissionSeeder extends Seeder
                 'purchase-approvals.view', 'purchase-approvals.create',
                 'vehicle-purchases.view', 'vehicle-purchases.create',
                 'possessions.view', 'possessions.create', 'possessions.update',
+                'vendor-submissions.view', 'vendor-submissions.review',
+                'vendor-partners.view',
                 'access-mobile',
+            ]],
+            // External sourcing vendors — self-service partner portal only.
+            'Vendor Partner' => ['assigned', [
+                'vendor-submissions.view', 'vendor-submissions.create',
+                'vendor-submissions.update', 'vendor-submissions.submit',
             ]],
             'Inspector' => ['assigned', [
                 'inspections.view', 'inspections.create', 'inspections.update',

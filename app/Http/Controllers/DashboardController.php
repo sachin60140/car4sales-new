@@ -28,9 +28,14 @@ class DashboardController extends Controller
 {
     public function __construct(private readonly ScopeService $scopes) {}
 
-    public function __invoke(Request $request): Response
+    public function __invoke(Request $request): Response|\Illuminate\Http\RedirectResponse
     {
         $user = $request->user();
+
+        // Vendor partners have no panel access — send them to their portal.
+        if ($user->isVendorPartner()) {
+            return redirect()->route('vendor.dashboard');
+        }
 
         return Inertia::render('Dashboard', [
             'greeting' => [

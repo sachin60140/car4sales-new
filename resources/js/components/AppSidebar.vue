@@ -5,7 +5,7 @@ import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, Sid
 import { usePermissions } from '@/composables/usePermissions';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/vue3';
-import { BarChart3, Bell, BookMarked, Boxes, Building2, CalendarClock, Car, ClipboardCheck, Contact, FileCheck2, Globe, Headphones, KeyRound, Landmark, LayoutGrid, Network, PhoneCall, ScrollText, ShoppingCart, Store, Truck, Users, UsersRound, Wallet, Wrench } from 'lucide-vue-next';
+import { BarChart3, Bell, BookMarked, Boxes, Building2, CalendarClock, Car, ClipboardCheck, Contact, FileCheck2, Globe, Handshake, Headphones, KeyRound, Landmark, LayoutGrid, Network, PackageCheck, PhoneCall, ScrollText, ShoppingCart, Store, Truck, Users, UsersRound, Wallet, Wrench } from 'lucide-vue-next';
 import { computed } from 'vue';
 import AppLogo from './AppLogo.vue';
 
@@ -22,6 +22,8 @@ const mainNavItems: NavItem[] = [
 const purchaseNavItems: NavItem[] = [
     { title: 'Purchase Leads', href: '/admin/purchase-leads', icon: ShoppingCart, permission: 'purchase-leads.view' },
     { title: 'Inspections', href: '/admin/inspections', icon: ClipboardCheck, permission: 'inspections.view' },
+    { title: 'Vendor Submissions', href: '/admin/vendor-submissions', icon: PackageCheck, permission: 'vendor-submissions.view' },
+    { title: 'Vendor Partners', href: '/admin/vendor-partners', icon: Handshake, permission: 'vendor-partners.view' },
 ];
 
 const inventoryNavItems: NavItem[] = [

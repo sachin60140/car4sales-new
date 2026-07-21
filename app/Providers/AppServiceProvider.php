@@ -35,6 +35,10 @@ use App\Domain\Teams\Models\Team;
 use App\Domain\Teams\Policies\TeamPolicy;
 use App\Domain\Vendors\Models\Vendor;
 use App\Domain\Vendors\Policies\VendorPolicy;
+use App\Domain\VendorSubmissions\Models\VendorProfile;
+use App\Domain\VendorSubmissions\Models\VendorSubmission;
+use App\Domain\VendorSubmissions\Policies\VendorProfilePolicy;
+use App\Domain\VendorSubmissions\Policies\VendorSubmissionPolicy;
 use App\Models\User;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
@@ -66,6 +70,8 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(FinanceApplication::class, FinanceApplicationPolicy::class);
         Gate::policy(Delivery::class, DeliveryPolicy::class);
         Gate::policy(RtoCase::class, RtoCasePolicy::class);
+        Gate::policy(VendorSubmission::class, VendorSubmissionPolicy::class);
+        Gate::policy(VendorProfile::class, VendorProfilePolicy::class);
 
         // Super Admin bypasses all permission checks.
         Gate::before(function (User $user, string $ability) {

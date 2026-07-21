@@ -89,6 +89,7 @@ class DemoDataSeeder extends Seeder
             $salesLeadCount = $this->seedSalesLeads($branches, $employees);
             $bookingCount = $this->seedBookings($employees);
             [$deliveryCount, $rtoCount] = $this->seedDeliveries($employees);
+            [$vendorPartnerCount, $vendorSubmissionCount] = $this->seedVendorPartners($branches);
         } finally {
             \App\Domain\Notifications\Services\NotificationService::unmute();
         }
@@ -96,7 +97,7 @@ class DemoDataSeeder extends Seeder
         $notificationCount = $this->seedNotifications();
 
         $this->command?->info(sprintf(
-            'Demo data seeded: %d branches, %d employees, %d sellers, %d vendors, %d purchase leads, %d inspections, %d vehicles, %d sales leads, %d bookings, %d deliveries, %d RTO cases, %d notifications.',
+            'Demo data seeded: %d branches, %d employees, %d sellers, %d vendors, %d purchase leads, %d inspections, %d vehicles, %d sales leads, %d bookings, %d deliveries, %d RTO cases, %d vendor partners, %d vendor submissions, %d notifications.',
             count($branches),
             $employeeCount,
             count($sellers),
@@ -108,6 +109,8 @@ class DemoDataSeeder extends Seeder
             $bookingCount,
             $deliveryCount,
             $rtoCount,
+            $vendorPartnerCount,
+            $vendorSubmissionCount,
             $notificationCount,
         ));
     }
@@ -823,6 +826,64 @@ class DemoDataSeeder extends Seeder
         }
 
         return [$deliveries, $rtoCases];
+    }
+
+    /**
+     * Demo sourcing vendors + submissions. Vendor users carry the demo email
+     * domain, so clear() removes them (their profile + submissions cascade). No
+     * approvals here — that would create a purchase lead outside the demo tags.
+     *
+     * @param  array<int, Branch>  $branches
+     * @return array{0: int, 1: int}  [partners, submissions]
+     */
+    private function seedVendorPartners(array $branches): array
+    {
+        $admin = User::query()->where('email', 'admin@car4sales.test')->first();
+        if ($admin === null) {
+            return [0, 0];
+        }
+
+        $registration = app(\App\Domain\VendorSubmissions\Actions\VendorRegistrationAction::class);
+        $submissions = app(\App\Domain\VendorSubmissions\Actions\VendorSubmissionAction::class);
+
+        // An activated partner with two submissions, plus one awaiting activation.
+        $active = $registration->register([
+            'name' => 'Deepak Sharma', 'email' => 'deepak.vendor'.self::USER_DOMAIN, 'password' => 'password',
+            'phone' => '9876500011', 'company_name' => 'Deepak Auto Traders', 'city' => 'Lucknow',
+        ]);
+        $registration->setStatus($active->vendorProfile, \App\Domain\VendorSubmissions\Enums\VendorProfileStatus::Active, $admin);
+
+        $registration->register([
+            'name' => 'Sunrise Motors', 'email' => 'sunrise.vendor'.self::USER_DOMAIN, 'password' => 'password',
+            'phone' => '9876500022', 'company_name' => 'Sunrise Motors', 'city' => 'Kanpur',
+        ]);
+
+        $items = fn () => [
+            ['section' => 'Engine', 'label' => 'Engine health', 'result' => 'pass', 'rating' => 4],
+            ['section' => 'Brakes', 'label' => 'Brakes & discs', 'result' => 'pass', 'rating' => 4],
+            ['section' => 'Exterior', 'label' => 'Body & paint', 'result' => 'fail', 'rating' => 2, 'remarks' => 'Minor dents on left door'],
+            ['section' => 'Tyres', 'label' => 'Tyre condition', 'result' => 'na', 'rating' => null],
+        ];
+
+        // Pending review.
+        $s1 = $submissions->save(null, [
+            'make' => 'Maruti', 'model' => 'Baleno', 'variant' => 'Zeta', 'manufacturing_year' => 2020,
+            'fuel_type' => 'Petrol', 'transmission' => 'Manual', 'color' => 'Grey', 'odometer_km' => 42000,
+            'ownership_serial' => 1, 'expected_amount' => 545000, 'overall_rating' => 4,
+            'overall_remark' => 'Well maintained, single owner.', 'branch_id' => $branches[0]->id ?? null,
+            'items' => $items(),
+        ], $active->fresh());
+        $submissions->submit($s1->fresh(), $active->fresh());
+
+        // Draft (not yet submitted).
+        $submissions->save(null, [
+            'make' => 'Hyundai', 'model' => 'Creta', 'variant' => 'SX', 'manufacturing_year' => 2019,
+            'fuel_type' => 'Diesel', 'transmission' => 'Automatic', 'color' => 'White', 'odometer_km' => 68000,
+            'ownership_serial' => 2, 'expected_amount' => 890000, 'overall_rating' => 3,
+            'branch_id' => $branches[0]->id ?? null, 'items' => $items(),
+        ], $active->fresh());
+
+        return [2, 2];
     }
 
     /**

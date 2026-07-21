@@ -34,6 +34,7 @@ return [
         'disbursement' => ['prefix' => 'DISB', 'padding' => 6, 'per_branch' => false],
         'invoice' => ['prefix' => 'INV', 'padding' => 6, 'per_branch' => false],
         'receipt' => ['prefix' => 'RCPT', 'padding' => 6, 'per_branch' => false],
+        'vendor_submission' => ['prefix' => 'VSUB', 'padding' => 6, 'per_branch' => false],
     ],
 
     /*

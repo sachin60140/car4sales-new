@@ -74,6 +74,17 @@ class User extends Authenticatable
         return $this->hasOne(EmployeeProfile::class);
     }
 
+    public function vendorProfile(): HasOne
+    {
+        return $this->hasOne(\App\Domain\VendorSubmissions\Models\VendorProfile::class);
+    }
+
+    /** True for external sourcing-vendor accounts (partner portal). */
+    public function isVendorPartner(): bool
+    {
+        return $this->hasRole('Vendor Partner');
+    }
+
     public function devices(): HasMany
     {
         return $this->hasMany(UserDevice::class);

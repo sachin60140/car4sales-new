@@ -43,6 +43,10 @@ class PermissionRegistry
             'refurbishment' => [...self::CRUD, 'approve', 'export'],
             'vendors' => [...self::CRUD, 'export'],
 
+            // Vendor-sourced vehicle submissions (partner portal + staff review).
+            'vendor-submissions' => ['view', 'create', 'update', 'submit', 'review', 'approve', 'export'],
+            'vendor-partners' => ['view', 'activate', 'export'],
+
             'customers' => [...self::CRUD, 'view-kyc', 'export'],
             'sales-leads' => [...self::CRUD, 'assign', 'reassign', 'cancel', 'reopen', 'export'],
             'telecalling' => ['view', 'create', 'update', 'export'],

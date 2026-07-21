@@ -86,6 +86,10 @@ const submit = () => {
                 Don't have an account?
                 <TextLink :href="route('register')" :tabindex="5">Sign up</TextLink>
             </div>
+            <div class="text-center text-sm text-muted-foreground">
+                Want to sell us vehicles?
+                <TextLink href="/vendor/register" :tabindex="6">Register as a vendor</TextLink>
+            </div>
         </form>
     </AuthBase>
 </template>
