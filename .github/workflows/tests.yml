@@ -80,13 +80,10 @@ jobs:
 
       - name: Run Tests
         run: |
-          php artisan test 2>&1 | tee test-output.log
+          php artisan test --compact 2>&1 | tee test-output.log
           code=${PIPESTATUS[0]}
           if [ "$code" -ne 0 ]; then
-            clean=$(sed 's/\x1b\[[0-9;]*m//g' test-output.log | tail -200)
-            clean=${clean//'%'/'%25'}
-            clean=${clean//$'\r'/'%0D'}
-            clean=${clean//$'\n'/'%0A'}
-            echo "::error::${clean}"
+            sed 's/\x1b\[[0-9;]*m//g' test-output.log | grep -avE '^[[:space:]]*$' | head -80 \
+              | while IFS= read -r line; do echo "::error::${line}"; done
           fi
           exit $code
