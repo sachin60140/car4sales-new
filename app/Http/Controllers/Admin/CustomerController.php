@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Domain\Branches\Models\Branch;
+use App\Domain\Customers\Actions\CustomerKycAction;
 use App\Domain\Customers\Actions\SaveCustomerAction;
 use App\Domain\Customers\Models\Customer;
 use App\Domain\RolesPermissions\Services\ScopeService;
@@ -65,7 +66,11 @@ class CustomerController extends Controller
 
         $canViewKyc = $request->user()->can('customers.view-kyc');
 
-        $customer->load(['branch:id,name', 'documents', 'salesLeads' => fn ($q) => $q->with('interestedVehicle:id,stock_number,make,model')->latest()]);
+        $customer->load([
+            'branch:id,name',
+            'documents.verifier:id,name',
+            'salesLeads' => fn ($q) => $q->with('interestedVehicle:id,stock_number,make,model')->latest(),
+        ]);
 
         if (! $canViewKyc) {
             $customer->makeHidden(['aadhaar_number', 'pan_number']);
@@ -74,8 +79,48 @@ class CustomerController extends Controller
         return Inertia::render('admin/customers/Show', [
             'customer' => $customer,
             'canViewKyc' => $canViewKyc,
+            'kyc' => $canViewKyc ? [
+                'rows' => $this->kycRows($customer),
+                'documentStatuses' => [
+                    ['value' => 'verified', 'label' => 'Verified'],
+                    ['value' => 'rejected', 'label' => 'Rejected'],
+                    ['value' => 'received', 'label' => 'Received'],
+                ],
+            ] : null,
             'can' => ['update' => $request->user()->can('update', $customer)],
         ]);
+    }
+
+    public function uploadDocument(Request $request, Customer $customer, CustomerKycAction $action): RedirectResponse
+    {
+        $this->authorize('view', $customer);
+        abort_unless($request->user()->can('customers.view-kyc'), 403);
+
+        $data = $request->validate([
+            'type' => ['required', Rule::in(array_keys(Customer::kycDocumentCatalog()))],
+            'file' => ['required', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:8192'],
+            'number' => ['nullable', 'string', 'max:100'],
+        ]);
+
+        $action->uploadDocument($customer, $data['type'], $request->file('file'), $data['number'] ?? null, $request->user());
+
+        return back()->with('success', 'Document uploaded.');
+    }
+
+    public function verifyDocument(Request $request, Customer $customer, CustomerKycAction $action): RedirectResponse
+    {
+        $this->authorize('view', $customer);
+        abort_unless($request->user()->can('customers.view-kyc'), 403);
+
+        $data = $request->validate([
+            'type' => ['required', Rule::in(array_keys(Customer::kycDocumentCatalog()))],
+            'status' => ['required', Rule::in(['verified', 'rejected', 'received'])],
+            'rejection_reason' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        $action->verifyDocument($customer, $data['type'], $data['status'], $data['rejection_reason'] ?? null, $request->user());
+
+        return back()->with('success', 'Document verification updated.');
     }
 
     public function edit(Request $request, Customer $customer): Response
@@ -154,5 +199,30 @@ class CustomerController extends Controller
     private function branchOptions()
     {
         return Branch::query()->where('is_active', true)->orderBy('name')->get(['id', 'name']);
+    }
+
+    /**
+     * One row per catalog document type with its uploaded file (if any), for the
+     * customer KYC document table.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function kycRows(Customer $customer): array
+    {
+        $byType = $customer->documents->keyBy('type');
+
+        return collect(Customer::kycDocumentCatalog())->map(fn (array $def, string $type) => [
+            'type' => $type,
+            'label' => $def['label'],
+            'group' => $def['group'],
+            'document' => ($doc = $byType->get($type)) ? [
+                'id' => $doc->id,
+                'status' => $doc->status,
+                'number' => $doc->number,
+                'rejection_reason' => $doc->rejection_reason,
+                'verified_by_name' => $doc->verifier?->name,
+                'uploaded_at' => $doc->created_at?->toDateString(),
+            ] : null,
+        ])->values()->all();
     }
 }

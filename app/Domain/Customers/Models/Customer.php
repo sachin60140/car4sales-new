@@ -29,6 +29,30 @@ class Customer extends Model
         ];
     }
 
+    /**
+     * KYC document catalog. Required documents must be verified for the customer
+     * to reach a `verified` KYC status.
+     *
+     * @return array<string, array{label: string, group: string}>
+     */
+    public static function kycDocumentCatalog(): array
+    {
+        return [
+            'aadhaar' => ['label' => 'Aadhaar card', 'group' => 'required'],
+            'pan' => ['label' => 'PAN card', 'group' => 'required'],
+            'photo' => ['label' => 'Photograph', 'group' => 'optional'],
+            'address_proof' => ['label' => 'Address proof', 'group' => 'optional'],
+        ];
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    public static function requiredKycTypes(): array
+    {
+        return array_keys(array_filter(self::kycDocumentCatalog(), fn ($d) => $d['group'] === 'required'));
+    }
+
     public function branch(): BelongsTo
     {
         return $this->belongsTo(Branch::class);

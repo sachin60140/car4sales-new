@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\BookingController;
 use App\Http\Controllers\Admin\BranchController;
 use App\Http\Controllers\Admin\CustomerController;
+use App\Http\Controllers\Admin\CustomerDocumentController;
 use App\Http\Controllers\Admin\DeliveryController;
 use App\Http\Controllers\Admin\DepartmentController;
 use App\Http\Controllers\Admin\EmployeeController;
@@ -121,6 +122,9 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::get('customers/{customer}', [CustomerController::class, 'show'])->name('customers.show');
     Route::get('customers/{customer}/edit', [CustomerController::class, 'edit'])->name('customers.edit');
     Route::patch('customers/{customer}', [CustomerController::class, 'update'])->name('customers.update');
+    Route::post('customers/{customer}/documents', [CustomerController::class, 'uploadDocument'])->name('customers.documents');
+    Route::post('customers/{customer}/documents/verify', [CustomerController::class, 'verifyDocument'])->name('customers.documents.verify');
+    Route::get('customer-documents/{customerDocument}', [CustomerDocumentController::class, 'show'])->name('customer-documents.view');
 
     // CRM: sales leads + telecaller workbench.
     Route::get('sales-leads', [SalesLeadController::class, 'index'])->name('sales-leads.index');
