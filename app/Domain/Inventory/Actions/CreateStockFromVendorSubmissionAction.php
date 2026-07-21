@@ -37,6 +37,7 @@ class CreateStockFromVendorSubmissionAction
                 'stock_number' => $this->sequences->next('stock'),
                 'registration_number' => $submission->registration_number,
                 'registration_state' => $submission->registration_state,
+                'chassis_number' => $submission->chassis_number,
                 'make' => $submission->make ?: 'Unknown',
                 'model' => $submission->model ?: 'Unknown',
                 'variant' => $submission->variant,
@@ -58,6 +59,23 @@ class CreateStockFromVendorSubmissionAction
             $vehicle->save();
 
             $vehicle->writeStatusHistory(null, VehicleStatus::InStock->value, $actor, 'Auto stock entry from vendor submission '.$submission->submission_number);
+
+            // Carry the owner-KYC documents onto the vehicle so they show in the
+            // inventory Documents tab (same private files, no duplication).
+            $verifications = $submission->document_verifications ?? [];
+            foreach ($submission->documentMedia()->get() as $media) {
+                $key = preg_replace('/_(front|back)$/', '', $media->type);
+                $verification = $verifications[$key] ?? [];
+
+                $vehicle->documents()->create([
+                    'type' => $media->type,
+                    'file_path' => $media->file_path,
+                    'number' => $verification['number'] ?? null,
+                    'valid_till' => $verification['valid_till'] ?? null,
+                    'status' => ($verification['status'] ?? null) === 'verified' ? 'verified' : 'received',
+                    'uploaded_by' => $actor?->id,
+                ]);
+            }
 
             return $vehicle;
         });

@@ -132,6 +132,17 @@ class DemoDataSeeder extends Seeder
             PurchaseLead::withTrashed()->whereIn('id', $vendorLeadIds)->get()->each(fn (PurchaseLead $l) => $l->forceDelete());
         }
 
+        // Vehicles auto-stocked from a demo vendor submission use the real STK-
+        // sequence (not the STK-DEMO- prefix), so remove them by their submission link.
+        $vendorVehicleIds = \App\Domain\VendorSubmissions\Models\VendorSubmission::withTrashed()
+            ->whereHas('vendor', fn ($q) => $q->where('email', 'like', '%'.self::USER_DOMAIN))
+            ->whereNotNull('vehicle_id')
+            ->pluck('vehicle_id')
+            ->filter();
+        if ($vendorVehicleIds->isNotEmpty()) {
+            Vehicle::withTrashed()->whereIn('id', $vendorVehicleIds)->get()->each(fn (Vehicle $v) => $v->forceDelete());
+        }
+
         // Phase 9: demo notifications are tagged in their data payload. Demo-user
         // notifications also cascade when those users are deleted below, but the
         // admin's demo notifications must be cleared explicitly.
@@ -920,7 +931,8 @@ class DemoDataSeeder extends Seeder
         ], $active->fresh());
 
         // A fully-settled example: approved (→ purchase lead), owner documents
-        // uploaded + verified, paid.
+        // uploaded + verified, paid, and possession confirmed → stocked (the owner
+        // documents are carried onto the vehicle's Documents tab).
         $s3 = $submissions->save(null, [
             'make' => 'Tata', 'model' => 'Nexon', 'variant' => 'XZ', 'manufacturing_year' => 2021,
             'registration_number' => 'UP32 GH 1092', 'keys_available' => 'both',
@@ -956,6 +968,12 @@ class DemoDataSeeder extends Seeder
             'payment_date' => now()->subDay()->toDateString(), 'paid_by' => $admin->id, 'paid_at' => now()->subDay(),
         ]);
         $this->attachDemoMedia($s3, 'payment_proof', 1);
+
+        // Confirm possession → auto stock entry (carries the owner documents onto the vehicle).
+        app(\App\Domain\VendorSubmissions\Actions\VendorSettlementAction::class)->confirmPossession($s3->fresh(), [
+            'vehicle_received' => true, 'original_rc_received' => true, 'main_key' => true, 'spare_key' => true,
+            'odometer_km' => 31000, 'fuel_level' => 'Half',
+        ], $admin);
 
         // Awaiting document verification — owner details + documents submitted, every
         // document pending, so the demo Document Verifier (Arman) has work to do.

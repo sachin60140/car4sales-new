@@ -226,9 +226,12 @@ function createJob() {
                         <Button size="sm" :disabled="!docForm.file || docForm.processing" @click="uploadDoc">Upload</Button>
                     </div>
                     <ul v-if="vehicle.documents?.length" class="divide-y text-sm">
-                        <li v-for="d in vehicle.documents" :key="d.id" class="flex items-center justify-between py-2">
-                            <span class="capitalize">{{ d.type }} <span v-if="d.number" class="text-muted-foreground">· {{ d.number }}</span></span>
-                            <span class="text-xs text-muted-foreground">{{ d.valid_till ? 'valid till ' + d.valid_till : d.status }}</span>
+                        <li v-for="d in vehicle.documents" :key="d.id" class="flex items-center justify-between gap-3 py-2">
+                            <span class="capitalize">{{ d.type.replace(/_/g, ' ') }} <span v-if="d.number" class="text-muted-foreground">· {{ d.number }}</span></span>
+                            <span class="flex items-center gap-3">
+                                <span class="text-xs capitalize" :class="d.status === 'verified' ? 'text-emerald-600' : 'text-muted-foreground'">{{ d.valid_till ? 'valid till ' + d.valid_till : (d.status || '').replace(/_/g, ' ') }}</span>
+                                <a v-if="d.file_path" :href="`/admin/files/${encodeURIComponent(d.file_path)}`" target="_blank" class="text-xs font-medium underline">View</a>
+                            </span>
                         </li>
                     </ul>
                     <p v-else class="py-4 text-center text-sm text-muted-foreground">No documents.</p>

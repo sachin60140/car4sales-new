@@ -288,6 +288,16 @@ it('confirms possession after payment and creates stock', function () {
         ->and(\App\Domain\Inventory\Models\Vehicle::whereKey($vehicle->id)->where('status', 'in_stock')->exists())->toBeTrue();
 });
 
+it('carries the owner documents onto the stocked vehicle', function () {
+    [$submission, , $admin] = paidSubmission();
+
+    $vehicle = app(VendorSettlementAction::class)->confirmPossession($submission->fresh(), ['vehicle_received' => true], $admin)['vehicle'];
+
+    expect($vehicle->documents()->count())->toBe($submission->fresh()->documentMedia()->count())
+        ->and($vehicle->documents()->where('type', 'rc_front')->exists())->toBeTrue()
+        ->and($vehicle->chassis_number)->toBe('MAT625016PWA12345');
+});
+
 it('blocks possession before the payment is recorded', function () {
     [$submission, , $admin] = verifiedSubmission();
 
