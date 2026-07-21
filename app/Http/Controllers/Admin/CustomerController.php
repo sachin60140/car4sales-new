@@ -46,6 +46,7 @@ class CustomerController extends Controller
         return Inertia::render('admin/customers/Form', [
             'customer' => null,
             'branches' => $this->branchOptions(),
+            'canViewKyc' => $request->user()->can('customers.view-kyc'),
         ]);
     }
 
@@ -53,7 +54,7 @@ class CustomerController extends Controller
     {
         $this->authorize('create', Customer::class);
 
-        $customer = $action->execute(null, $this->validated($request, null));
+        $customer = $action->execute(null, $this->kycFiltered($request, $this->validated($request, null)));
 
         return redirect()->route('admin.customers.show', $customer)->with('success', "Customer {$customer->customer_code} added.");
     }
@@ -62,11 +63,17 @@ class CustomerController extends Controller
     {
         $this->authorize('view', $customer);
 
+        $canViewKyc = $request->user()->can('customers.view-kyc');
+
         $customer->load(['branch:id,name', 'documents', 'salesLeads' => fn ($q) => $q->with('interestedVehicle:id,stock_number,make,model')->latest()]);
+
+        if (! $canViewKyc) {
+            $customer->makeHidden(['aadhaar_number', 'pan_number']);
+        }
 
         return Inertia::render('admin/customers/Show', [
             'customer' => $customer,
-            'canViewKyc' => $request->user()->can('customers.view-kyc'),
+            'canViewKyc' => $canViewKyc,
             'can' => ['update' => $request->user()->can('update', $customer)],
         ]);
     }
@@ -75,12 +82,19 @@ class CustomerController extends Controller
     {
         $this->authorize('update', $customer);
 
+        $canViewKyc = $request->user()->can('customers.view-kyc');
+
+        $fields = ['id', 'customer_code', 'name', 'mobile', 'alt_mobile', 'email',
+            'address', 'city', 'state', 'pin_code', 'occupation', 'dob', 'branch_id'];
+        if ($canViewKyc) {
+            $fields[] = 'aadhaar_number';
+            $fields[] = 'pan_number';
+        }
+
         return Inertia::render('admin/customers/Form', [
-            'customer' => $customer->only([
-                'id', 'customer_code', 'name', 'mobile', 'alt_mobile', 'email',
-                'address', 'city', 'state', 'pin_code', 'occupation', 'dob', 'branch_id',
-            ]),
+            'customer' => $customer->only($fields),
             'branches' => $this->branchOptions(),
+            'canViewKyc' => $canViewKyc,
         ]);
     }
 
@@ -88,9 +102,25 @@ class CustomerController extends Controller
     {
         $this->authorize('update', $customer);
 
-        $action->execute($customer, $this->validated($request, $customer));
+        $action->execute($customer, $this->kycFiltered($request, $this->validated($request, $customer)));
 
         return redirect()->route('admin.customers.show', $customer)->with('success', 'Customer updated.');
+    }
+
+    /**
+     * Drop KYC identity numbers unless the user may view/manage KYC, so they can
+     * never be written by an unauthorised user (even via a crafted request).
+     *
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    private function kycFiltered(Request $request, array $data): array
+    {
+        if (! $request->user()->can('customers.view-kyc')) {
+            unset($data['aadhaar_number'], $data['pan_number']);
+        }
+
+        return $data;
     }
 
     /**
@@ -109,7 +139,12 @@ class CustomerController extends Controller
             'pin_code' => ['nullable', 'string', 'max:10'],
             'occupation' => ['nullable', 'string', 'max:255'],
             'dob' => ['nullable', 'date', 'before:today'],
+            'aadhaar_number' => ['nullable', 'string', 'regex:/^\d{12}$/'],
+            'pan_number' => ['nullable', 'string', 'regex:/^[A-Za-z]{5}[0-9]{4}[A-Za-z]$/'],
             'branch_id' => ['nullable', 'integer', Rule::exists('branches', 'id')->withoutTrashed()],
+        ], [
+            'aadhaar_number.regex' => 'Aadhaar must be a 12-digit number.',
+            'pan_number.regex' => 'PAN must look like ABCDE1234F.',
         ]);
     }
 

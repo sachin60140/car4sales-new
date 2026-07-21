@@ -40,6 +40,15 @@ class SaveCustomerAction
             'branch_id' => $data['branch_id'] ?? null,
         ]);
 
+        // KYC identity numbers are only written when supplied (a user without the
+        // view-kyc permission never sends them — see CustomerController).
+        if (array_key_exists('aadhaar_number', $data)) {
+            $customer->aadhaar_number = $data['aadhaar_number'];
+        }
+        if (array_key_exists('pan_number', $data)) {
+            $customer->pan_number = $data['pan_number'] !== null ? strtoupper($data['pan_number']) : null;
+        }
+
         $customer->save();
 
         return $customer;

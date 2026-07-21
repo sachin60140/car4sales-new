@@ -54,15 +54,21 @@ const breadcrumbs: BreadcrumbItem[] = [
                 </Card>
 
                 <Card v-if="canViewKyc">
-                    <CardHeader><CardTitle class="text-base">Documents</CardTitle></CardHeader>
-                    <CardContent>
-                        <ul v-if="customer.documents?.length" class="divide-y text-sm">
-                            <li v-for="d in customer.documents" :key="d.id" class="flex items-center justify-between py-2">
-                                <span class="capitalize">{{ d.type }}</span>
-                                <span class="rounded-full bg-muted px-2 py-0.5 text-xs capitalize">{{ d.status }}</span>
-                            </li>
-                        </ul>
-                        <p v-else class="py-2 text-sm text-muted-foreground">No documents.</p>
+                    <CardHeader><CardTitle class="text-base">Identity &amp; Documents</CardTitle></CardHeader>
+                    <CardContent class="grid gap-3">
+                        <div class="grid grid-cols-2 gap-y-2 text-sm">
+                            <span class="text-muted-foreground">Aadhaar</span><span>{{ customer.aadhaar_number ?? '—' }}</span>
+                            <span class="text-muted-foreground">PAN</span><span>{{ customer.pan_number ?? '—' }}</span>
+                        </div>
+                        <div class="border-t pt-3">
+                            <ul v-if="customer.documents?.length" class="divide-y text-sm">
+                                <li v-for="d in customer.documents" :key="d.id" class="flex items-center justify-between py-2">
+                                    <span class="capitalize">{{ d.type }}</span>
+                                    <span class="rounded-full bg-muted px-2 py-0.5 text-xs capitalize">{{ d.status }}</span>
+                                </li>
+                            </ul>
+                            <p v-else class="text-sm text-muted-foreground">No documents.</p>
+                        </div>
                     </CardContent>
                 </Card>
 

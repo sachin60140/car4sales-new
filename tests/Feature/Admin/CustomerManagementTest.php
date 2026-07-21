@@ -40,6 +40,54 @@ it('keeps one customer per mobile when adding', function () {
     expect(Customer::query()->where('mobile', '9811122233')->count())->toBe(1);
 });
 
+it('saves Aadhaar and PAN for a KYC-permitted user', function () {
+    $user = userWithPermissions(['customers.create', 'customers.view-kyc'], scope: 'all');
+
+    $this->actingAs($user)->post('/admin/customers', [
+        'name' => 'Ravi', 'mobile' => '9820011111',
+        'aadhaar_number' => '123456789012', 'pan_number' => 'abcde1234f',
+    ])->assertRedirect();
+
+    $customer = Customer::query()->where('mobile', '9820011111')->firstOrFail();
+    expect($customer->aadhaar_number)->toBe('123456789012')
+        // PAN is upper-cased on save.
+        ->and($customer->pan_number)->toBe('ABCDE1234F');
+});
+
+it('validates Aadhaar and PAN formats', function () {
+    $user = userWithPermissions(['customers.create', 'customers.view-kyc'], scope: 'all');
+
+    $this->actingAs($user)->post('/admin/customers', [
+        'name' => 'Bad', 'mobile' => '9820022222',
+        'aadhaar_number' => '12345', 'pan_number' => 'NOTAPAN',
+    ])->assertSessionHasErrors(['aadhaar_number', 'pan_number']);
+});
+
+it('ignores identity numbers from a user without KYC access', function () {
+    $user = userWithPermissions(['customers.create'], scope: 'all');
+
+    $this->actingAs($user)->post('/admin/customers', [
+        'name' => 'NoKyc', 'mobile' => '9820033333',
+        'aadhaar_number' => '123456789012', 'pan_number' => 'ABCDE1234F',
+    ])->assertRedirect();
+
+    $customer = Customer::query()->where('mobile', '9820033333')->firstOrFail();
+    expect($customer->aadhaar_number)->toBeNull()
+        ->and($customer->pan_number)->toBeNull();
+});
+
+it('hides identity numbers on the detail page from a non-KYC user', function () {
+    $user = userWithPermissions(['customers.view'], scope: 'all');
+    $customer = Customer::query()->create([
+        'customer_code' => 'CUST-KYC', 'name' => 'Secret', 'mobile' => '9820044444',
+        'kyc_status' => 'pending', 'aadhaar_number' => '123456789012', 'pan_number' => 'ABCDE1234F',
+    ]);
+
+    $this->actingAs($user)
+        ->get("/admin/customers/{$customer->id}")
+        ->assertInertia(fn ($p) => $p->missing('customer.aadhaar_number')->missing('customer.pan_number'));
+});
+
 it('requires a name and mobile', function () {
     $user = userWithPermissions(['customers.create'], scope: 'all');
 

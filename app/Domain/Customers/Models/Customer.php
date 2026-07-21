@@ -17,7 +17,8 @@ class Customer extends Model
 
     protected $fillable = [
         'customer_code', 'name', 'mobile', 'alt_mobile', 'email', 'address',
-        'city', 'state', 'pin_code', 'occupation', 'dob', 'kyc_status', 'branch_id', 'meta',
+        'city', 'state', 'pin_code', 'occupation', 'dob', 'aadhaar_number', 'pan_number',
+        'kyc_status', 'branch_id', 'meta',
     ];
 
     protected function casts(): array

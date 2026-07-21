@@ -22,12 +22,15 @@ interface Customer {
     pin_code: string | null;
     occupation: string | null;
     dob: string | null;
+    aadhaar_number?: string | null;
+    pan_number?: string | null;
     branch_id: number | null;
 }
 
 const props = defineProps<{
     customer: Customer | null;
     branches: { id: number; name: string }[];
+    canViewKyc: boolean;
 }>();
 
 const isEdit = computed(() => props.customer !== null);
@@ -49,6 +52,8 @@ const form = useForm({
     pin_code: props.customer?.pin_code ?? '',
     occupation: props.customer?.occupation ?? '',
     dob: props.customer?.dob ? String(props.customer.dob).slice(0, 10) : '',
+    aadhaar_number: props.customer?.aadhaar_number ?? '',
+    pan_number: props.customer?.pan_number ?? '',
     branch_id: props.customer?.branch_id ?? null,
 });
 
@@ -119,6 +124,25 @@ const inputClass = 'h-9 w-full rounded-md border border-input bg-transparent px-
                         <Label for="dob">Date of birth</Label>
                         <Input id="dob" v-model="form.dob" type="date" />
                         <InputError :message="form.errors.dob" />
+                    </div>
+                </CardContent>
+            </Card>
+
+            <Card v-if="canViewKyc">
+                <CardHeader>
+                    <CardTitle>Identity (KYC)</CardTitle>
+                    <p class="mt-1 text-sm text-muted-foreground">Sensitive — visible only to staff with KYC access.</p>
+                </CardHeader>
+                <CardContent class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    <div class="grid gap-1.5">
+                        <Label for="aadhaar_number">Aadhaar number</Label>
+                        <Input id="aadhaar_number" v-model="form.aadhaar_number" inputmode="numeric" placeholder="12-digit number" maxlength="12" />
+                        <InputError :message="form.errors.aadhaar_number" />
+                    </div>
+                    <div class="grid gap-1.5">
+                        <Label for="pan_number">PAN number</Label>
+                        <Input id="pan_number" v-model="form.pan_number" class="uppercase" placeholder="ABCDE1234F" maxlength="10" />
+                        <InputError :message="form.errors.pan_number" />
                     </div>
                 </CardContent>
             </Card>
