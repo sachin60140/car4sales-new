@@ -31,7 +31,6 @@
     @php
         $veh = trim(($vehicle->make ?? '').' '.($vehicle->model ?? '').' '.($vehicle->variant ?? ''));
         $money = fn ($v) => '₹ '.number_format((float) $v, 2);
-        $jurisdiction = $company['jurisdiction'] ?? 'the local courts';
         $companyName = $company['company_name'] ?? config('app.name');
     @endphp
 
@@ -56,14 +55,15 @@
         <table class="kv">
             <tr>
                 <td class="label">Name</td><td>{{ $customer?->name ?? '—' }}</td>
+                <td class="label">Father's Name</td><td>{{ $customer?->father_name ?? '—' }}</td>
+            </tr>
+            <tr>
                 <td class="label">Mobile</td><td>{{ $customer?->mobile ?? '—' }}</td>
-            </tr>
-            <tr>
                 <td class="label">Customer Code</td><td>{{ $customer?->customer_code ?? '—' }}</td>
-                <td class="label">City</td><td>{{ $customer?->city ?? '—' }}</td>
             </tr>
             <tr>
-                <td class="label">Address</td><td colspan="3">{{ $customer?->address ?? '—' }}</td>
+                <td class="label">Address</td><td>{{ $customer?->address ?? '—' }}</td>
+                <td class="label">City</td><td>{{ $customer?->city ?? '—' }}</td>
             </tr>
         </table>
 
@@ -117,18 +117,9 @@
 
         <h2>Terms &amp; Conditions</h2>
         <ol class="terms">
-            <li>This booking slip is a receipt for the booking/token amount and an agreement to purchase the above pre-owned vehicle. The booking amount is an advance and is adjusted against the total sale consideration.</li>
-            <li>The vehicle is a <strong>used / pre-owned vehicle</strong> and is sold strictly on an <strong>“as-is-where-is” and “no-warranty” basis</strong>. The Buyer confirms having inspected (and/or test-driven) the vehicle and is fully satisfied with its condition, fitness, mileage and documents. No implied warranty of merchantability or fitness under the Sale of Goods Act, 1930 shall apply, save for any separate written warranty issued by the Company.</li>
-            <li>The <strong>balance amount is payable in full before delivery</strong>. Delivery shall be made only after realisation of full payment and completion of documentation/finance formalities. Any cheque/UPI/NEFT is subject to realisation.</li>
-            <li>Ownership and possession pass to the Buyer only on delivery against full payment. Until then the vehicle remains the property of the Company.</li>
-            <li>Transfer of registration/ownership shall be carried out as per the <strong>Motor Vehicles Act, 1988</strong> and the Central Motor Vehicles Rules, 1989. RTO transfer charges, road tax, smart-card, hypothecation/termination and other statutory charges are <strong>payable by the Buyer</strong> unless expressly agreed in writing.</li>
-            <li>The Buyer shall be responsible for insurance transfer/renewal from the date of delivery. The Company is not liable for any claim arising after delivery.</li>
-            <li>From the date/time of delivery, the Buyer is solely responsible for the vehicle’s use, road-safety compliance, traffic challans, penalties and any third-party liability. The Company shall not be liable for any accident, loss, or violation thereafter.</li>
-            <li>Prices are inclusive of applicable taxes as per prevailing GST law; any statutory levy revised by the government shall be borne by the Buyer.</li>
-            <li><strong>Cancellation &amp; refund:</strong> if the Buyer cancels the booking, the booking/token amount may be refunded or forfeited as per the Company’s cancellation policy and the reason for cancellation. Refunds, where approved, are processed to the original payment source within a reasonable period.</li>
-            <li>Delivery timelines are indicative and subject to document verification, finance/loan approval and RTO processes; delays on these accounts shall not be a ground for cancellation or compensation.</li>
-            <li>This slip supersedes oral representations. Any addition/alteration is valid only if recorded in writing and signed by an authorised signatory of the Company.</li>
-            <li>This agreement is governed by the laws of India. All disputes are subject to the <strong>exclusive jurisdiction of the courts at {{ $jurisdiction }}</strong>.</li>
+            @foreach ($terms as $term)
+                <li>{{ $term }}</li>
+            @endforeach
         </ol>
 
         <p style="font-size:9.5px; margin-top:6px;">

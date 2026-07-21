@@ -28,6 +28,7 @@ class SaveCustomerAction
 
         $customer->fill([
             'name' => $data['name'],
+            'father_name' => $data['father_name'] ?? null,
             'mobile' => $data['mobile'],
             'alt_mobile' => $data['alt_mobile'] ?? null,
             'email' => $data['email'] ?? null,

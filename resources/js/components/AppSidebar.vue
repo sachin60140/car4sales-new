@@ -26,6 +26,7 @@ import {
     PackageCheck,
     PhoneCall,
     ScrollText,
+    Settings,
     ShoppingCart,
     Store,
     Truck,
@@ -100,6 +101,7 @@ const adminNavItems: NavItem[] = [
     { title: 'Employees', href: '/admin/employees', icon: Users, permission: 'employees.view' },
     { title: 'Roles & Permissions', href: '/admin/roles', icon: KeyRound, permission: 'roles.view' },
     { title: 'Audit Logs', href: '/admin/audit/activity', icon: ScrollText, permission: 'audit.view' },
+    { title: 'Settings', href: '/admin/settings', icon: Settings, permission: 'settings.view' },
 ];
 
 const visibleAdminItems = computed(() => adminNavItems.filter((item) => !item.permission || can(item.permission)));

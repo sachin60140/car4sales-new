@@ -16,7 +16,7 @@ class Customer extends Model
     use LogsActivity, SoftDeletes;
 
     protected $fillable = [
-        'customer_code', 'name', 'mobile', 'alt_mobile', 'email', 'address',
+        'customer_code', 'name', 'father_name', 'mobile', 'alt_mobile', 'email', 'address',
         'city', 'state', 'pin_code', 'occupation', 'dob', 'aadhaar_number', 'pan_number',
         'kyc_status', 'branch_id', 'meta',
     ];

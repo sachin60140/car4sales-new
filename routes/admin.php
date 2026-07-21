@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\AuditLogController;
+use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\BookingController;
 use App\Http\Controllers\Admin\BranchController;
 use App\Http\Controllers\Admin\CustomerController;
@@ -41,6 +42,10 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
 
     Route::get('audit/activity', [AuditLogController::class, 'activity'])->name('audit.activity');
     Route::get('audit/logins', [AuditLogController::class, 'logins'])->name('audit.logins');
+
+    // Application settings (editable content such as the booking-slip T&C).
+    Route::get('settings', [SettingController::class, 'edit'])->name('settings.edit');
+    Route::patch('settings', [SettingController::class, 'update'])->name('settings.update');
 
     // Vendor-sourced submissions (staff review) + vendor partner activation.
     Route::get('vendor-submissions', [VendorSubmissionController::class, 'index'])->name('vendor-submissions.index');

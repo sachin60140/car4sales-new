@@ -129,7 +129,7 @@ class CustomerController extends Controller
 
         $canViewKyc = $request->user()->can('customers.view-kyc');
 
-        $fields = ['id', 'customer_code', 'name', 'mobile', 'alt_mobile', 'email',
+        $fields = ['id', 'customer_code', 'name', 'father_name', 'mobile', 'alt_mobile', 'email',
             'address', 'city', 'state', 'pin_code', 'occupation', 'dob', 'branch_id'];
         if ($canViewKyc) {
             $fields[] = 'aadhaar_number';
@@ -175,6 +175,7 @@ class CustomerController extends Controller
     {
         return $request->validate([
             'name' => ['required', 'string', 'max:255'],
+            'father_name' => ['nullable', 'string', 'max:255'],
             'mobile' => ['required', 'string', 'max:20', Rule::unique('customers', 'mobile')->ignore($customer?->id)->withoutTrashed()],
             'alt_mobile' => ['nullable', 'string', 'max:20'],
             'email' => ['nullable', 'email', 'max:255'],

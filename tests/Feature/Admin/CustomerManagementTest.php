@@ -16,14 +16,15 @@ it('lets a permitted user add a customer', function () {
     $user = userWithPermissions(['customers.view', 'customers.create'], scope: 'all');
 
     $response = $this->actingAs($user)->post('/admin/customers', [
-        'name' => 'Anita Desai', 'mobile' => '9800012345', 'email' => 'anita@example.test',
-        'city' => 'Pune', 'state' => 'Maharashtra', 'occupation' => 'Teacher',
+        'name' => 'Anita Desai', 'father_name' => 'Ramesh Desai', 'mobile' => '9800012345',
+        'email' => 'anita@example.test', 'city' => 'Pune', 'state' => 'Maharashtra', 'occupation' => 'Teacher',
     ]);
 
     $customer = Customer::query()->where('mobile', '9800012345')->firstOrFail();
     $response->assertRedirect("/admin/customers/{$customer->id}");
 
     expect($customer->name)->toBe('Anita Desai')
+        ->and($customer->father_name)->toBe('Ramesh Desai')
         ->and($customer->customer_code)->not->toBeEmpty()
         ->and($customer->kyc_status)->toBe('pending')
         ->and($customer->city)->toBe('Pune');

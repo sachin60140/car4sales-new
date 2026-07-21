@@ -4,6 +4,30 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Booking slip — default terms & conditions
+    |--------------------------------------------------------------------------
+    | Default used-vehicle booking terms (Indian law). Editable at runtime from
+    | Admin → Settings, which stores an override in the `settings` table under
+    | the `booking_terms` key (one clause per line).
+    */
+
+    'booking_terms' => [
+        'This booking slip is a receipt for the booking/token amount and an agreement to purchase the above pre-owned vehicle. The booking amount is an advance and is adjusted against the total sale consideration.',
+        'The vehicle is a used / pre-owned vehicle and is sold strictly on an "as-is-where-is" and "no-warranty" basis. The Buyer confirms having inspected (and/or test-driven) the vehicle and is fully satisfied with its condition, fitness, mileage and documents. No implied warranty of merchantability or fitness under the Sale of Goods Act, 1930 shall apply, save for any separate written warranty issued by the Company.',
+        'The balance amount is payable in full before delivery. Delivery shall be made only after realisation of full payment and completion of documentation/finance formalities. Any cheque/UPI/NEFT is subject to realisation.',
+        'Ownership and possession pass to the Buyer only on delivery against full payment. Until then the vehicle remains the property of the Company.',
+        'Transfer of registration/ownership shall be carried out as per the Motor Vehicles Act, 1988 and the Central Motor Vehicles Rules, 1989. RTO transfer charges, road tax, smart-card, hypothecation/termination and other statutory charges are payable by the Buyer unless expressly agreed in writing.',
+        'The Buyer shall be responsible for insurance transfer/renewal from the date of delivery. The Company is not liable for any claim arising after delivery.',
+        'From the date/time of delivery, the Buyer is solely responsible for the vehicle\'s use, road-safety compliance, traffic challans, penalties and any third-party liability. The Company shall not be liable for any accident, loss, or violation thereafter.',
+        'Prices are inclusive of applicable taxes as per prevailing GST law; any statutory levy revised by the government shall be borne by the Buyer.',
+        'Cancellation & refund: if the Buyer cancels the booking, the booking/token amount may be refunded or forfeited as per the Company\'s cancellation policy and the reason for cancellation. Refunds, where approved, are processed to the original payment source within a reasonable period.',
+        'Delivery timelines are indicative and subject to document verification, finance/loan approval and RTO processes; delays on these accounts shall not be a ground for cancellation or compensation.',
+        'This slip supersedes oral representations. Any addition/alteration is valid only if recorded in writing and signed by an authorised signatory of the Company.',
+        'This agreement is governed by the laws of India. All disputes are subject to the exclusive jurisdiction of the courts at the Company\'s registered location.',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Reference number sequences
     |--------------------------------------------------------------------------
     | Each workflow document type has a configurable prefix. Set per_branch to

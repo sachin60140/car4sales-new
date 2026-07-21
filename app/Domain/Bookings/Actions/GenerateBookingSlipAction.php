@@ -3,6 +3,7 @@
 namespace App\Domain\Bookings\Actions;
 
 use App\Domain\Bookings\Models\Booking;
+use App\Domain\Settings\Models\Setting;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Number;
 
@@ -30,6 +31,7 @@ class GenerateBookingSlipAction
             'paidAmount' => $paid,
             'balance' => max($netPayable - $paid, 0),
             'amountInWords' => $this->words($paid),
+            'terms' => Setting::bookingTerms(),
         ])->setPaper('a4');
     }
 

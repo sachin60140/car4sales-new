@@ -13,6 +13,7 @@ interface Customer {
     id: number;
     customer_code: string;
     name: string;
+    father_name: string | null;
     mobile: string;
     alt_mobile: string | null;
     email: string | null;
@@ -43,6 +44,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 const form = useForm({
     name: props.customer?.name ?? '',
+    father_name: props.customer?.father_name ?? '',
     mobile: props.customer?.mobile ?? '',
     alt_mobile: props.customer?.alt_mobile ?? '',
     email: props.customer?.email ?? '',
@@ -99,6 +101,11 @@ const inputClass = 'h-9 w-full rounded-md border border-input bg-transparent px-
                         <Label for="name">Name <span class="text-brand-red">*</span></Label>
                         <Input id="name" v-model="form.name" placeholder="Full name" />
                         <InputError :message="form.errors.name" />
+                    </div>
+                    <div class="grid gap-1.5">
+                        <Label for="father_name">Father's name</Label>
+                        <Input id="father_name" v-model="form.father_name" placeholder="Father's name" />
+                        <InputError :message="form.errors.father_name" />
                     </div>
                     <div class="grid gap-1.5">
                         <Label for="mobile">Mobile <span class="text-brand-red">*</span></Label>

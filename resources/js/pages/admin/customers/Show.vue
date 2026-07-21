@@ -100,6 +100,7 @@ const docStatusStyle: Record<string, string> = {
                 <Card>
                     <CardHeader><CardTitle class="text-base">Profile</CardTitle></CardHeader>
                     <CardContent class="grid grid-cols-2 gap-y-2 text-sm">
+                        <span class="text-muted-foreground">Father's Name</span><span>{{ customer.father_name ?? '—' }}</span>
                         <span class="text-muted-foreground">Email</span><span>{{ customer.email ?? '—' }}</span>
                         <span class="text-muted-foreground">Alt Mobile</span><span>{{ customer.alt_mobile ?? '—' }}</span>
                         <span class="text-muted-foreground">City</span><span>{{ customer.city ?? '—' }}</span>
