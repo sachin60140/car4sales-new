@@ -4,8 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import AppLayout from '@/layouts/AppLayout.vue';
 import type { BreadcrumbItem, Paginated } from '@/types';
-import { Head, router } from '@inertiajs/vue3';
-import { Search } from 'lucide-vue-next';
+import { Head, Link, router } from '@inertiajs/vue3';
+import { Plus, Search } from 'lucide-vue-next';
 import { reactive, watch } from 'vue';
 
 interface Partner {
@@ -25,7 +25,7 @@ const props = defineProps<{
     partners: Paginated<Partner>;
     statuses: { value: string; label: string }[];
     filters: { search: string; status: string | null };
-    can: { activate: boolean };
+    can: { activate: boolean; create: boolean; update: boolean };
 }>();
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -62,9 +62,17 @@ const statusStyle: Record<string, string> = {
 
     <AppLayout :breadcrumbs="breadcrumbs">
         <div class="flex h-full flex-1 flex-col gap-4 p-4">
-            <div>
-                <h1 class="text-xl font-semibold">Vendor Partners</h1>
-                <p class="text-sm text-muted-foreground">Activate sourcing partners so they can submit vehicles.</p>
+            <div class="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                    <h1 class="text-xl font-semibold">Vendor Partners</h1>
+                    <p class="text-sm text-muted-foreground">Add sourcing partners and activate them so they can submit vehicles.</p>
+                </div>
+                <Button v-if="can.create" as-child>
+                    <Link href="/admin/vendor-partners/create">
+                        <Plus class="size-4" />
+                        Add Partner
+                    </Link>
+                </Button>
             </div>
 
             <div class="flex flex-wrap items-center gap-3">
@@ -111,16 +119,25 @@ const statusStyle: Record<string, string> = {
                                 }}</span>
                             </td>
                             <td class="px-4 py-3">
-                                <div v-if="can.activate" class="flex justify-end gap-1.5">
-                                    <Button v-if="p.status !== 'active'" size="sm" @click="setStatus(p, 'active')">Activate</Button>
-                                    <Button v-if="p.status === 'pending_activation'" size="sm" variant="destructive" @click="setStatus(p, 'rejected')"
-                                        >Reject</Button
-                                    >
-                                    <Button v-if="p.status === 'active'" size="sm" variant="outline" @click="setStatus(p, 'suspended')"
-                                        >Suspend</Button
-                                    >
+                                <div class="flex justify-end gap-1.5">
+                                    <template v-if="can.activate">
+                                        <Button v-if="p.status !== 'active'" size="sm" @click="setStatus(p, 'active')">Activate</Button>
+                                        <Button
+                                            v-if="p.status === 'pending_activation'"
+                                            size="sm"
+                                            variant="destructive"
+                                            @click="setStatus(p, 'rejected')"
+                                            >Reject</Button
+                                        >
+                                        <Button v-if="p.status === 'active'" size="sm" variant="outline" @click="setStatus(p, 'suspended')"
+                                            >Suspend</Button
+                                        >
+                                    </template>
+                                    <Button v-if="can.update" size="sm" variant="ghost" as-child>
+                                        <Link :href="`/admin/vendor-partners/${p.id}/edit`">Edit</Link>
+                                    </Button>
+                                    <span v-if="!can.activate && !can.update" class="text-xs text-muted-foreground">—</span>
                                 </div>
-                                <span v-else class="text-xs text-muted-foreground">—</span>
                             </td>
                         </tr>
                     </tbody>

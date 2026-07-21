@@ -88,7 +88,7 @@ class RolePermissionSeeder extends Seeder
                 'approvals.view', 'approvals.approve', 'approvals.reject',
                 'vendor-submissions.view', 'vendor-submissions.review',
                 'vendor-submissions.verify-documents', 'vendor-submissions.approve',
-                'vendor-partners.view', 'vendor-partners.activate',
+                'vendor-partners.view', 'vendor-partners.create', 'vendor-partners.update', 'vendor-partners.activate',
                 'reports.view', 'reports.access-reports',
                 'access-mobile',
             ]],

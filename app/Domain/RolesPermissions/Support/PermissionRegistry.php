@@ -47,7 +47,7 @@ class PermissionRegistry
             // 'verify-documents' is a standalone right: an employee granted it can
             // verify owner-KYC documents without full review/approve authority.
             'vendor-submissions' => ['view', 'create', 'update', 'submit', 'review', 'verify-documents', 'approve', 'export'],
-            'vendor-partners' => ['view', 'activate', 'export'],
+            'vendor-partners' => ['view', 'create', 'update', 'activate', 'export'],
 
             'customers' => [...self::CRUD, 'view-kyc', 'export'],
             'sales-leads' => [...self::CRUD, 'assign', 'reassign', 'cancel', 'reopen', 'export'],
