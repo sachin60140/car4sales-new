@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import AppLayout from '@/layouts/AppLayout.vue';
 import type { BreadcrumbItem } from '@/types';
 import { Head, Link, useForm } from '@inertiajs/vue3';
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 
 const props = defineProps<{
     role: {
@@ -64,6 +64,25 @@ function toggleModule(module: string, checked: boolean) {
 
 const grantedCount = computed(() => form.permissions.length);
 
+// --- "Show granted only" filter ---
+const showGrantedOnly = ref(false);
+function grantedActions(module: string): string[] {
+    return props.registry[module].filter((action) => form.permissions.includes(permissionName(module, action)));
+}
+function moduleGrantedCount(module: string): number {
+    return grantedActions(module).length;
+}
+function actionsFor(module: string): string[] {
+    return showGrantedOnly.value ? grantedActions(module) : props.registry[module];
+}
+const visibleModules = computed<string[]>(() =>
+    Object.keys(props.registry).filter((module) => !showGrantedOnly.value || moduleGrantedCount(module) > 0),
+);
+const visibleGlobals = computed<string[]>(() =>
+    showGrantedOnly.value ? props.globalPermissions.filter((p) => form.permissions.includes(p)) : props.globalPermissions,
+);
+const hasAnyVisible = computed(() => visibleModules.value.length > 0 || visibleGlobals.value.length > 0);
+
 function submit() {
     form.put(`/admin/roles/${props.role.id}`, { preserveScroll: true });
 }
@@ -111,32 +130,42 @@ function submit() {
             </Card>
 
             <Card>
-                <CardHeader><CardTitle>Permissions</CardTitle></CardHeader>
+                <CardHeader class="flex flex-row items-center justify-between gap-3">
+                    <CardTitle>Permissions</CardTitle>
+                    <label class="flex items-center gap-2 text-sm font-normal text-muted-foreground">
+                        <Checkbox :model-value="showGrantedOnly" @update:model-value="showGrantedOnly = $event === true" />
+                        Show granted only
+                    </label>
+                </CardHeader>
                 <CardContent class="grid gap-6">
                     <InputError :message="form.errors.permissions" />
-                    <div v-for="(actions, module) in registry" :key="module" class="border-b pb-4 last:border-0 last:pb-0">
+                    <p v-if="!hasAnyVisible" class="text-sm text-muted-foreground">No permissions granted yet.</p>
+
+                    <div v-for="module in visibleModules" :key="module" class="border-b pb-4 last:border-0 last:pb-0">
                         <label class="mb-2 flex items-center gap-2 text-sm font-semibold capitalize">
                             <Checkbox
-                                :model-value="moduleFullyGranted(module as string)"
-                                @update:model-value="toggleModule(module as string, $event === true)"
+                                v-if="!showGrantedOnly"
+                                :model-value="moduleFullyGranted(module)"
+                                @update:model-value="toggleModule(module, $event === true)"
                             />
-                            {{ (module as string).replace(/-/g, ' ') }}
+                            {{ module.replace(/-/g, ' ') }}
+                            <span class="text-xs font-normal normal-case text-muted-foreground">{{ moduleGrantedCount(module) }}/{{ registry[module].length }}</span>
                         </label>
                         <div class="grid grid-cols-2 gap-2 pl-6 sm:grid-cols-4 lg:grid-cols-6">
-                            <label v-for="action in actions" :key="action" class="flex items-center gap-2 text-sm">
+                            <label v-for="action in actionsFor(module)" :key="action" class="flex items-center gap-2 text-sm">
                                 <Checkbox
-                                    :model-value="form.permissions.includes(permissionName(module as string, action))"
-                                    @update:model-value="togglePermission(permissionName(module as string, action), $event === true)"
+                                    :model-value="form.permissions.includes(permissionName(module, action))"
+                                    @update:model-value="togglePermission(permissionName(module, action), $event === true)"
                                 />
                                 {{ action.replace(/-/g, ' ') }}
                             </label>
                         </div>
                     </div>
 
-                    <div>
+                    <div v-if="visibleGlobals.length">
                         <p class="mb-2 text-sm font-semibold">Global</p>
                         <div class="grid grid-cols-2 gap-2 pl-6 sm:grid-cols-4">
-                            <label v-for="permission in globalPermissions" :key="permission" class="flex items-center gap-2 text-sm">
+                            <label v-for="permission in visibleGlobals" :key="permission" class="flex items-center gap-2 text-sm">
                                 <Checkbox
                                     :model-value="form.permissions.includes(permission)"
                                     @update:model-value="togglePermission(permission, $event === true)"
