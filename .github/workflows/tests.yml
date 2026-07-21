@@ -79,4 +79,12 @@ jobs:
         run: npm run build
 
       - name: Run Tests
-        run: php artisan test
+        run: |
+          php artisan test 2>&1 | tee test-output.log
+          code=${PIPESTATUS[0]}
+          if [ "$code" -ne 0 ]; then
+            grep -aE "⨯|FAIL|Failed asserting|Expected|Error|Exception|SQLSTATE|Tests:|→ " test-output.log \
+              | sed 's/\x1b\[[0-9;]*m//g' | head -40 \
+              | while IFS= read -r line; do echo "::error::${line}"; done
+          fi
+          exit $code
