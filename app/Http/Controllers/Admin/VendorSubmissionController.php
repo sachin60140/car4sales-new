@@ -58,7 +58,8 @@ class VendorSubmissionController extends Controller
 
         $vendorSubmission->load([
             'vendor:id,name,phone,email', 'vendor.vendorProfile:id,user_id,company_name,phone',
-            'items', 'media', 'reviewer:id,name', 'purchaseLead:id,lead_number,status', 'branch:id,name',
+            'items', 'media', 'reviewer:id,name', 'kycApprovedBy:id,name',
+            'purchaseLead:id,lead_number,status', 'branch:id,name',
         ]);
 
         return Inertia::render('admin/vendor-submissions/Show', [
@@ -89,13 +90,25 @@ class VendorSubmissionController extends Controller
                 // Settlement.
                 'settlement_status' => $vendorSubmission->settlement_status->value,
                 'settlement_label' => $vendorSubmission->settlement_status->label(),
-                'agreement_url' => $vendorSubmission->status === SubmissionStatus::Approved ? route('submission-agreement.download', $vendorSubmission) : null,
-                'bank' => $vendorSubmission->settlement_status === SettlementStatus::NotStarted ? null : [
+                'agreement_url' => $vendorSubmission->settlement_status->agreementAvailable() ? route('submission-agreement.download', $vendorSubmission) : null,
+                // Owner (seller) KYC — captured after approval, kept off the purchase lead.
+                'owner' => $vendorSubmission->owner_name ? [
+                    'name' => $vendorSubmission->owner_name,
+                    'phone' => $vendorSubmission->owner_phone,
+                    'email' => $vendorSubmission->owner_email,
+                    'address' => $vendorSubmission->owner_address,
+                    'pan' => $vendorSubmission->owner_pan,
+                ] : null,
+                'documents' => $this->documentRows($vendorSubmission),
+                'kyc_remarks' => $vendorSubmission->kyc_remarks,
+                'kyc_approved_by' => $vendorSubmission->kycApprovedBy?->name,
+                'kyc_approved_at' => $vendorSubmission->kyc_approved_at?->toDateString(),
+                'bank' => $vendorSubmission->bank_account_number ? [
                     'account_name' => $vendorSubmission->bank_account_name,
                     'account_number' => $vendorSubmission->bank_account_number,
                     'ifsc' => $vendorSubmission->bank_ifsc,
                     'bank_name' => $vendorSubmission->bank_name,
-                ],
+                ] : null,
                 'cheque' => ($c = $vendorSubmission->media->firstWhere('type', 'cancelled_cheque')) ? ['id' => $c->id, 'url' => route('submission-media.view', $c)] : null,
                 'payment' => $vendorSubmission->settlement_status === SettlementStatus::Paid ? [
                     'amount' => $vendorSubmission->payment_amount,
@@ -105,11 +118,56 @@ class VendorSubmissionController extends Controller
                 ] : null,
                 'payment_proof' => ($p = $vendorSubmission->media->firstWhere('type', 'payment_proof')) ? ['id' => $p->id, 'url' => route('submission-media.view', $p)] : null,
             ],
+            'docLabels' => VendorSubmission::REQUIRED_KYC_DOCS,
             'can' => [
                 'review' => $vendorSubmission->status === SubmissionStatus::PendingReview,
+                'approveKyc' => $vendorSubmission->settlement_status === SettlementStatus::KycSubmitted,
                 'recordPayment' => $vendorSubmission->settlement_status === SettlementStatus::PaymentRequested,
             ],
         ]);
+    }
+
+    /** Owner-KYC documents grouped by type (+ extras), for review. */
+    private function documentRows(VendorSubmission $s): array
+    {
+        $docs = [];
+        foreach (array_keys(VendorSubmission::REQUIRED_KYC_DOCS) as $type) {
+            $m = $s->media->firstWhere('type', $type);
+            $docs[$type] = $m ? ['id' => $m->id, 'url' => route('submission-media.view', $m)] : null;
+        }
+        $docs['extra'] = $s->media->where('type', 'other_doc')->values()->map(fn ($m) => ['id' => $m->id, 'url' => route('submission-media.view', $m)]);
+
+        return $docs;
+    }
+
+    public function approveKyc(Request $request, VendorSubmission $vendorSubmission, VendorSettlementAction $action): RedirectResponse
+    {
+        $this->authorize('review', $vendorSubmission);
+
+        $data = $request->validate(['remarks' => ['nullable', 'string', 'max:1000']]);
+
+        try {
+            $action->approveOwnerKyc($vendorSubmission, $request->user(), $data['remarks'] ?? null);
+        } catch (\RuntimeException $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        return back()->with('success', 'Owner documents verified — the agreement is now available to the vendor.');
+    }
+
+    public function rejectKyc(Request $request, VendorSubmission $vendorSubmission, VendorSettlementAction $action): RedirectResponse
+    {
+        $this->authorize('review', $vendorSubmission);
+
+        $data = $request->validate(['remarks' => ['required', 'string', 'max:1000']]);
+
+        try {
+            $action->rejectOwnerKyc($vendorSubmission, $request->user(), $data['remarks']);
+        } catch (\RuntimeException $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        return back()->with('success', 'Documents sent back to the vendor for correction.');
     }
 
     public function recordPayment(Request $request, VendorSubmission $vendorSubmission, VendorSettlementAction $action): RedirectResponse

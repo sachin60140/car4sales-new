@@ -27,7 +27,12 @@
 <body>
     @php
         $veh = trim(($submission->make ?? '').' '.($submission->model ?? '').' '.($submission->variant ?? ''));
-        $sellerName = $profile?->company_name ?: ($vendor?->name ?? 'Vendor');
+        // Seller = the actual vehicle owner captured during KYC; fall back to the
+        // partner's registered name only if owner details were not supplied.
+        $sellerName = $submission->owner_name ?: ($profile?->company_name ?: ($vendor?->name ?? 'Seller'));
+        $sellerContact = trim(implode(' · ', array_filter([$submission->owner_phone, $submission->owner_email])));
+        $partnerName = $profile?->company_name ?: $vendor?->name;
+        $regNo = $submission->registration_number ?: '—';
         $amount = number_format((float) $submission->expected_amount, 2);
     @endphp
 
@@ -42,8 +47,12 @@
 
         <h2>Parties</h2>
         <table class="kv">
-            <tr><td class="label">Seller</td><td>{{ $sellerName }}</td></tr>
-            <tr><td class="label">Seller Contact</td><td>{{ $profile?->phone ?? $vendor?->phone ?? '—' }} · {{ $vendor?->email ?? '' }}</td></tr>
+            <tr><td class="label">Seller (Owner)</td><td>{{ $sellerName }}</td></tr>
+            <tr><td class="label">Seller Contact</td><td>{{ $sellerContact ?: ($profile?->phone ?? $vendor?->phone ?? '—') }}</td></tr>
+            <tr><td class="label">Seller Address</td><td>{{ $submission->owner_address ?? '—' }}</td></tr>
+            @if($partnerName && $partnerName !== $sellerName)
+                <tr><td class="label">Presented By</td><td>{{ $partnerName }} (Vendor Partner)</td></tr>
+            @endif
             <tr><td class="label">Buyer</td><td>{{ $buyerName }}{{ $submission->branch ? ' — '.$submission->branch->name : '' }}</td></tr>
         </table>
 

@@ -14,7 +14,7 @@ beforeEach(function () {
     $this->seed(\Database\Seeders\RolePermissionSeeder::class);
 });
 
-/** @return array{0: VendorSubmission, 1: User, 2: User} [submission, vendor, admin] */
+/** @return array{0: VendorSubmission, 1: User, 2: User} [submission (kyc_pending), vendor, admin] */
 function approvedSubmission(): array
 {
     $admin = superAdmin();
@@ -25,7 +25,7 @@ function approvedSubmission(): array
     app(VendorRegistrationAction::class)->setStatus($vendor->vendorProfile, VendorProfileStatus::Active, $admin);
 
     $action = app(VendorSubmissionAction::class);
-    $submission = $action->save(null, ['make' => 'Kia', 'model' => 'Seltos', 'expected_amount' => 600000], $vendor->fresh());
+    $submission = $action->save(null, ['make' => 'Kia', 'model' => 'Seltos', 'registration_number' => 'UP32 AA 0001', 'expected_amount' => 600000], $vendor->fresh());
     $submission->media()->create(['type' => 'gallery', 'file_path' => 'demo/g.jpg']);
     $action->submit($submission->fresh(), $vendor->fresh());
     $submission = $action->approve($submission->fresh(), $admin);
@@ -33,24 +33,88 @@ function approvedSubmission(): array
     return [$submission, $vendor->fresh(), $admin];
 }
 
-function requestVendorPayment(VendorSubmission $submission, User $vendor): VendorSubmission
+function submitKyc(VendorSubmission $submission, User $vendor): VendorSubmission
 {
     Storage::fake('private');
 
-    return app(VendorSettlementAction::class)->requestPayment($submission->fresh(), [
+    $documents = collect(array_keys(VendorSubmission::REQUIRED_KYC_DOCS))
+        ->mapWithKeys(fn ($type) => [$type => UploadedFile::fake()->image("{$type}.jpg")])
+        ->all();
+
+    return app(VendorSettlementAction::class)->submitOwnerKyc($submission->fresh(), [
+        'owner_name' => 'Rakesh Kumar', 'owner_phone' => '9876540000', 'owner_address' => '14 Civil Lines, Lucknow',
+    ], [
         'bank_account_name' => 'VS Motors', 'bank_account_number' => '1234567890',
         'bank_ifsc' => 'HDFC0001234', 'bank_name' => 'HDFC Bank',
-    ], UploadedFile::fake()->image('cheque.jpg'), $vendor);
+    ], $documents, $vendor);
 }
 
-it('opens the settlement (agreement ready) on approval', function () {
+/** @return array{0: VendorSubmission, 1: User, 2: User} [submission (agreement_ready), vendor, admin] */
+function verifiedSubmission(): array
+{
+    [$submission, $vendor, $admin] = approvedSubmission();
+    submitKyc($submission, $vendor);
+    $submission = app(VendorSettlementAction::class)->approveOwnerKyc($submission->fresh(), $admin);
+
+    return [$submission, $vendor, $admin];
+}
+
+it('opens owner-KYC (kyc pending) on approval', function () {
     [$submission] = approvedSubmission();
 
-    expect($submission->settlement_status)->toBe(SettlementStatus::AgreementReady);
+    expect($submission->settlement_status)->toBe(SettlementStatus::KycPending);
 });
 
-it('downloads the pre-filled agreement pdf for the vendor', function () {
+it('lets the vendor submit owner details, bank and documents', function () {
     [$submission, $vendor] = approvedSubmission();
+
+    $result = submitKyc($submission, $vendor);
+
+    expect($result->settlement_status)->toBe(SettlementStatus::KycSubmitted)
+        ->and($result->owner_name)->toBe('Rakesh Kumar')
+        ->and($result->bank_account_number)->toBe('1234567890')
+        ->and($result->documentMedia()->count())->toBe(count(VendorSubmission::REQUIRED_KYC_DOCS));
+});
+
+it('blocks owner-KYC before approval', function () {
+    $vendor = app(VendorRegistrationAction::class)->register([
+        'name' => 'V', 'email' => 'pre@vs.test', 'password' => 'Password1', 'phone' => '9800000001',
+    ]);
+    app(VendorRegistrationAction::class)->setStatus($vendor->vendorProfile, VendorProfileStatus::Active, superAdmin());
+    $submission = app(VendorSubmissionAction::class)->save(null, ['make' => 'A', 'model' => 'B', 'registration_number' => 'X', 'expected_amount' => 1], $vendor->fresh());
+
+    expect(fn () => submitKyc($submission, $vendor->fresh()))
+        ->toThrow(RuntimeException::class, 'approved');
+});
+
+it('lets staff verify the documents → agreement ready', function () {
+    [$submission, $vendor, $admin] = approvedSubmission();
+    submitKyc($submission, $vendor);
+
+    $result = app(VendorSettlementAction::class)->approveOwnerKyc($submission->fresh(), $admin);
+
+    expect($result->settlement_status)->toBe(SettlementStatus::AgreementReady)
+        ->and($result->kyc_approved_by)->toBe($admin->id);
+});
+
+it('lets staff send documents back to the vendor', function () {
+    [$submission, $vendor, $admin] = approvedSubmission();
+    submitKyc($submission, $vendor);
+
+    $result = app(VendorSettlementAction::class)->rejectOwnerKyc($submission->fresh(), $admin, 'Aadhaar is blurred.');
+
+    expect($result->settlement_status)->toBe(SettlementStatus::KycPending)
+        ->and($result->kyc_remarks)->toBe('Aadhaar is blurred.');
+});
+
+it('only serves the agreement once documents are verified', function () {
+    [$submission, $vendor] = approvedSubmission();
+
+    // Before verification — not available.
+    $this->actingAs($vendor)->get("/submission-agreement/{$submission->id}")->assertNotFound();
+
+    submitKyc($submission, $vendor);
+    app(VendorSettlementAction::class)->approveOwnerKyc($submission->fresh(), superAdmin());
 
     $this->actingAs($vendor)
         ->get("/submission-agreement/{$submission->id}")
@@ -58,31 +122,24 @@ it('downloads the pre-filled agreement pdf for the vendor', function () {
         ->assertHeader('content-type', 'application/pdf');
 });
 
-it('lets the vendor request payment with bank details and a cancelled cheque', function () {
-    [$submission, $vendor] = approvedSubmission();
+it('lets the vendor request payment once verified', function () {
+    [$submission, $vendor] = verifiedSubmission();
 
-    $result = requestVendorPayment($submission, $vendor);
+    $result = app(VendorSettlementAction::class)->requestPayment($submission->fresh(), $vendor);
 
-    expect($result->settlement_status)->toBe(SettlementStatus::PaymentRequested)
-        ->and($result->bank_account_number)->toBe('1234567890')
-        ->and($result->bank_ifsc)->toBe('HDFC0001234')
-        ->and($result->chequeMedia()->count())->toBe(1);
+    expect($result->settlement_status)->toBe(SettlementStatus::PaymentRequested);
 });
 
-it('blocks a payment request before approval', function () {
-    $vendor = app(VendorRegistrationAction::class)->register([
-        'name' => 'V', 'email' => 'pre@vs.test', 'password' => 'Password1', 'phone' => '9800000001',
-    ]);
-    app(VendorRegistrationAction::class)->setStatus($vendor->vendorProfile, VendorProfileStatus::Active, superAdmin());
-    $submission = app(VendorSubmissionAction::class)->save(null, ['make' => 'A', 'model' => 'B', 'expected_amount' => 1], $vendor->fresh());
+it('blocks a payment request before documents are verified', function () {
+    [$submission, $vendor] = approvedSubmission();
 
-    expect(fn () => requestVendorPayment($submission, $vendor->fresh()))
-        ->toThrow(RuntimeException::class, 'approved');
+    expect(fn () => app(VendorSettlementAction::class)->requestPayment($submission->fresh(), $vendor))
+        ->toThrow(RuntimeException::class, 'verified');
 });
 
 it('lets staff record the payment with details and a screenshot', function () {
-    [$submission, $vendor, $admin] = approvedSubmission();
-    requestVendorPayment($submission, $vendor);
+    [$submission, $vendor, $admin] = verifiedSubmission();
+    app(VendorSettlementAction::class)->requestPayment($submission->fresh(), $vendor);
     Storage::fake('private');
 
     $this->actingAs($admin)
@@ -100,7 +157,7 @@ it('lets staff record the payment with details and a screenshot', function () {
         ->and($submission->paymentProofMedia()->count())->toBe(1);
 });
 
-it('scopes the payment request to the submission owner', function () {
+it('scopes owner-KYC submission to the submission owner', function () {
     [$submission] = approvedSubmission();
     $other = app(VendorRegistrationAction::class)->register([
         'name' => 'Other', 'email' => 'other@vs.test', 'password' => 'Password1', 'phone' => '9800000002',
@@ -108,9 +165,9 @@ it('scopes the payment request to the submission owner', function () {
     app(VendorRegistrationAction::class)->setStatus($other->vendorProfile, VendorProfileStatus::Active, superAdmin());
 
     $this->actingAs($other->fresh())
-        ->post("/vendor/submissions/{$submission->id}/request-payment", [
+        ->post("/vendor/submissions/{$submission->id}/owner-kyc", [
+            'owner_name' => 'X', 'owner_phone' => '1', 'owner_address' => 'Y',
             'bank_account_name' => 'X', 'bank_account_number' => '1', 'bank_ifsc' => 'ABCD0001234',
-            'cheque' => UploadedFile::fake()->image('c.jpg'),
         ])
         ->assertForbidden();
 });

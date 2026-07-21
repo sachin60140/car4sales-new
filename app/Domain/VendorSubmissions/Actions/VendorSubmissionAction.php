@@ -160,7 +160,7 @@ class VendorSubmissionAction
 
             $submission->update([
                 'status' => SubmissionStatus::Approved->value,
-                'settlement_status' => \App\Domain\VendorSubmissions\Enums\SettlementStatus::AgreementReady->value,
+                'settlement_status' => \App\Domain\VendorSubmissions\Enums\SettlementStatus::KycPending->value,
                 'reviewed_by' => $reviewer->id,
                 'reviewed_at' => now(),
                 'review_remarks' => $remarks,
@@ -168,7 +168,7 @@ class VendorSubmissionAction
             ]);
 
             $this->notifyVendor($submission, 'approved', 'Vehicle submission approved',
-                $submission->submission_number.' is approved — download your agreement and request payment.');
+                $submission->submission_number.' is approved — add the owner & bank details and upload the required documents to proceed.');
 
             return $submission->fresh();
         });

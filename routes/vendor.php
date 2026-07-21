@@ -34,5 +34,6 @@ Route::middleware(['auth', 'verified', 'role:Vendor Partner'])->prefix('vendor')
     Route::post('submissions/{submission}/media', [SubmissionController::class, 'uploadMedia'])->name('submissions.media');
     Route::delete('submission-media/{media}', [SubmissionController::class, 'deleteMedia'])->name('submissions.media.delete');
     Route::post('submissions/{submission}/submit', [SubmissionController::class, 'submit'])->name('submissions.submit');
+    Route::post('submissions/{submission}/owner-kyc', [SubmissionController::class, 'submitKyc'])->name('submissions.owner-kyc');
     Route::post('submissions/{submission}/request-payment', [SubmissionController::class, 'requestPayment'])->name('submissions.request-payment');
 });

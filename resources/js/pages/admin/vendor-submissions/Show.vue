@@ -10,7 +10,8 @@ import { computed } from 'vue';
 
 const props = defineProps<{
     submission: Record<string, any>;
-    can: { review: boolean; recordPayment: boolean };
+    docLabels: Record<string, string>;
+    can: { review: boolean; approveKyc: boolean; recordPayment: boolean };
 }>();
 
 const s = computed(() => props.submission);
@@ -51,6 +52,21 @@ function recordPayment() {
     payForm.post(`/admin/vendor-submissions/${s.value.id}/record-payment`, { preserveScroll: true, forceFormData: true });
 }
 const paymentModes = ['neft', 'rtgs', 'upi', 'cheque', 'cash'];
+
+// --- Owner KYC review ---
+const kycApproveForm = useForm({ remarks: '' });
+const kycRejectForm = useForm({ remarks: '' });
+function approveKyc() {
+    kycApproveForm.post(`/admin/vendor-submissions/${s.value.id}/approve-kyc`, { preserveScroll: true });
+}
+function rejectKyc() {
+    if (!kycRejectForm.remarks) return;
+    kycRejectForm.post(`/admin/vendor-submissions/${s.value.id}/reject-kyc`, { preserveScroll: true });
+}
+const docEntries = computed<{ type: string; label: string; doc: any }[]>(() =>
+    Object.entries(props.docLabels).map(([type, label]) => ({ type, label, doc: s.value.documents?.[type] ?? null })),
+);
+const extraDocs = computed<any[]>(() => s.value.documents?.extra ?? []);
 
 const statusStyle: Record<string, string> = {
     draft: 'bg-muted text-muted-foreground',
@@ -177,15 +193,48 @@ const resultStyle: Record<string, string> = { pass: 'text-emerald-600', fail: 't
                             <Button v-if="s.agreement_url" size="sm" variant="outline" as-child><a :href="s.agreement_url">Agreement</a></Button>
                         </CardHeader>
                         <CardContent class="grid gap-3 text-sm">
-                            <span class="w-fit rounded-full bg-muted px-2 py-0.5 text-xs capitalize">{{ s.settlement_label }}</span>
+                            <span class="w-fit rounded-full bg-muted px-2 py-0.5 text-xs">{{ s.settlement_label }}</span>
 
-                            <div v-if="s.bank" class="rounded-lg border border-sidebar-border/60 p-2">
-                                <p class="text-xs font-medium uppercase text-muted-foreground">Vendor bank</p>
-                                <p>{{ s.bank.account_name }}</p>
-                                <p class="text-muted-foreground">A/c {{ s.bank.account_number }} · {{ s.bank.ifsc }}<span v-if="s.bank.bank_name"> · {{ s.bank.bank_name }}</span></p>
-                                <a v-if="s.cheque" :href="s.cheque.url" target="_blank" class="text-xs underline">Cancelled cheque</a>
+                            <p v-if="settlement === 'kyc_pending'" class="text-xs text-muted-foreground">Waiting for the vendor to submit owner details &amp; documents.</p>
+
+                            <!-- Owner (seller) details -->
+                            <div v-if="s.owner" class="rounded-lg border border-sidebar-border/60 p-2">
+                                <p class="text-xs font-medium uppercase text-muted-foreground">Owner (Seller)</p>
+                                <p>{{ s.owner.name }}</p>
+                                <p class="text-muted-foreground">{{ s.owner.phone }}<span v-if="s.owner.email"> · {{ s.owner.email }}</span></p>
+                                <p class="text-muted-foreground">{{ s.owner.address }}</p>
+                                <p v-if="s.owner.pan" class="text-muted-foreground">PAN {{ s.owner.pan }}</p>
                             </div>
 
+                            <!-- Vendor bank -->
+                            <div v-if="s.bank" class="rounded-lg border border-sidebar-border/60 p-2">
+                                <p class="text-xs font-medium uppercase text-muted-foreground">Payout bank</p>
+                                <p>{{ s.bank.account_name }}</p>
+                                <p class="text-muted-foreground">A/c {{ s.bank.account_number }} · {{ s.bank.ifsc }}<span v-if="s.bank.bank_name"> · {{ s.bank.bank_name }}</span></p>
+                            </div>
+
+                            <!-- KYC documents -->
+                            <div v-if="s.owner" class="rounded-lg border border-sidebar-border/60 p-2">
+                                <p class="mb-1 text-xs font-medium uppercase text-muted-foreground">Documents</p>
+                                <div class="flex flex-wrap gap-1.5">
+                                    <a v-for="e in docEntries" :key="e.type" v-show="e.doc" :href="e.doc?.url" target="_blank" class="rounded-md border px-2 py-0.5 text-xs underline">{{ e.label }}</a>
+                                    <a v-for="(x, i) in extraDocs" :key="'x' + i" :href="x.url" target="_blank" class="rounded-md border px-2 py-0.5 text-xs underline">Other {{ i + 1 }}</a>
+                                </div>
+                            </div>
+
+                            <!-- KYC review actions -->
+                            <div v-if="can.approveKyc" class="grid gap-2 border-t pt-3">
+                                <Label class="text-xs">Verify owner documents</Label>
+                                <Input v-model="kycApproveForm.remarks" placeholder="Note (optional)" class="h-9" />
+                                <Button size="sm" :disabled="kycApproveForm.processing" @click="approveKyc">Approve documents → issue agreement</Button>
+                                <div class="border-t pt-2">
+                                    <Input v-model="kycRejectForm.remarks" placeholder="Reason to send back" class="h-9" />
+                                    <Button size="sm" variant="destructive" class="mt-2" :disabled="!kycRejectForm.remarks || kycRejectForm.processing" @click="rejectKyc">Send back</Button>
+                                </div>
+                            </div>
+                            <p v-else-if="s.kyc_remarks && settlement === 'kyc_pending'" class="rounded-lg border border-brand-red/40 bg-brand-red/5 p-2 text-xs text-brand-red">Sent back: {{ s.kyc_remarks }}</p>
+
+                            <!-- Record payment -->
                             <div v-if="can.recordPayment" class="grid gap-2 border-t pt-3">
                                 <div class="grid gap-1"><Label class="text-xs">Amount paid (₹)</Label><Input v-model.number="payForm.payment_amount" type="number" class="h-9" /></div>
                                 <div class="grid gap-1">
@@ -207,7 +256,7 @@ const resultStyle: Record<string, string> = { pass: 'text-emerald-600', fail: 't
                                 <a v-if="s.payment_proof" :href="s.payment_proof.url" target="_blank" class="text-xs underline">Payment proof</a>
                             </div>
 
-                            <p v-else-if="settlement === 'agreement_ready'" class="text-xs text-muted-foreground">Waiting for the vendor to request payment.</p>
+                            <p v-else-if="settlement === 'agreement_ready'" class="text-xs text-muted-foreground">Documents verified. Waiting for the vendor to request payment.</p>
                         </CardContent>
                     </Card>
                 </div>

@@ -5,10 +5,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import VendorLayout from '@/layouts/VendorLayout.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
-import { Download, Upload } from 'lucide-vue-next';
+import { Download, FileCheck2, Upload } from 'lucide-vue-next';
 import { computed } from 'vue';
 
-const props = defineProps<{ submission: Record<string, any> }>();
+const props = defineProps<{
+    submission: Record<string, any>;
+    docTypes: { type: string; label: string }[];
+}>();
 const s = computed(() => props.submission);
 
 function money(v: string | number | null): string {
@@ -18,14 +21,43 @@ function money(v: string | number | null): string {
 
 // --- Settlement (post-approval) ---
 const settlement = computed<string>(() => s.value.settlement_status);
-const payForm = useForm<{ bank_account_name: string; bank_account_number: string; bank_ifsc: string; bank_name: string; cheque: File | null }>({
-    bank_account_name: '', bank_account_number: '', bank_ifsc: '', bank_name: '', cheque: null,
+
+// Owner KYC: owner + bank details + required documents.
+const kycForm = useForm<{
+    owner_name: string; owner_phone: string; owner_email: string; owner_address: string; owner_pan: string;
+    bank_account_name: string; bank_account_number: string; bank_ifsc: string; bank_name: string;
+    documents: Record<string, File | null>;
+    extra_documents: File[];
+}>({
+    owner_name: '', owner_phone: '', owner_email: '', owner_address: '', owner_pan: '',
+    bank_account_name: '', bank_account_number: '', bank_ifsc: '', bank_name: '',
+    documents: Object.fromEntries(props.docTypes.map((d) => [d.type, null])),
+    extra_documents: [],
 });
-function onCheque(e: Event) {
-    payForm.cheque = (e.target as HTMLInputElement).files?.[0] ?? null;
+function onDoc(type: string, e: Event) {
+    kycForm.documents[type] = (e.target as HTMLInputElement).files?.[0] ?? null;
 }
+function onExtra(e: Event) {
+    kycForm.extra_documents = Array.from((e.target as HTMLInputElement).files ?? []);
+}
+const kycComplete = computed(
+    () =>
+        !!kycForm.owner_name &&
+        !!kycForm.owner_phone &&
+        !!kycForm.owner_address &&
+        !!kycForm.bank_account_name &&
+        !!kycForm.bank_account_number &&
+        !!kycForm.bank_ifsc &&
+        props.docTypes.every((d) => kycForm.documents[d.type]),
+);
+function submitKyc() {
+    kycForm.post(`/vendor/submissions/${s.value.id}/owner-kyc`, { preserveScroll: true, forceFormData: true });
+}
+
+// Request payment (bank already on file from KYC).
+const reqForm = useForm({});
 function requestPayment() {
-    payForm.post(`/vendor/submissions/${s.value.id}/request-payment`, { preserveScroll: true, forceFormData: true });
+    reqForm.post(`/vendor/submissions/${s.value.id}/request-payment`, { preserveScroll: true });
 }
 
 const statusStyle: Record<string, string> = {
@@ -76,51 +108,114 @@ const resultStyle: Record<string, string> = {
         <!-- Settlement (after approval) -->
         <Card v-if="s.status === 'approved'" class="mt-4">
             <CardHeader class="flex flex-row items-center justify-between">
-                <CardTitle class="text-base">Agreement &amp; Payment</CardTitle>
-                <Button size="sm" variant="outline" as-child>
+                <div>
+                    <CardTitle class="text-base">Owner Documents, Agreement &amp; Payment</CardTitle>
+                    <p class="mt-0.5 text-xs text-muted-foreground">{{ s.settlement_label }}</p>
+                </div>
+                <Button v-if="s.agreement_available" size="sm" variant="outline" as-child>
                     <a :href="s.agreement_url"><Download class="mr-1 size-4" /> Download Agreement</a>
                 </Button>
             </CardHeader>
             <CardContent>
-                <p class="mb-3 text-sm text-muted-foreground">
-                    Download your pre-filled agreement (with Form 29 &amp; 30), then request payment with your bank details.
-                </p>
-
-                <!-- Request payment -->
-                <div v-if="settlement === 'agreement_ready'" class="grid gap-3 rounded-lg border border-sidebar-border/60 p-3 sm:grid-cols-2">
-                    <div class="grid gap-1.5"><Label class="text-xs">Account Holder Name *</Label><Input v-model="payForm.bank_account_name" class="h-9" /></div>
-                    <div class="grid gap-1.5"><Label class="text-xs">Account Number *</Label><Input v-model="payForm.bank_account_number" class="h-9" /></div>
-                    <div class="grid gap-1.5"><Label class="text-xs">IFSC *</Label><Input v-model="payForm.bank_ifsc" class="h-9" /></div>
-                    <div class="grid gap-1.5"><Label class="text-xs">Bank Name</Label><Input v-model="payForm.bank_name" class="h-9" /></div>
-                    <div class="grid gap-1.5 sm:col-span-2">
-                        <Label class="text-xs">Cancelled Cheque *</Label>
-                        <input type="file" accept="image/*" class="text-sm" @change="onCheque" />
+                <!-- Stage 1: submit owner details + bank + documents -->
+                <template v-if="settlement === 'kyc_pending'">
+                    <div v-if="s.kyc_remarks" class="mb-3 rounded-lg border border-brand-red/40 bg-brand-red/5 p-3 text-sm">
+                        <p class="font-medium text-brand-red">Please correct and resubmit</p>
+                        <p class="text-muted-foreground">{{ s.kyc_remarks }}</p>
                     </div>
-                    <div class="sm:col-span-2">
-                        <Button :disabled="!payForm.bank_account_name || !payForm.bank_account_number || !payForm.bank_ifsc || !payForm.cheque || payForm.processing" @click="requestPayment">
-                            <Upload class="mr-1 size-4" /> Request Payment
+                    <p class="mb-3 text-sm text-muted-foreground">
+                        Provide the vehicle owner's details, your payout bank account, and upload the required documents.
+                        Once verified, your agreement (with Form 29 &amp; 30) will be available and you can request payment.
+                    </p>
+
+                    <p class="mb-2 text-xs font-semibold uppercase text-muted-foreground">Owner (Seller) details</p>
+                    <div class="grid gap-3 sm:grid-cols-2">
+                        <div class="grid gap-1.5"><Label class="text-xs">Owner Name *</Label><Input v-model="kycForm.owner_name" class="h-9" /></div>
+                        <div class="grid gap-1.5"><Label class="text-xs">Owner Phone *</Label><Input v-model="kycForm.owner_phone" class="h-9" /></div>
+                        <div class="grid gap-1.5"><Label class="text-xs">Owner Email</Label><Input v-model="kycForm.owner_email" type="email" class="h-9" /></div>
+                        <div class="grid gap-1.5"><Label class="text-xs">Owner PAN</Label><Input v-model="kycForm.owner_pan" class="h-9" /></div>
+                        <div class="grid gap-1.5 sm:col-span-2"><Label class="text-xs">Owner Address *</Label><Input v-model="kycForm.owner_address" class="h-9" /></div>
+                    </div>
+
+                    <p class="mb-2 mt-4 text-xs font-semibold uppercase text-muted-foreground">Payout bank</p>
+                    <div class="grid gap-3 sm:grid-cols-2">
+                        <div class="grid gap-1.5"><Label class="text-xs">Account Holder *</Label><Input v-model="kycForm.bank_account_name" class="h-9" /></div>
+                        <div class="grid gap-1.5"><Label class="text-xs">Account Number *</Label><Input v-model="kycForm.bank_account_number" class="h-9" /></div>
+                        <div class="grid gap-1.5"><Label class="text-xs">IFSC *</Label><Input v-model="kycForm.bank_ifsc" class="h-9" /></div>
+                        <div class="grid gap-1.5"><Label class="text-xs">Bank Name</Label><Input v-model="kycForm.bank_name" class="h-9" /></div>
+                    </div>
+
+                    <p class="mb-2 mt-4 text-xs font-semibold uppercase text-muted-foreground">Required documents</p>
+                    <div class="grid gap-3 sm:grid-cols-2">
+                        <div v-for="d in docTypes" :key="d.type" class="grid gap-1.5">
+                            <Label class="text-xs">{{ d.label }} *</Label>
+                            <input type="file" accept="image/*" class="text-sm" @change="onDoc(d.type, $event)" />
+                            <p v-if="(kycForm.errors as any)[`documents.${d.type}`]" class="text-xs text-brand-red">{{ (kycForm.errors as any)[`documents.${d.type}`] }}</p>
+                        </div>
+                        <div class="grid gap-1.5 sm:col-span-2">
+                            <Label class="text-xs">Other documents (optional)</Label>
+                            <input type="file" accept="image/*" multiple class="text-sm" @change="onExtra" />
+                        </div>
+                    </div>
+
+                    <div class="mt-4">
+                        <Button :disabled="!kycComplete || kycForm.processing" @click="submitKyc">
+                            <Upload class="mr-1 size-4" /> Submit for Verification
                         </Button>
+                        <p v-if="!kycComplete" class="mt-1 text-xs text-muted-foreground">Fill all required fields and attach every required document to submit.</p>
                     </div>
-                </div>
+                </template>
 
-                <!-- Requested / paid states -->
-                <div v-else class="grid gap-4 sm:grid-cols-2">
-                    <div class="rounded-lg border border-sidebar-border/60 p-3 text-sm">
-                        <p class="mb-1 text-xs font-medium uppercase text-muted-foreground">Bank details</p>
-                        <p>{{ s.bank_account_name }}</p>
-                        <p class="text-muted-foreground">A/c {{ s.bank_account_number }} · {{ s.bank_ifsc }}<span v-if="s.bank_name"> · {{ s.bank_name }}</span></p>
-                        <a v-if="s.cheque" :href="s.cheque.url" target="_blank" class="mt-1 inline-block text-xs underline">View cancelled cheque</a>
+                <!-- Stage 2: documents under review -->
+                <template v-else-if="settlement === 'kyc_submitted'">
+                    <div class="mb-3 flex items-center gap-2 rounded-lg border border-brand-orange/40 bg-brand-orange/5 p-3 text-sm text-brand-orange">
+                        <FileCheck2 class="size-4" /> Documents submitted — our team is verifying them.
                     </div>
-                    <div v-if="settlement === 'paid'" class="rounded-lg border border-emerald-500/40 bg-emerald-500/5 p-3 text-sm">
-                        <p class="mb-1 text-xs font-medium uppercase text-emerald-700 dark:text-emerald-400">Payment received</p>
-                        <p class="text-lg font-bold">{{ money(s.payment_amount) }}</p>
-                        <p class="text-muted-foreground capitalize">{{ s.payment_mode }}<span v-if="s.payment_reference"> · {{ s.payment_reference }}</span><span v-if="s.payment_date"> · {{ s.payment_date }}</span></p>
-                        <a v-if="s.payment_proof" :href="s.payment_proof.url" target="_blank" class="mt-1 inline-block text-xs underline">View payment proof</a>
+                    <div class="grid gap-4 sm:grid-cols-2">
+                        <div class="rounded-lg border border-sidebar-border/60 p-3 text-sm">
+                            <p class="mb-1 text-xs font-medium uppercase text-muted-foreground">Owner</p>
+                            <p>{{ s.owner_name }}</p>
+                            <p class="text-muted-foreground">{{ s.owner_phone }}<span v-if="s.owner_email"> · {{ s.owner_email }}</span></p>
+                            <p class="text-muted-foreground">{{ s.owner_address }}</p>
+                        </div>
+                        <div class="rounded-lg border border-sidebar-border/60 p-3 text-sm">
+                            <p class="mb-1 text-xs font-medium uppercase text-muted-foreground">Payout bank</p>
+                            <p>{{ s.bank_account_name }}</p>
+                            <p class="text-muted-foreground">A/c {{ s.bank_account_number }} · {{ s.bank_ifsc }}<span v-if="s.bank_name"> · {{ s.bank_name }}</span></p>
+                        </div>
                     </div>
-                    <div v-else class="flex items-center rounded-lg border border-brand-orange/40 bg-brand-orange/5 p-3 text-sm text-brand-orange">
-                        Payment requested — our team is processing it.
+                    <div class="mt-3 flex flex-wrap gap-2">
+                        <template v-for="d in docTypes" :key="d.type">
+                            <a v-if="s.documents?.[d.type]" :href="s.documents[d.type].url" target="_blank" class="rounded-md border px-2 py-1 text-xs underline">{{ d.label }}</a>
+                        </template>
                     </div>
-                </div>
+                </template>
+
+                <!-- Stage 3+: agreement ready / payment requested / paid -->
+                <template v-else>
+                    <div class="grid gap-4 sm:grid-cols-2">
+                        <div class="rounded-lg border border-sidebar-border/60 p-3 text-sm">
+                            <p class="mb-1 text-xs font-medium uppercase text-muted-foreground">Owner &amp; bank</p>
+                            <p v-if="s.owner_name">{{ s.owner_name }} · {{ s.owner_phone }}</p>
+                            <p>{{ s.bank_account_name }}</p>
+                            <p class="text-muted-foreground">A/c {{ s.bank_account_number }} · {{ s.bank_ifsc }}<span v-if="s.bank_name"> · {{ s.bank_name }}</span></p>
+                        </div>
+
+                        <div v-if="settlement === 'paid'" class="rounded-lg border border-emerald-500/40 bg-emerald-500/5 p-3 text-sm">
+                            <p class="mb-1 text-xs font-medium uppercase text-emerald-700 dark:text-emerald-400">Payment received</p>
+                            <p class="text-lg font-bold">{{ money(s.payment_amount) }}</p>
+                            <p class="text-muted-foreground capitalize">{{ s.payment_mode }}<span v-if="s.payment_reference"> · {{ s.payment_reference }}</span><span v-if="s.payment_date"> · {{ s.payment_date }}</span></p>
+                            <a v-if="s.payment_proof" :href="s.payment_proof.url" target="_blank" class="mt-1 inline-block text-xs underline">View payment proof</a>
+                        </div>
+                        <div v-else-if="settlement === 'payment_requested'" class="flex items-center rounded-lg border border-brand-orange/40 bg-brand-orange/5 p-3 text-sm text-brand-orange">
+                            Payment requested — our team is processing it.
+                        </div>
+                        <div v-else class="flex flex-col items-start justify-center gap-2 rounded-lg border border-emerald-500/40 bg-emerald-500/5 p-3 text-sm">
+                            <p class="text-muted-foreground">Documents verified. Download your agreement, then request payment.</p>
+                            <Button size="sm" :disabled="reqForm.processing" @click="requestPayment"><Upload class="mr-1 size-4" /> Request Payment</Button>
+                        </div>
+                    </div>
+                </template>
             </CardContent>
         </Card>
 

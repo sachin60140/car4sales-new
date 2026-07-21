@@ -144,7 +144,7 @@ const resultStyle: Record<string, string> = {
                     <div class="grid gap-1.5"><Label>Model *</Label><Input v-model="form.model" /><InputError :message="form.errors.model" /></div>
                     <div class="grid gap-1.5"><Label>Variant</Label><Input v-model="form.variant" /></div>
                     <div class="grid gap-1.5"><Label>Mfg. Year</Label><Input v-model.number="form.manufacturing_year" type="number" /><InputError :message="form.errors.manufacturing_year" /></div>
-                    <div class="grid gap-1.5"><Label>Registration No.</Label><Input v-model="form.registration_number" /></div>
+                    <div class="grid gap-1.5"><Label>Registration No. *</Label><Input v-model="form.registration_number" placeholder="e.g. UP32 AB 1234" /><InputError :message="form.errors.registration_number" /></div>
                     <div class="grid gap-1.5"><Label>Registration State</Label><Input v-model="form.registration_state" placeholder="e.g. UP" /></div>
                     <div class="grid gap-1.5">
                         <Label>Fuel</Label>

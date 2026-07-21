@@ -879,6 +879,7 @@ class DemoDataSeeder extends Seeder
         // Pending review — with vehicle photos + a damage shot (required to submit).
         $s1 = $submissions->save(null, [
             'make' => 'Maruti', 'model' => 'Baleno', 'variant' => 'Zeta', 'manufacturing_year' => 2020,
+            'registration_number' => 'UP32 CD 4521',
             'fuel_type' => 'Petrol', 'transmission' => 'Manual', 'color' => 'Grey', 'odometer_km' => 42000,
             'ownership_serial' => 1, 'expected_amount' => 545000,
             'overall_remark' => 'Well maintained, single owner.', 'branch_id' => $branches[0]->id ?? null,
@@ -891,14 +892,17 @@ class DemoDataSeeder extends Seeder
         // Draft (not yet submitted).
         $submissions->save(null, [
             'make' => 'Hyundai', 'model' => 'Creta', 'variant' => 'SX', 'manufacturing_year' => 2019,
+            'registration_number' => 'UP32 EF 7788',
             'fuel_type' => 'Diesel', 'transmission' => 'Automatic', 'color' => 'White', 'odometer_km' => 68000,
             'ownership_serial' => 2, 'expected_amount' => 890000,
             'branch_id' => $branches[0]->id ?? null, 'items' => $items(),
         ], $active->fresh());
 
-        // A fully-settled example: approved (→ purchase lead) and paid.
+        // A fully-settled example: approved (→ purchase lead), owner documents
+        // verified, and paid.
         $s3 = $submissions->save(null, [
             'make' => 'Tata', 'model' => 'Nexon', 'variant' => 'XZ', 'manufacturing_year' => 2021,
+            'registration_number' => 'UP32 GH 1092',
             'fuel_type' => 'Petrol', 'transmission' => 'Manual', 'color' => 'Blue', 'odometer_km' => 31000,
             'ownership_serial' => 1, 'expected_amount' => 720000, 'branch_id' => $branches[0]->id ?? null,
             'items' => $items(),
@@ -909,12 +913,17 @@ class DemoDataSeeder extends Seeder
         $submissions->approve($s3->fresh(), $admin);
         $s3->update([
             'settlement_status' => \App\Domain\VendorSubmissions\Enums\SettlementStatus::Paid->value,
+            'owner_name' => 'Rakesh Kumar', 'owner_phone' => '9876540000', 'owner_email' => 'rakesh.owner@example.test',
+            'owner_address' => '14 Civil Lines, Lucknow, UP 226001', 'owner_pan' => 'ABCDE1234F',
+            'kyc_submitted_at' => now()->subDays(3), 'kyc_approved_at' => now()->subDays(2), 'kyc_approved_by' => $admin->id,
             'bank_account_name' => 'Deepak Auto Traders', 'bank_account_number' => '50100123456',
             'bank_ifsc' => 'HDFC0000123', 'bank_name' => 'HDFC Bank', 'payment_requested_at' => now()->subDays(2),
             'payment_amount' => 710000, 'payment_mode' => 'neft', 'payment_reference' => 'UTRDEMO0001',
             'payment_date' => now()->subDay()->toDateString(), 'paid_by' => $admin->id, 'paid_at' => now()->subDay(),
         ]);
-        $this->attachDemoMedia($s3, 'cancelled_cheque', 1);
+        foreach (['rc', 'pan', 'aadhaar', 'noc', 'key_image', 'owner_photo', 'cancelled_cheque'] as $docType) {
+            $this->attachDemoMedia($s3, $docType, 1);
+        }
         $this->attachDemoMedia($s3, 'payment_proof', 1);
 
         return [2, 3];

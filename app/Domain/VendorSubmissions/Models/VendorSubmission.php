@@ -23,9 +23,22 @@ class VendorSubmission extends Model
         'registration_number', 'registration_state', 'fuel_type', 'transmission', 'color',
         'odometer_km', 'ownership_serial', 'expected_amount', 'overall_rating', 'overall_remark',
         'status', 'reviewed_by', 'reviewed_at', 'review_remarks', 'purchase_lead_id', 'branch_id',
-        'settlement_status', 'bank_account_name', 'bank_account_number', 'bank_ifsc', 'bank_name',
+        'settlement_status', 'owner_name', 'owner_phone', 'owner_email', 'owner_address', 'owner_pan',
+        'kyc_submitted_at', 'kyc_approved_at', 'kyc_approved_by', 'kyc_remarks',
+        'bank_account_name', 'bank_account_number', 'bank_ifsc', 'bank_name',
         'payment_requested_at', 'payment_amount', 'payment_mode', 'payment_reference',
         'payment_date', 'paid_by', 'paid_at',
+    ];
+
+    /** Owner-KYC documents the vendor must upload before the agreement is issued. */
+    public const REQUIRED_KYC_DOCS = [
+        'rc' => 'Registration Certificate (RC)',
+        'pan' => 'Owner PAN card',
+        'aadhaar' => 'Owner Aadhaar',
+        'noc' => 'NOC',
+        'key_image' => 'Key photo',
+        'owner_photo' => 'Owner with vehicle',
+        'cancelled_cheque' => 'Cancelled cheque',
     ];
 
     protected function casts(): array
@@ -36,6 +49,8 @@ class VendorSubmission extends Model
             'expected_amount' => 'decimal:2',
             'payment_amount' => 'decimal:2',
             'reviewed_at' => 'datetime',
+            'kyc_submitted_at' => 'datetime',
+            'kyc_approved_at' => 'datetime',
             'payment_requested_at' => 'datetime',
             'payment_date' => 'date',
             'paid_at' => 'datetime',
@@ -92,9 +107,20 @@ class VendorSubmission extends Model
         return $this->media()->where('type', 'payment_proof');
     }
 
+    /** All owner-KYC document media (RC, PAN, Aadhaar, NOC, key/owner photos, cheque, extras). */
+    public function documentMedia(): HasMany
+    {
+        return $this->media()->whereIn('type', [...array_keys(self::REQUIRED_KYC_DOCS), 'other_doc']);
+    }
+
     public function paidBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'paid_by');
+    }
+
+    public function kycApprovedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'kyc_approved_by');
     }
 
     public function title(): string
