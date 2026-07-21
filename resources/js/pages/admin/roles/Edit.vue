@@ -83,6 +83,14 @@ const visibleGlobals = computed<string[]>(() =>
 );
 const hasAnyVisible = computed(() => visibleModules.value.length > 0 || visibleGlobals.value.length > 0);
 
+// Live summary of everything currently granted, grouped by module.
+const grantedByModule = computed<{ module: string; actions: string[] }[]>(() =>
+    Object.keys(props.registry)
+        .map((module) => ({ module, actions: grantedActions(module) }))
+        .filter((group) => group.actions.length > 0),
+);
+const grantedGlobals = computed<string[]>(() => props.globalPermissions.filter((p) => form.permissions.includes(p)));
+
 function submit() {
     form.put(`/admin/roles/${props.role.id}`, { preserveScroll: true });
 }
@@ -139,6 +147,26 @@ function submit() {
                 </CardHeader>
                 <CardContent class="grid gap-6">
                     <InputError :message="form.errors.permissions" />
+
+                    <!-- Live summary of everything this role currently grants. -->
+                    <div v-if="grantedCount" class="rounded-lg border border-sidebar-border/60 bg-muted/30 p-3">
+                        <p class="mb-2 text-xs font-semibold uppercase text-muted-foreground">Granted access ({{ grantedCount }})</p>
+                        <div class="flex flex-col gap-1.5">
+                            <div v-for="group in grantedByModule" :key="group.module" class="flex flex-wrap items-baseline gap-x-2 gap-y-1 text-sm">
+                                <span class="min-w-32 font-medium capitalize">{{ group.module.replace(/-/g, ' ') }}</span>
+                                <span class="flex flex-wrap gap-1">
+                                    <span v-for="action in group.actions" :key="action" class="rounded-full border bg-background px-2 py-0.5 text-xs text-muted-foreground">{{ action.replace(/-/g, ' ') }}</span>
+                                </span>
+                            </div>
+                            <div v-if="grantedGlobals.length" class="flex flex-wrap items-baseline gap-x-2 gap-y-1 text-sm">
+                                <span class="min-w-32 font-medium">Global</span>
+                                <span class="flex flex-wrap gap-1">
+                                    <span v-for="permission in grantedGlobals" :key="permission" class="rounded-full border bg-background px-2 py-0.5 text-xs text-muted-foreground">{{ permission.replace(/-/g, ' ') }}</span>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
                     <p v-if="!hasAnyVisible" class="text-sm text-muted-foreground">No permissions granted yet.</p>
 
                     <div v-for="module in visibleModules" :key="module" class="border-b pb-4 last:border-0 last:pb-0">
