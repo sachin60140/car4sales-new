@@ -15,7 +15,7 @@ interface Recent {
     created_at: string;
 }
 
-const props = defineProps<{
+defineProps<{
     profile: { company_name: string | null; contact_person: string | null; status: string; status_label: string; is_active: boolean };
     stats: { draft: number; pending_review: number; approved: number; rejected: number };
     recent: Recent[];

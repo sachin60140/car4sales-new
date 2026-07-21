@@ -5,7 +5,7 @@ import type { VehicleDetailData } from '@/types/public';
 import { Link } from '@inertiajs/vue3';
 import { Car } from 'lucide-vue-next';
 
-const props = defineProps<{ vehicles: VehicleDetailData[] }>();
+defineProps<{ vehicles: VehicleDetailData[] }>();
 
 function money(v: string | null): string {
     if (!v) return '—';

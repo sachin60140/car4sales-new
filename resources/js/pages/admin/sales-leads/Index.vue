@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import AppLayout from '@/layouts/AppLayout.vue';
 import type { BreadcrumbItem, Paginated } from '@/types';
 import { Head, Link, router } from '@inertiajs/vue3';
-import { Phone, Plus, Search } from 'lucide-vue-next';
+import { Plus, Search } from 'lucide-vue-next';
 import { reactive, watch } from 'vue';
 
 interface LeadRow {
