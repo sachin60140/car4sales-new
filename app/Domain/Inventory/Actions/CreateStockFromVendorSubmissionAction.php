@@ -33,6 +33,15 @@ class CreateStockFromVendorSubmissionAction
             $price = (float) ($submission->payment_amount ?? $submission->expected_amount);
             $title = trim(($submission->make ?? '').' '.($submission->model ?? '').' '.($submission->variant ?? ''));
 
+            // Auto-fill the acquisition/source panel from the vendor-partner deal:
+            // the car was bought (via the vendor partner) from the registered owner,
+            // who received the payout. Keep the partner traceable in the reference.
+            $partnerName = $submission->vendor?->name;
+            $reference = $submission->submission_number;
+            if ($partnerName) {
+                $reference = Str::limit($reference.' · Partner: '.$partnerName, 100, '');
+            }
+
             $vehicle = new Vehicle([
                 'stock_number' => $this->sequences->next('stock'),
                 'registration_number' => $submission->registration_number,
@@ -53,6 +62,12 @@ class CreateStockFromVendorSubmissionAction
                 'status' => VehicleStatus::InStock->value,
                 'title' => $title,
                 'created_by' => $actor?->id,
+                'acquisition_source' => 'vendor',
+                'seller_name' => $submission->owner_name ?: $partnerName,
+                'seller_contact' => $submission->owner_phone,
+                'purchased_by' => $submission->paid_by ?? $actor?->id,
+                'purchased_at' => $submission->payment_date ?? $submission->paid_at ?? now(),
+                'purchase_reference' => $reference,
             ]);
 
             $vehicle->slug = Str::slug($title.'-'.$vehicle->stock_number);

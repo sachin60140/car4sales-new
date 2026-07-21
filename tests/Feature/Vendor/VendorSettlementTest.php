@@ -287,7 +287,12 @@ it('confirms possession after payment and creates stock', function () {
         ->and($vehicle->registration_number)->toBe('UP32 AA 0001')
         ->and((float) $vehicle->purchase_price)->toBe(590000.0)
         ->and($vehicle->odometer_km)->toBe(33000)
-        ->and(Vehicle::whereKey($vehicle->id)->where('status', 'in_stock')->exists())->toBeTrue();
+        ->and(Vehicle::whereKey($vehicle->id)->where('status', 'in_stock')->exists())->toBeTrue()
+        // Source & Purchase panel is auto-filled from the vendor-partner deal.
+        ->and($vehicle->acquisition_source)->toBe('vendor')
+        ->and($vehicle->seller_name)->toBe('Rakesh Kumar')
+        ->and($vehicle->seller_contact)->toBe('9876540000')
+        ->and($vehicle->purchase_reference)->toContain($submission->submission_number);
 });
 
 it('carries the owner documents onto the stocked vehicle', function () {
