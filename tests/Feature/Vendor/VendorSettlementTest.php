@@ -184,6 +184,15 @@ it('lets a document verifier open the submission but not issue the agreement', f
     $this->actingAs($verifier)->post("/admin/vendor-submissions/{$submission->id}/approve-kyc")->assertForbidden();
 });
 
+it('lets a document verifier stream a submission document image', function () {
+    [$submission, $vendor] = approvedSubmission();
+    submitKyc($submission, $vendor); // uploads real fake files to the private disk
+    $media = $submission->fresh()->media()->where('type', 'rc_front')->firstOrFail();
+    $verifier = userWithPermissions(['vendor-submissions.view', 'vendor-submissions.verify-documents'], 'all');
+
+    $this->actingAs($verifier)->get("/submission-media/{$media->id}")->assertOk();
+});
+
 it('requires NOC & Form 35 as required documents only under hypothecation', function () {
     expect(VendorSubmission::requiredDocKeys(false))->not->toContain('noc')->not->toContain('form_35')
         ->and(VendorSubmission::requiredDocKeys(true))->toContain('noc')->toContain('form_35');

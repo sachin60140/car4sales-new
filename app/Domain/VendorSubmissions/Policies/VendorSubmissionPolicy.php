@@ -18,7 +18,9 @@ class VendorSubmissionPolicy
 
     public function view(User $user, VendorSubmission $submission): bool
     {
-        if ($user->can('vendor-submissions.review')) {
+        // Staff reviewers and document verifiers can view any submission (and its
+        // media); a vendor can view only their own.
+        if ($user->can('vendor-submissions.review') || $user->can('vendor-submissions.verify-documents')) {
             return true;
         }
 
