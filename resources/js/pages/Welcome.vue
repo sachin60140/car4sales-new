@@ -19,8 +19,8 @@ const page = usePage<SharedData>();
         </div>
 
         <p class="max-w-md text-center text-muted-foreground">
-            Multi-branch pre-owned car dealership management platform. The public website launches in a
-            later phase — employees can sign in to the management panel below.
+            Multi-branch pre-owned car dealership management platform. The public website launches in a later phase — employees can sign in to the
+            management panel below.
         </p>
 
         <div class="flex gap-3">

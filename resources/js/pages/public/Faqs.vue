@@ -27,7 +27,11 @@ const jsonLd = computed(() => ({
 </script>
 
 <template>
-    <SeoHead title="FAQs — Car4Sales" description="Frequently asked questions about buying, selling and financing pre-owned cars with Car4Sales." :json-ld="jsonLd" />
+    <SeoHead
+        title="FAQs — Car4Sales"
+        description="Frequently asked questions about buying, selling and financing pre-owned cars with Car4Sales."
+        :json-ld="jsonLd"
+    />
 
     <PublicLayout>
         <section class="bg-brand-maroon py-12 text-white">

@@ -62,7 +62,9 @@ const why = [
                 <h1 class="mt-2 max-w-2xl text-4xl font-extrabold leading-tight md:text-5xl">
                     Find your perfect <span class="text-brand-yellow">pre-owned car</span>
                 </h1>
-                <p class="mt-3 max-w-xl text-white/80">{{ stats.in_stock }}+ quality-checked cars across {{ stats.branches }} branches. Inspected, refurbished and ready to drive.</p>
+                <p class="mt-3 max-w-xl text-white/80">
+                    {{ stats.in_stock }}+ quality-checked cars across {{ stats.branches }} branches. Inspected, refurbished and ready to drive.
+                </p>
 
                 <div class="mt-6 flex max-w-xl overflow-hidden rounded-xl bg-white p-1.5 shadow-lg">
                     <input
@@ -71,13 +73,21 @@ const why = [
                         class="flex-1 px-3 text-sm text-neutral-900 outline-none"
                         @keyup.enter="doSearch"
                     />
-                    <button class="flex items-center gap-1 rounded-lg bg-brand-yellow px-4 py-2.5 text-sm font-bold text-brand-maroon" @click="doSearch">
+                    <button
+                        class="flex items-center gap-1 rounded-lg bg-brand-yellow px-4 py-2.5 text-sm font-bold text-brand-maroon"
+                        @click="doSearch"
+                    >
                         <Search class="size-4" /> Search
                     </button>
                 </div>
 
                 <div class="mt-4 flex flex-wrap gap-2">
-                    <Link v-for="brand in brands.slice(0, 6)" :key="brand.make" :href="`/cars?make=${encodeURIComponent(brand.make)}`" class="rounded-full bg-white/10 px-3 py-1 text-sm backdrop-blur hover:bg-white/20">
+                    <Link
+                        v-for="brand in brands.slice(0, 6)"
+                        :key="brand.make"
+                        :href="`/cars?make=${encodeURIComponent(brand.make)}`"
+                        class="rounded-full bg-white/10 px-3 py-1 text-sm backdrop-blur hover:bg-white/20"
+                    >
                         {{ brand.make }}
                     </Link>
                 </div>
@@ -88,7 +98,12 @@ const why = [
         <section class="mx-auto max-w-7xl px-4 py-10">
             <h2 class="mb-4 text-xl font-bold text-neutral-900">Browse by Budget</h2>
             <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-                <button v-for="band in budgetBands" :key="band.label" class="rounded-xl border bg-white p-4 text-left transition-colors hover:border-brand-yellow hover:bg-brand-yellow/5" @click="byBudget(band)">
+                <button
+                    v-for="band in budgetBands"
+                    :key="band.label"
+                    class="rounded-xl border bg-white p-4 text-left transition-colors hover:border-brand-yellow hover:bg-brand-yellow/5"
+                    @click="byBudget(band)"
+                >
                     <Banknote class="mb-2 size-6 text-brand-orange" />
                     <span class="text-sm font-semibold text-neutral-800">{{ band.label }}</span>
                 </button>
@@ -145,9 +160,13 @@ const why = [
             <div class="flex flex-col justify-between rounded-2xl bg-brand-maroon p-8 text-white">
                 <div>
                     <h3 class="text-2xl font-extrabold">Finance Assistance</h3>
-                    <p class="mt-2 max-w-sm text-white/80">Drive home your dream car with easy EMIs. Quick approvals and attractive interest rates.</p>
+                    <p class="mt-2 max-w-sm text-white/80">
+                        Drive home your dream car with easy EMIs. Quick approvals and attractive interest rates.
+                    </p>
                 </div>
-                <Link href="/finance" class="mt-4 w-fit rounded-lg bg-brand-yellow px-5 py-2.5 text-sm font-bold text-brand-maroon">Calculate EMI</Link>
+                <Link href="/finance" class="mt-4 w-fit rounded-lg bg-brand-yellow px-5 py-2.5 text-sm font-bold text-brand-maroon"
+                    >Calculate EMI</Link
+                >
             </div>
         </section>
 
@@ -161,7 +180,9 @@ const why = [
                             <span v-for="n in 5" :key="n">{{ n <= t.rating ? '★' : '☆' }}</span>
                         </div>
                         <p class="mt-3 text-sm text-neutral-700">"{{ t.message }}"</p>
-                        <p class="mt-3 text-sm font-semibold text-neutral-900">{{ t.customer_name }}<span v-if="t.city" class="font-normal text-neutral-500">, {{ t.city }}</span></p>
+                        <p class="mt-3 text-sm font-semibold text-neutral-900">
+                            {{ t.customer_name }}<span v-if="t.city" class="font-normal text-neutral-500">, {{ t.city }}</span>
+                        </p>
                     </div>
                 </div>
             </div>
@@ -172,9 +193,16 @@ const why = [
             <div>
                 <h2 class="mb-4 text-xl font-bold text-neutral-900">Our Branches</h2>
                 <div class="grid gap-3">
-                    <Link v-for="b in branches" :key="b.id" :href="`/branches/${b.slug}`" class="rounded-xl border bg-white p-4 hover:border-brand-yellow">
+                    <Link
+                        v-for="b in branches"
+                        :key="b.id"
+                        :href="`/branches/${b.slug}`"
+                        class="rounded-xl border bg-white p-4 hover:border-brand-yellow"
+                    >
                         <p class="font-semibold text-neutral-900">{{ b.name }}</p>
-                        <p class="text-sm text-neutral-500">{{ b.address ?? b.city }}<span v-if="b.phone"> · {{ b.phone }}</span></p>
+                        <p class="text-sm text-neutral-500">
+                            {{ b.address ?? b.city }}<span v-if="b.phone"> · {{ b.phone }}</span>
+                        </p>
                     </Link>
                 </div>
             </div>

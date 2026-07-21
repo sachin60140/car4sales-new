@@ -10,9 +10,22 @@ import { Head, Link, router } from '@inertiajs/vue3';
 import { Download, FileText } from 'lucide-vue-next';
 import { computed, reactive } from 'vue';
 
-interface Column { key: string; label: string; align?: string; format?: string }
-interface SummaryItem { label: string; value: number | string; format?: string }
-interface Filter { key: string; label: string; type: string }
+interface Column {
+    key: string;
+    label: string;
+    align?: string;
+    format?: string;
+}
+interface SummaryItem {
+    label: string;
+    value: number | string;
+    format?: string;
+}
+interface Filter {
+    key: string;
+    label: string;
+    type: string;
+}
 
 const props = defineProps<{
     report: { key: string; label: string; description: string; group: string; filters: Filter[] };
@@ -137,12 +150,16 @@ const hasChart = computed(() => chartLabels.value.length > 0);
                                 :key="c.key"
                                 class="px-4 py-3 font-medium"
                                 :class="c.align === 'right' ? 'text-right' : ''"
-                            >{{ c.label }}</th>
+                            >
+                                {{ c.label }}
+                            </th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr v-if="result.rows.length === 0">
-                            <td :colspan="result.columns.length" class="px-4 py-10 text-center text-muted-foreground">No data for the selected period.</td>
+                            <td :colspan="result.columns.length" class="px-4 py-10 text-center text-muted-foreground">
+                                No data for the selected period.
+                            </td>
                         </tr>
                         <tr v-for="(row, ri) in result.rows" :key="ri" class="border-b last:border-0 hover:bg-muted/30">
                             <td
@@ -150,7 +167,9 @@ const hasChart = computed(() => chartLabels.value.length > 0);
                                 :key="c.key"
                                 class="px-4 py-2.5"
                                 :class="c.align === 'right' ? 'text-right tabular-nums' : ''"
-                            >{{ fmt(row[c.key], c.format) }}</td>
+                            >
+                                {{ fmt(row[c.key], c.format) }}
+                            </td>
                         </tr>
                     </tbody>
                 </table>

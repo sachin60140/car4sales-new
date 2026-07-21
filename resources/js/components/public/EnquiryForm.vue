@@ -110,7 +110,14 @@ function submit() {
                 <p v-if="form.errors.name" class="mt-1 text-xs text-brand-red">{{ form.errors.name }}</p>
             </div>
             <div>
-                <input v-model="form.mobile" placeholder="Mobile (10 digits) *" required maxlength="10" inputmode="numeric" class="w-full rounded-lg border px-3 py-2.5 text-sm" />
+                <input
+                    v-model="form.mobile"
+                    placeholder="Mobile (10 digits) *"
+                    required
+                    maxlength="10"
+                    inputmode="numeric"
+                    class="w-full rounded-lg border px-3 py-2.5 text-sm"
+                />
                 <p v-if="form.errors.mobile" class="mt-1 text-xs text-brand-red">{{ form.errors.mobile }}</p>
             </div>
         </div>
@@ -124,11 +131,31 @@ function submit() {
         <div v-if="otpRequired && otpStage !== 'verified'" class="rounded-lg border border-dashed bg-neutral-50 p-3">
             <div v-if="otpStage === 'idle'" class="flex items-center justify-between gap-2">
                 <span class="text-xs text-neutral-600">Verify your mobile number to submit.</span>
-                <button type="button" :disabled="otpBusy" class="rounded-md bg-brand-maroon px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50" @click="requestOtp">Send OTP</button>
+                <button
+                    type="button"
+                    :disabled="otpBusy"
+                    class="rounded-md bg-brand-maroon px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50"
+                    @click="requestOtp"
+                >
+                    Send OTP
+                </button>
             </div>
             <div v-else class="flex items-center gap-2">
-                <input v-model="otpCode" placeholder="6-digit OTP" maxlength="6" inputmode="numeric" class="w-32 rounded-lg border px-3 py-2 text-sm" />
-                <button type="button" :disabled="otpBusy" class="rounded-md bg-brand-maroon px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50" @click="verifyOtp">Verify</button>
+                <input
+                    v-model="otpCode"
+                    placeholder="6-digit OTP"
+                    maxlength="6"
+                    inputmode="numeric"
+                    class="w-32 rounded-lg border px-3 py-2 text-sm"
+                />
+                <button
+                    type="button"
+                    :disabled="otpBusy"
+                    class="rounded-md bg-brand-maroon px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50"
+                    @click="verifyOtp"
+                >
+                    Verify
+                </button>
                 <button type="button" class="text-xs text-neutral-500 underline" @click="requestOtp">Resend</button>
             </div>
             <p v-if="otpError" class="mt-1 text-xs text-brand-red">{{ otpError }}</p>

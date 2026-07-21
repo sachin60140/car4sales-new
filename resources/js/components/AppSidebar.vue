@@ -5,7 +5,35 @@ import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, Sid
 import { usePermissions } from '@/composables/usePermissions';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/vue3';
-import { BarChart3, Bell, BookMarked, Boxes, Building2, CalendarClock, Car, ClipboardCheck, Contact, FileCheck2, Globe, Handshake, Headphones, KeyRound, Landmark, LayoutGrid, Network, PackageCheck, PhoneCall, ScrollText, ShoppingCart, Store, Truck, Users, UsersRound, Wallet, Wrench } from 'lucide-vue-next';
+import {
+    BarChart3,
+    Bell,
+    BookMarked,
+    Boxes,
+    Building2,
+    CalendarClock,
+    Car,
+    ClipboardCheck,
+    Contact,
+    FileCheck2,
+    Globe,
+    Handshake,
+    Headphones,
+    KeyRound,
+    Landmark,
+    LayoutGrid,
+    Network,
+    PackageCheck,
+    PhoneCall,
+    ScrollText,
+    ShoppingCart,
+    Store,
+    Truck,
+    Users,
+    UsersRound,
+    Wallet,
+    Wrench,
+} from 'lucide-vue-next';
 import { computed } from 'vue';
 import AppLogo from './AppLogo.vue';
 

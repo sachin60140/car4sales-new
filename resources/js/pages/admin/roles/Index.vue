@@ -75,9 +75,7 @@ function confirmDelete() {
                     <h1 class="text-xl font-semibold">Roles &amp; Permissions</h1>
                     <p class="text-sm text-muted-foreground">Role definitions, data scopes and permission grants.</p>
                 </div>
-                <Button v-if="can.create" @click="dialogOpen = true">
-                    <Plus class="mr-1 size-4" /> New Role
-                </Button>
+                <Button v-if="can.create" @click="dialogOpen = true"> <Plus class="mr-1 size-4" /> New Role </Button>
             </div>
 
             <div class="overflow-x-auto rounded-xl border border-sidebar-border/70 dark:border-sidebar-border">

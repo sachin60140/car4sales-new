@@ -98,7 +98,10 @@ const statusStyle: Record<string, string> = {
                             <td class="px-4 py-3">{{ money(j.approved_total ?? j.estimate_total) }}</td>
                             <td class="px-4 py-3">{{ money(j.actual_total) }}</td>
                             <td class="px-4 py-3">
-                                <span class="inline-flex rounded-full px-2 py-0.5 text-xs font-medium" :class="statusStyle[j.status] ?? 'bg-muted text-muted-foreground'">
+                                <span
+                                    class="inline-flex rounded-full px-2 py-0.5 text-xs font-medium"
+                                    :class="statusStyle[j.status] ?? 'bg-muted text-muted-foreground'"
+                                >
                                     {{ j.status_label }}
                                 </span>
                             </td>

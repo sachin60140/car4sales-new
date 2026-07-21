@@ -63,9 +63,17 @@ watch(filters, () => {
 const dialogOpen = ref(false);
 const editing = ref<Vendor | null>(null);
 const form = useForm({
-    name: '', type: 'workshop', contact_person: '', phone: '', email: '',
-    address: '', city: '', gst_number: '', branch_id: null as number | null,
-    is_active: true as boolean, remarks: '',
+    name: '',
+    type: 'workshop',
+    contact_person: '',
+    phone: '',
+    email: '',
+    address: '',
+    city: '',
+    gst_number: '',
+    branch_id: null as number | null,
+    is_active: true as boolean,
+    remarks: '',
 });
 
 function openCreate() {
@@ -90,7 +98,13 @@ function openEdit(vendor: Vendor) {
     dialogOpen.value = true;
 }
 function submit() {
-    const opts = { preserveScroll: true, onSuccess: () => { dialogOpen.value = false; form.reset(); } };
+    const opts = {
+        preserveScroll: true,
+        onSuccess: () => {
+            dialogOpen.value = false;
+            form.reset();
+        },
+    };
     if (editing.value) form.put(`/admin/vendors/${editing.value.id}`, opts);
     else form.post('/admin/vendors', opts);
 }
@@ -102,7 +116,10 @@ function confirmDelete() {
     deleting.value = true;
     router.delete(`/admin/vendors/${deleteTarget.value.id}`, {
         preserveScroll: true,
-        onFinish: () => { deleting.value = false; deleteTarget.value = null; },
+        onFinish: () => {
+            deleting.value = false;
+            deleteTarget.value = null;
+        },
     });
 }
 </script>
@@ -155,14 +172,25 @@ function confirmDelete() {
                             <td class="px-4 py-3">{{ vendor.phone ?? '—' }}</td>
                             <td class="px-4 py-3">{{ vendor.city ?? '—' }}</td>
                             <td class="px-4 py-3">
-                                <span class="inline-flex rounded-full px-2 py-0.5 text-xs font-medium" :class="vendor.is_active ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400' : 'bg-brand-red/15 text-brand-red'">
+                                <span
+                                    class="inline-flex rounded-full px-2 py-0.5 text-xs font-medium"
+                                    :class="
+                                        vendor.is_active
+                                            ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400'
+                                            : 'bg-brand-red/15 text-brand-red'
+                                    "
+                                >
                                     {{ vendor.is_active ? 'Active' : 'Inactive' }}
                                 </span>
                             </td>
                             <td class="px-4 py-3">
                                 <div class="flex justify-end gap-1">
-                                    <Button v-if="can.update" variant="ghost" size="icon" aria-label="Edit vendor" @click="openEdit(vendor)"><Pencil class="size-4" /></Button>
-                                    <Button v-if="can.delete" variant="ghost" size="icon" aria-label="Delete vendor" @click="deleteTarget = vendor"><Trash2 class="size-4 text-destructive" /></Button>
+                                    <Button v-if="can.update" variant="ghost" size="icon" aria-label="Edit vendor" @click="openEdit(vendor)"
+                                        ><Pencil class="size-4"
+                                    /></Button>
+                                    <Button v-if="can.delete" variant="ghost" size="icon" aria-label="Delete vendor" @click="deleteTarget = vendor"
+                                        ><Trash2 class="size-4 text-destructive"
+                                    /></Button>
                                 </div>
                             </td>
                         </tr>
@@ -175,7 +203,9 @@ function confirmDelete() {
 
         <Dialog v-model:open="dialogOpen">
             <DialogContent class="max-h-[90vh] overflow-y-auto sm:max-w-lg">
-                <DialogHeader><DialogTitle>{{ editing ? 'Edit Vendor' : 'New Vendor' }}</DialogTitle></DialogHeader>
+                <DialogHeader
+                    ><DialogTitle>{{ editing ? 'Edit Vendor' : 'New Vendor' }}</DialogTitle></DialogHeader
+                >
                 <form class="grid gap-4" @submit.prevent="submit">
                     <div class="grid grid-cols-2 gap-4">
                         <div class="grid gap-2">
@@ -185,13 +215,19 @@ function confirmDelete() {
                         </div>
                         <div class="grid gap-2">
                             <Label for="v-type">Type *</Label>
-                            <select id="v-type" v-model="form.type" class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-sm">
+                            <select
+                                id="v-type"
+                                v-model="form.type"
+                                class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-sm"
+                            >
                                 <option v-for="t in types" :key="t.value" :value="t.value">{{ t.label }}</option>
                             </select>
                         </div>
                     </div>
                     <div class="grid grid-cols-2 gap-4">
-                        <div class="grid gap-2"><Label for="v-contact">Contact Person</Label><Input id="v-contact" v-model="form.contact_person" /></div>
+                        <div class="grid gap-2">
+                            <Label for="v-contact">Contact Person</Label><Input id="v-contact" v-model="form.contact_person" />
+                        </div>
                         <div class="grid gap-2"><Label for="v-phone">Phone</Label><Input id="v-phone" v-model="form.phone" maxlength="20" /></div>
                     </div>
                     <div class="grid grid-cols-2 gap-4">
@@ -199,10 +235,16 @@ function confirmDelete() {
                         <div class="grid gap-2"><Label for="v-city">City</Label><Input id="v-city" v-model="form.city" /></div>
                     </div>
                     <div class="grid grid-cols-2 gap-4">
-                        <div class="grid gap-2"><Label for="v-gst">GST Number</Label><Input id="v-gst" v-model="form.gst_number" maxlength="20" /></div>
+                        <div class="grid gap-2">
+                            <Label for="v-gst">GST Number</Label><Input id="v-gst" v-model="form.gst_number" maxlength="20" />
+                        </div>
                         <div class="grid gap-2">
                             <Label for="v-branch">Branch</Label>
-                            <select id="v-branch" v-model="form.branch_id" class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-sm">
+                            <select
+                                id="v-branch"
+                                v-model="form.branch_id"
+                                class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-sm"
+                            >
                                 <option :value="null">All branches</option>
                                 <option v-for="b in branches" :key="b.id" :value="b.id">{{ b.name }}</option>
                             </select>

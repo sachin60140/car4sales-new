@@ -24,12 +24,16 @@ const levelDot: Record<string, string> = {
 };
 
 function open(n: AppNotification) {
-    router.post(`/admin/notifications/${n.id}/read`, {}, {
-        preserveScroll: true,
-        onSuccess: () => {
-            if (n.action_url) router.visit(n.action_url);
+    router.post(
+        `/admin/notifications/${n.id}/read`,
+        {},
+        {
+            preserveScroll: true,
+            onSuccess: () => {
+                if (n.action_url) router.visit(n.action_url);
+            },
         },
-    });
+    );
 }
 
 function markAllRead() {
@@ -57,7 +61,8 @@ function timeAgo(iso: string): string {
             <span
                 v-if="unread > 0"
                 class="absolute -right-0.5 -top-0.5 flex min-w-[18px] items-center justify-center rounded-full bg-brand-red px-1 text-[10px] font-bold leading-4 text-white"
-            >{{ unread > 99 ? '99+' : unread }}</span>
+                >{{ unread > 99 ? '99+' : unread }}</span
+            >
         </DropdownMenuTrigger>
 
         <DropdownMenuContent align="end" class="w-80">
@@ -67,9 +72,7 @@ function timeAgo(iso: string): string {
             </div>
             <DropdownMenuSeparator />
 
-            <div v-if="recent.length === 0" class="px-3 py-6 text-center text-sm text-muted-foreground">
-                You're all caught up.
-            </div>
+            <div v-if="recent.length === 0" class="px-3 py-6 text-center text-sm text-muted-foreground">You're all caught up.</div>
 
             <template v-else>
                 <DropdownMenuItem

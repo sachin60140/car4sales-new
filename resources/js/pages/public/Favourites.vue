@@ -23,7 +23,9 @@ defineProps<{ vehicles: VehicleCardData[] }>();
             <div v-else class="mt-6 rounded-xl border bg-white py-16 text-center">
                 <Heart class="mx-auto size-12 text-neutral-300" />
                 <p class="mt-3 text-neutral-500">You haven't saved any cars yet.</p>
-                <Link href="/cars" class="mt-4 inline-block rounded-lg bg-brand-maroon px-5 py-2.5 text-sm font-semibold text-white">Browse Cars</Link>
+                <Link href="/cars" class="mt-4 inline-block rounded-lg bg-brand-maroon px-5 py-2.5 text-sm font-semibold text-white"
+                    >Browse Cars</Link
+                >
             </div>
         </div>
     </PublicLayout>

@@ -42,7 +42,12 @@ const jsonLd = computed(() => ({
     fuelType: props.vehicle.fuel_type,
     mileageFromOdometer: props.vehicle.odometer_km ? { '@type': 'QuantitativeValue', value: props.vehicle.odometer_km, unitCode: 'KMT' } : undefined,
     offers: props.vehicle.asking_price
-        ? { '@type': 'Offer', price: props.vehicle.asking_price, priceCurrency: 'INR', availability: props.vehicle.availability === 'available' ? 'https://schema.org/InStock' : 'https://schema.org/LimitedAvailability' }
+        ? {
+              '@type': 'Offer',
+              price: props.vehicle.asking_price,
+              priceCurrency: 'INR',
+              availability: props.vehicle.availability === 'available' ? 'https://schema.org/InStock' : 'https://schema.org/LimitedAvailability',
+          }
         : undefined,
 }));
 </script>
@@ -59,8 +64,8 @@ const jsonLd = computed(() => ({
         <div class="mx-auto max-w-7xl px-4 py-6">
             <!-- Breadcrumb -->
             <nav class="mb-4 flex items-center gap-1 text-xs text-neutral-500">
-                <Link href="/" class="hover:text-brand-maroon">Home</Link><span>/</span>
-                <Link href="/cars" class="hover:text-brand-maroon">Cars</Link><span>/</span>
+                <Link href="/" class="hover:text-brand-maroon">Home</Link><span>/</span> <Link href="/cars" class="hover:text-brand-maroon">Cars</Link
+                ><span>/</span>
                 <span class="text-neutral-800">{{ vehicle.title }}</span>
             </nav>
 
@@ -69,7 +74,12 @@ const jsonLd = computed(() => ({
                 <div class="lg:col-span-2">
                     <div class="overflow-hidden rounded-xl border bg-white">
                         <div class="aspect-[16/10] bg-neutral-100">
-                            <img v-if="vehicle.gallery.length" :src="vehicle.gallery[activeImage]?.url" :alt="vehicle.title" class="size-full object-cover" />
+                            <img
+                                v-if="vehicle.gallery.length"
+                                :src="vehicle.gallery[activeImage]?.url"
+                                :alt="vehicle.title"
+                                class="size-full object-cover"
+                            />
                             <div v-else class="flex size-full flex-col items-center justify-center text-neutral-300">
                                 <Car class="size-24" /><span class="mt-2 text-sm">No photos available</span>
                             </div>
@@ -122,20 +132,36 @@ const jsonLd = computed(() => ({
                         <span
                             class="mt-2 inline-flex rounded-full px-2 py-0.5 text-xs font-medium"
                             :class="vehicle.availability === 'available' ? 'bg-green-100 text-green-700' : 'bg-brand-red/15 text-brand-red'"
-                        >{{ vehicle.availability === 'available' ? 'Available' : 'Reserved' }}</span>
+                            >{{ vehicle.availability === 'available' ? 'Available' : 'Reserved' }}</span
+                        >
 
                         <div v-if="financeEstimate" class="mt-4 rounded-lg bg-brand-yellow/10 p-3 text-sm">
                             <p class="text-neutral-600">EMI starts at</p>
                             <p class="text-lg font-bold text-brand-maroon">{{ money(financeEstimate.emi) }}/mo</p>
-                            <p class="text-xs text-neutral-500">{{ financeEstimate.tenure_months }} months @ {{ financeEstimate.interest_rate }}% · <Link href="/finance" class="underline">Calculate</Link></p>
+                            <p class="text-xs text-neutral-500">
+                                {{ financeEstimate.tenure_months }} months @ {{ financeEstimate.interest_rate }}% ·
+                                <Link href="/finance" class="underline">Calculate</Link>
+                            </p>
                         </div>
                     </div>
 
                     <div class="rounded-xl border bg-white p-5 shadow-sm">
-                        <EnquiryForm type="vehicle" :vehicle-id="vehicle.id" heading="Interested? Enquire now" submit-label="Send Enquiry" purpose="enquiry" />
+                        <EnquiryForm
+                            type="vehicle"
+                            :vehicle-id="vehicle.id"
+                            heading="Interested? Enquire now"
+                            submit-label="Send Enquiry"
+                            purpose="enquiry"
+                        />
                     </div>
                     <div class="rounded-xl border bg-white p-5 shadow-sm">
-                        <EnquiryForm type="test_drive" :vehicle-id="vehicle.id" heading="Book a Test Drive" submit-label="Request Test Drive" purpose="enquiry" />
+                        <EnquiryForm
+                            type="test_drive"
+                            :vehicle-id="vehicle.id"
+                            heading="Book a Test Drive"
+                            submit-label="Request Test Drive"
+                            purpose="enquiry"
+                        />
                     </div>
                 </div>
             </div>

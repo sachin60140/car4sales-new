@@ -73,13 +73,24 @@ const kycStyle: Record<string, string> = {
                         <tr v-if="customers.data.length === 0">
                             <td colspan="6" class="px-4 py-10 text-center text-muted-foreground">No customers yet.</td>
                         </tr>
-                        <tr v-for="c in customers.data" :key="c.id" class="cursor-pointer border-b last:border-0 hover:bg-muted/30" @click="router.get(`/admin/customers/${c.id}`)">
+                        <tr
+                            v-for="c in customers.data"
+                            :key="c.id"
+                            class="cursor-pointer border-b last:border-0 hover:bg-muted/30"
+                            @click="router.get(`/admin/customers/${c.id}`)"
+                        >
                             <td class="px-4 py-3 font-mono text-xs">{{ c.customer_code }}</td>
                             <td class="px-4 py-3 font-medium">{{ c.name }}</td>
                             <td class="px-4 py-3">{{ c.mobile }}</td>
                             <td class="px-4 py-3">{{ c.city ?? '—' }}</td>
                             <td class="px-4 py-3">{{ c.sales_leads_count }}</td>
-                            <td class="px-4 py-3"><span class="inline-flex rounded-full px-2 py-0.5 text-xs font-medium capitalize" :class="kycStyle[c.kyc_status] ?? 'bg-muted'">{{ c.kyc_status }}</span></td>
+                            <td class="px-4 py-3">
+                                <span
+                                    class="inline-flex rounded-full px-2 py-0.5 text-xs font-medium capitalize"
+                                    :class="kycStyle[c.kyc_status] ?? 'bg-muted'"
+                                    >{{ c.kyc_status }}</span
+                                >
+                            </td>
                         </tr>
                     </tbody>
                 </table>

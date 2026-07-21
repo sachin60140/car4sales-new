@@ -7,10 +7,14 @@ import { Label } from '@/components/ui/label';
 import AppLayout from '@/layouts/AppLayout.vue';
 import type { BreadcrumbItem } from '@/types';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
-import { CheckCircle2, XCircle, RefreshCw } from 'lucide-vue-next';
+import { CheckCircle2, RefreshCw, XCircle } from 'lucide-vue-next';
 import { computed } from 'vue';
 
-interface ChecklistField { key: string; label: string; auto: boolean }
+interface ChecklistField {
+    key: string;
+    label: string;
+    auto: boolean;
+}
 
 const props = defineProps<{
     delivery: Record<string, any>;
@@ -33,9 +37,7 @@ const isDelivered = computed(() => d.value.status === 'delivered');
 const manualFields = computed(() => props.checklistFields.filter((f) => !f.auto));
 
 // Manual checklist toggles.
-const checksForm = useForm<Record<string, boolean>>(
-    Object.fromEntries(manualFields.value.map((f) => [f.key, !!d.value[f.key]])),
-);
+const checksForm = useForm<Record<string, boolean>>(Object.fromEntries(manualFields.value.map((f) => [f.key, !!d.value[f.key]])));
 function saveChecks() {
     checksForm.post(`/admin/deliveries/${d.value.id}/checks`, { preserveScroll: true });
 }
@@ -98,11 +100,17 @@ const statusStyle: Record<string, string> = {
                 <div>
                     <div class="flex items-center gap-3">
                         <h1 class="text-xl font-semibold">{{ delivery.delivery_number }}</h1>
-                        <span class="inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium" :class="statusStyle[delivery.status] ?? 'bg-muted text-muted-foreground'">{{ delivery.status_label }}</span>
+                        <span
+                            class="inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium"
+                            :class="statusStyle[delivery.status] ?? 'bg-muted text-muted-foreground'"
+                            >{{ delivery.status_label }}</span
+                        >
                     </div>
                     <p class="mt-1 text-sm text-muted-foreground">
                         {{ delivery.customer?.name }} · {{ delivery.customer?.mobile }} ·
-                        <Link v-if="delivery.booking" :href="`/admin/bookings/${delivery.booking.id}`" class="underline">{{ delivery.booking.booking_number }}</Link>
+                        <Link v-if="delivery.booking" :href="`/admin/bookings/${delivery.booking.id}`" class="underline">{{
+                            delivery.booking.booking_number
+                        }}</Link>
                     </p>
                 </div>
                 <div class="flex items-center gap-2">
@@ -137,16 +145,26 @@ const statusStyle: Record<string, string> = {
                                 <p class="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">Manual verification</p>
                                 <div class="grid gap-2 sm:grid-cols-2">
                                     <label v-for="f in manualFields" :key="f.key" class="flex items-center gap-2 text-sm">
-                                        <Checkbox :model-value="checksForm[f.key]" :disabled="!can.update || isDelivered" @update:model-value="checksForm[f.key] = $event === true" />
+                                        <Checkbox
+                                            :model-value="checksForm[f.key]"
+                                            :disabled="!can.update || isDelivered"
+                                            @update:model-value="checksForm[f.key] = $event === true"
+                                        />
                                         <span>{{ f.label }}</span>
                                     </label>
                                 </div>
-                                <Button v-if="can.update && !isDelivered" size="sm" class="mt-3" :disabled="checksForm.processing" @click="saveChecks">Save checklist</Button>
+                                <Button v-if="can.update && !isDelivered" size="sm" class="mt-3" :disabled="checksForm.processing" @click="saveChecks"
+                                    >Save checklist</Button
+                                >
                             </div>
 
                             <div v-if="isPending && can.approve" class="rounded-lg border border-dashed p-3">
                                 <p class="mb-2 text-sm" :class="delivery.checklist_complete ? 'text-emerald-600' : 'text-muted-foreground'">
-                                    {{ delivery.checklist_complete ? 'All items complete — ready to approve.' : 'Complete every checklist item to approve.' }}
+                                    {{
+                                        delivery.checklist_complete
+                                            ? 'All items complete — ready to approve.'
+                                            : 'Complete every checklist item to approve.'
+                                    }}
                                 </p>
                                 <Button size="sm" :disabled="!delivery.checklist_complete" @click="approve">Approve Delivery</Button>
                             </div>
@@ -171,7 +189,11 @@ const statusStyle: Record<string, string> = {
                                 <p class="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">Items handed over</p>
                                 <div class="grid gap-2 sm:grid-cols-2">
                                     <label v-for="item in handoverItems" :key="item.key" class="flex items-center gap-2 text-sm">
-                                        <Checkbox :model-value="handoverForm[item.key]" :disabled="isDelivered" @update:model-value="handoverForm[item.key] = $event === true" />
+                                        <Checkbox
+                                            :model-value="handoverForm[item.key]"
+                                            :disabled="isDelivered"
+                                            @update:model-value="handoverForm[item.key] = $event === true"
+                                        />
                                         <span>{{ item.label }}</span>
                                     </label>
                                 </div>
@@ -180,8 +202,12 @@ const statusStyle: Record<string, string> = {
                                 <Label class="text-xs">Remarks</Label>
                                 <Input v-model="handoverForm.remarks" class="h-9" :disabled="isDelivered" />
                             </div>
-                            <Button v-if="isApproved && can.update" :disabled="handoverForm.processing" @click="completeHandover">Complete Handover</Button>
-                            <p v-if="isDelivered" class="text-sm text-emerald-600">Vehicle delivered on {{ new Date(delivery.delivered_at).toLocaleString() }}.</p>
+                            <Button v-if="isApproved && can.update" :disabled="handoverForm.processing" @click="completeHandover"
+                                >Complete Handover</Button
+                            >
+                            <p v-if="isDelivered" class="text-sm text-emerald-600">
+                                Vehicle delivered on {{ new Date(delivery.delivered_at).toLocaleString() }}.
+                            </p>
                         </CardContent>
                     </Card>
                 </div>
@@ -209,7 +235,8 @@ const statusStyle: Record<string, string> = {
                     <Card>
                         <CardHeader><CardTitle class="text-base">Deal</CardTitle></CardHeader>
                         <CardContent class="grid grid-cols-2 gap-y-2 text-sm">
-                            <span class="text-muted-foreground">Payment Mode</span><span class="capitalize">{{ delivery.booking?.payment_mode ?? '—' }}</span>
+                            <span class="text-muted-foreground">Payment Mode</span
+                            ><span class="capitalize">{{ delivery.booking?.payment_mode ?? '—' }}</span>
                             <span class="text-muted-foreground">Branch</span><span>{{ delivery.branch?.name ?? '—' }}</span>
                             <span class="text-muted-foreground">Approved by</span><span>{{ delivery.approver?.name ?? '—' }}</span>
                         </CardContent>

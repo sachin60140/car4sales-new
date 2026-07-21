@@ -80,7 +80,10 @@ const eventStyles: Record<string, string> = {
                                 <div class="text-xs text-muted-foreground">{{ entry.user?.email ?? entry.email ?? '' }}</div>
                             </td>
                             <td class="px-4 py-3">
-                                <span class="inline-flex rounded-full px-2 py-0.5 text-xs font-medium capitalize" :class="eventStyles[entry.event] ?? 'bg-muted'">
+                                <span
+                                    class="inline-flex rounded-full px-2 py-0.5 text-xs font-medium capitalize"
+                                    :class="eventStyles[entry.event] ?? 'bg-muted'"
+                                >
                                     {{ entry.event.replace('_', ' ') }}
                                 </span>
                             </td>

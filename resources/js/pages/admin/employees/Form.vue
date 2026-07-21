@@ -63,9 +63,7 @@ const form = useForm({
 
 const availableTeams = computed(() =>
     props.teams.filter(
-        (team) =>
-            (!form.branch_id || team.branch_id === form.branch_id) &&
-            (!form.department_id || team.department_id === form.department_id),
+        (team) => (!form.branch_id || team.branch_id === form.branch_id) && (!form.department_id || team.department_id === form.department_id),
     ),
 );
 
@@ -261,9 +259,8 @@ function submit() {
                     </CardHeader>
                     <CardContent class="grid gap-4">
                         <p class="text-sm text-muted-foreground">
-                            Grant individual actions to this employee on top of their roles. Actions already covered by a
-                            role are shown ticked and locked <span class="text-xs">(· role)</span>. Options you cannot grant
-                            yourself appear disabled.
+                            Grant individual actions to this employee on top of their roles. Actions already covered by a role are shown ticked and
+                            locked <span class="text-xs">(· role)</span>. Options you cannot grant yourself appear disabled.
                         </p>
                         <InputError :message="form.errors.permissions" />
 
@@ -274,7 +271,10 @@ function submit() {
                                     v-for="action in actions"
                                     :key="action"
                                     class="flex items-center gap-2 text-sm"
-                                    :class="{ 'opacity-50': isDisabled(permName(module as string, action)) && !isCovered(permName(module as string, action)) }"
+                                    :class="{
+                                        'opacity-50':
+                                            isDisabled(permName(module as string, action)) && !isCovered(permName(module as string, action)),
+                                    }"
                                 >
                                     <Checkbox
                                         :model-value="isChecked(permName(module as string, action))"
@@ -283,7 +283,9 @@ function submit() {
                                     />
                                     <span>
                                         {{ action.replace(/-/g, ' ') }}
-                                        <span v-if="isCovered(permName(module as string, action))" class="text-[10px] text-muted-foreground">· role</span>
+                                        <span v-if="isCovered(permName(module as string, action))" class="text-[10px] text-muted-foreground"
+                                            >· role</span
+                                        >
                                     </span>
                                 </label>
                             </div>

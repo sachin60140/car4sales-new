@@ -30,7 +30,13 @@ function money(v: string | number | null): string {
 const base = computed(() => `/admin/rto-cases/${c.value.id}`);
 
 // Status transition.
-const transitionForm = useForm({ status: '', application_number: c.value.application_number ?? '', expected_completion: c.value.expected_completion ?? '', to_rto: c.value.to_rto ?? '', remarks: '' });
+const transitionForm = useForm({
+    status: '',
+    application_number: c.value.application_number ?? '',
+    expected_completion: c.value.expected_completion ?? '',
+    to_rto: c.value.to_rto ?? '',
+    remarks: '',
+});
 function applyTransition() {
     if (!transitionForm.status) return;
     transitionForm.post(`${base.value}/transition`, { preserveScroll: true, onSuccess: () => transitionForm.reset('status', 'remarks') });
@@ -94,22 +100,47 @@ function uploadRc() {
                 <div>
                     <div class="flex items-center gap-3">
                         <h1 class="text-xl font-semibold">{{ c.rto_number }}</h1>
-                        <span class="rounded-full bg-brand-yellow/20 px-2.5 py-0.5 text-xs font-medium capitalize text-brand-maroon dark:text-brand-yellow">{{ c.status_label }}</span>
+                        <span
+                            class="rounded-full bg-brand-yellow/20 px-2.5 py-0.5 text-xs font-medium capitalize text-brand-maroon dark:text-brand-yellow"
+                            >{{ c.status_label }}</span
+                        >
                     </div>
                     <p class="mt-1 text-sm text-muted-foreground">
-                        {{ c.vehicle?.make }} {{ c.vehicle?.model }} · {{ c.vehicle?.registration_number ?? c.vehicle?.stock_number }} ·
-                        Buyer: {{ c.buyer?.name ?? '—' }}
-                        <template v-if="c.delivery"> · <Link :href="`/admin/deliveries/${c.delivery.id}`" class="underline">{{ c.delivery.delivery_number }}</Link></template>
+                        {{ c.vehicle?.make }} {{ c.vehicle?.model }} · {{ c.vehicle?.registration_number ?? c.vehicle?.stock_number }} · Buyer:
+                        {{ c.buyer?.name ?? '—' }}
+                        <template v-if="c.delivery">
+                            · <Link :href="`/admin/deliveries/${c.delivery.id}`" class="underline">{{ c.delivery.delivery_number }}</Link></template
+                        >
                     </p>
                 </div>
                 <Button variant="outline" as-child><Link href="/admin/rto-cases">Back</Link></Button>
             </div>
 
             <div class="grid grid-cols-2 gap-3 md:grid-cols-4">
-                <Card><CardContent class="p-4"><p class="text-xs text-muted-foreground">From RTO</p><p class="text-lg font-bold">{{ c.from_rto ?? '—' }}</p></CardContent></Card>
-                <Card><CardContent class="p-4"><p class="text-xs text-muted-foreground">To RTO</p><p class="text-lg font-bold">{{ c.to_rto ?? '—' }}</p></CardContent></Card>
-                <Card><CardContent class="p-4"><p class="text-xs text-muted-foreground">Expenses</p><p class="text-lg font-bold">{{ money(c.total_expenses) }}</p></CardContent></Card>
-                <Card><CardContent class="p-4"><p class="text-xs text-muted-foreground">On Hold</p><p class="text-lg font-bold text-brand-red">{{ money(c.hold_amount) }}</p></CardContent></Card>
+                <Card
+                    ><CardContent class="p-4"
+                        ><p class="text-xs text-muted-foreground">From RTO</p>
+                        <p class="text-lg font-bold">{{ c.from_rto ?? '—' }}</p></CardContent
+                    ></Card
+                >
+                <Card
+                    ><CardContent class="p-4"
+                        ><p class="text-xs text-muted-foreground">To RTO</p>
+                        <p class="text-lg font-bold">{{ c.to_rto ?? '—' }}</p></CardContent
+                    ></Card
+                >
+                <Card
+                    ><CardContent class="p-4"
+                        ><p class="text-xs text-muted-foreground">Expenses</p>
+                        <p class="text-lg font-bold">{{ money(c.total_expenses) }}</p></CardContent
+                    ></Card
+                >
+                <Card
+                    ><CardContent class="p-4"
+                        ><p class="text-xs text-muted-foreground">On Hold</p>
+                        <p class="text-lg font-bold text-brand-red">{{ money(c.hold_amount) }}</p></CardContent
+                    ></Card
+                >
             </div>
 
             <div class="grid gap-4 lg:grid-cols-3">
@@ -121,15 +152,25 @@ function uploadRc() {
                             <div v-if="c.movements.length === 0" class="text-sm text-muted-foreground">No document movements recorded.</div>
                             <ul v-else class="divide-y text-sm">
                                 <li v-for="m in c.movements" :key="m.id" class="flex items-center justify-between py-2">
-                                    <span><span class="font-medium">{{ m.document }}</span> <span class="text-muted-foreground">{{ m.from_holder ?? '—' }} → {{ m.to_holder }}</span></span>
-                                    <span class="text-xs text-muted-foreground">{{ m.mover?.name }} · {{ m.moved_at ? new Date(m.moved_at).toLocaleDateString() : '' }}</span>
+                                    <span
+                                        ><span class="font-medium">{{ m.document }}</span>
+                                        <span class="text-muted-foreground">{{ m.from_holder ?? '—' }} → {{ m.to_holder }}</span></span
+                                    >
+                                    <span class="text-xs text-muted-foreground"
+                                        >{{ m.mover?.name }} · {{ m.moved_at ? new Date(m.moved_at).toLocaleDateString() : '' }}</span
+                                    >
                                 </li>
                             </ul>
                             <div v-if="can.update" class="grid gap-2 sm:grid-cols-4">
                                 <Input v-model="movementForm.document" placeholder="Document" class="h-9" />
                                 <Input v-model="movementForm.from_holder" placeholder="From (opt.)" class="h-9" />
                                 <Input v-model="movementForm.to_holder" placeholder="To holder" class="h-9" />
-                                <Button size="sm" :disabled="!movementForm.document || !movementForm.to_holder || movementForm.processing" @click="addMovement">Record</Button>
+                                <Button
+                                    size="sm"
+                                    :disabled="!movementForm.document || !movementForm.to_holder || movementForm.processing"
+                                    @click="addMovement"
+                                    >Record</Button
+                                >
                             </div>
                         </CardContent>
                     </Card>
@@ -141,7 +182,10 @@ function uploadRc() {
                             <div v-if="c.expenses.length === 0" class="text-sm text-muted-foreground">No expenses recorded.</div>
                             <ul v-else class="divide-y text-sm">
                                 <li v-for="e in c.expenses" :key="e.id" class="flex items-center justify-between py-2">
-                                    <span class="capitalize">{{ e.head.replace(/_/g, ' ') }}<span v-if="e.reference" class="text-muted-foreground"> · {{ e.reference }}</span></span>
+                                    <span class="capitalize"
+                                        >{{ e.head.replace(/_/g, ' ')
+                                        }}<span v-if="e.reference" class="text-muted-foreground"> · {{ e.reference }}</span></span
+                                    >
                                     <span class="font-medium">{{ money(e.amount) }}</span>
                                 </li>
                             </ul>
@@ -165,15 +209,27 @@ function uploadRc() {
                                 <li v-for="h in c.holds" :key="h.id" class="flex items-center justify-between py-2">
                                     <span>
                                         <span class="font-medium">{{ money(h.amount) }}</span> — {{ h.reason }}
-                                        <span class="ml-1 rounded-full px-1.5 py-0.5 text-xs" :class="h.status === 'held' ? 'bg-brand-orange/15 text-brand-orange' : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400'">{{ h.status }}</span>
+                                        <span
+                                            class="ml-1 rounded-full px-1.5 py-0.5 text-xs"
+                                            :class="
+                                                h.status === 'held'
+                                                    ? 'bg-brand-orange/15 text-brand-orange'
+                                                    : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400'
+                                            "
+                                            >{{ h.status }}</span
+                                        >
                                     </span>
-                                    <Button v-if="h.status === 'held' && can.update" size="sm" variant="ghost" @click="releaseHold(h.id)">Release</Button>
+                                    <Button v-if="h.status === 'held' && can.update" size="sm" variant="ghost" @click="releaseHold(h.id)"
+                                        >Release</Button
+                                    >
                                 </li>
                             </ul>
                             <div v-if="can.update" class="grid gap-2 sm:grid-cols-3">
                                 <Input v-model.number="holdForm.amount" type="number" placeholder="Amount" class="h-9" />
                                 <Input v-model="holdForm.reason" placeholder="Reason" class="h-9" />
-                                <Button size="sm" :disabled="!holdForm.amount || !holdForm.reason || holdForm.processing" @click="addHold">Place Hold</Button>
+                                <Button size="sm" :disabled="!holdForm.amount || !holdForm.reason || holdForm.processing" @click="addHold"
+                                    >Place Hold</Button
+                                >
                             </div>
                         </CardContent>
                     </Card>
@@ -184,8 +240,14 @@ function uploadRc() {
                         <CardContent>
                             <ol class="space-y-2 text-sm">
                                 <li v-for="h in c.histories" :key="h.id" class="flex items-center justify-between border-b pb-2 last:border-0">
-                                    <span class="capitalize">{{ (h.to_status ?? '').replace(/_/g, ' ') }}<span v-if="h.remarks" class="text-muted-foreground"> — {{ h.remarks }}</span></span>
-                                    <span class="text-xs text-muted-foreground">{{ h.changed_by?.name ?? 'System' }} · {{ h.created_at ? new Date(h.created_at).toLocaleDateString() : '' }}</span>
+                                    <span class="capitalize"
+                                        >{{ (h.to_status ?? '').replace(/_/g, ' ')
+                                        }}<span v-if="h.remarks" class="text-muted-foreground"> — {{ h.remarks }}</span></span
+                                    >
+                                    <span class="text-xs text-muted-foreground"
+                                        >{{ h.changed_by?.name ?? 'System' }} ·
+                                        {{ h.created_at ? new Date(h.created_at).toLocaleDateString() : '' }}</span
+                                    >
                                 </li>
                             </ol>
                         </CardContent>
@@ -203,7 +265,10 @@ function uploadRc() {
                             </select>
                             <Input v-model="transitionForm.application_number" placeholder="Application # (opt.)" class="h-9" />
                             <Input v-model="transitionForm.to_rto" placeholder="Destination RTO (opt.)" class="h-9" />
-                            <div class="grid gap-1"><Label class="text-xs">Expected completion</Label><Input v-model="transitionForm.expected_completion" type="date" class="h-9" /></div>
+                            <div class="grid gap-1">
+                                <Label class="text-xs">Expected completion</Label
+                                ><Input v-model="transitionForm.expected_completion" type="date" class="h-9" />
+                            </div>
                             <Input v-model="transitionForm.remarks" placeholder="Remarks (opt.)" class="h-9" />
                             <Button size="sm" :disabled="!transitionForm.status || transitionForm.processing" @click="applyTransition">Apply</Button>
                         </CardContent>
@@ -214,14 +279,20 @@ function uploadRc() {
                         <CardContent class="grid gap-2">
                             <div class="grid gap-1">
                                 <Label class="text-xs">RTO Executive</Label>
-                                <select v-model="assignForm.assigned_to" class="h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-sm">
+                                <select
+                                    v-model="assignForm.assigned_to"
+                                    class="h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-sm"
+                                >
                                     <option :value="null">Unassigned</option>
                                     <option v-for="u in executives" :key="u.id" :value="u.id">{{ u.name }}</option>
                                 </select>
                             </div>
                             <div class="grid gap-1">
                                 <Label class="text-xs">Agent / Vendor</Label>
-                                <select v-model="assignForm.agent_vendor_id" class="h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-sm">
+                                <select
+                                    v-model="assignForm.agent_vendor_id"
+                                    class="h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-sm"
+                                >
                                     <option :value="null">None</option>
                                     <option v-for="a in agents" :key="a.id" :value="a.id">{{ a.name }}</option>
                                 </select>

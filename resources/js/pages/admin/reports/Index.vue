@@ -59,7 +59,9 @@ function openReport(key: string) {
                         @click="openReport(r.key)"
                     >
                         <CardContent class="flex items-start gap-3 p-4">
-                            <div class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-brand-yellow/20 text-brand-maroon dark:text-brand-yellow">
+                            <div
+                                class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-brand-yellow/20 text-brand-maroon dark:text-brand-yellow"
+                            >
                                 <BarChart3 class="size-5" />
                             </div>
                             <div class="min-w-0 flex-1">

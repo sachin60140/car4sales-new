@@ -15,13 +15,16 @@ jobs:
     runs-on: ubuntu-latest
 
     # The suite runs on MySQL/MariaDB (phpunit.xml pins the `mariadb` connection
-    # + the car4sales_new_test database) — provide a matching service.
+    # + the car4sales_new_test database) — provide a matching service. A dedicated
+    # user is granted %-host access to the database (root is localhost-only).
     services:
       mariadb:
         image: mariadb:10.11
         env:
           MARIADB_ROOT_PASSWORD: root
           MARIADB_DATABASE: car4sales_new_test
+          MARIADB_USER: car4sales
+          MARIADB_PASSWORD: secret
         ports:
           - 3306:3306
         options: >-
@@ -29,6 +32,14 @@ jobs:
           --health-interval=10s
           --health-timeout=5s
           --health-retries=15
+
+    env:
+      DB_CONNECTION: mariadb
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
+      DB_DATABASE: car4sales_new_test
+      DB_USERNAME: car4sales
+      DB_PASSWORD: secret
 
     steps:
       - name: Checkout
@@ -60,15 +71,12 @@ jobs:
       - name: Generate Application Key
         run: php artisan key:generate
 
+      - name: Wait for database
+        run: |
+          php -r '$t=time()+60; while(time()<$t){ try{ new PDO("mysql:host=127.0.0.1;port=3306;dbname=car4sales_new_test","car4sales","secret"); echo "Database ready\n"; exit(0);}catch(Throwable $e){ echo "Waiting for database...\n"; sleep(2);} } fwrite(STDERR, "Database never became ready\n"); exit(1);'
+
       - name: Build Assets
         run: npm run build
 
       - name: Run Tests
-        env:
-          DB_CONNECTION: mariadb
-          DB_HOST: 127.0.0.1
-          DB_PORT: 3306
-          DB_DATABASE: car4sales_new_test
-          DB_USERNAME: root
-          DB_PASSWORD: root
         run: php artisan test

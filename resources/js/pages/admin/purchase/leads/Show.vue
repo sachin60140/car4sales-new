@@ -9,7 +9,10 @@ import type { BreadcrumbItem } from '@/types';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 
-interface StatusOption { value: string; label: string }
+interface StatusOption {
+    value: string;
+    label: string;
+}
 
 const props = defineProps<{
     lead: Record<string, any>;
@@ -24,9 +27,11 @@ const props = defineProps<{
 // only exists once approved). Drive the whole Approval tab from this.
 const approval_request = computed(() => props.approvalRequest);
 const hasPendingApproval = computed(() => approval_request.value?.status === 'pending');
-const canRequestApproval = computed(
-    () => props.can.requestApproval && (!approval_request.value || approval_request.value.status === 'rejected'),
-);
+const pendingApproverName = computed<string>(() => {
+    const step = approval_request.value?.steps?.find((s: Record<string, unknown>) => s.status === 'pending');
+    return (step?.role as { name?: string } | undefined)?.name ?? 'the approver';
+});
+const canRequestApproval = computed(() => props.can.requestApproval && (!approval_request.value || approval_request.value.status === 'rejected'));
 
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Dashboard', href: '/dashboard' },
@@ -41,9 +46,7 @@ const documentStages = ['document_verification_pending', 'seller_kyc_pending'];
 const activeTab = ref(documentStages.includes(props.lead.status) ? 'Documents' : 'Overview');
 
 // Outstanding document/KYC work, surfaced as a badge on the Documents tab.
-const pendingVerifications = computed(
-    () => (props.lead.verifications ?? []).filter((v: Record<string, any>) => v.status === 'pending').length,
-);
+const pendingVerifications = computed(() => (props.lead.verifications ?? []).filter((v: Record<string, any>) => v.status === 'pending').length);
 const documentsDue = computed(() => documentStages.includes(props.lead.status));
 // Number of unverified items when we have them; otherwise a dot ('•') while the
 // lead sits at a KYC/verification stage. Empty string = no badge.
@@ -123,9 +126,14 @@ const valuation = useForm({
 });
 const liveRecommended = computed(() => {
     const expenses =
-        Number(valuation.repair_estimate) + Number(valuation.rto_expense) + Number(valuation.documentation_expense) +
-        Number(valuation.transportation_expense) + Number(valuation.insurance_expense) + Number(valuation.brokerage) +
-        Number(valuation.holding_cost) + Number(valuation.other_costs);
+        Number(valuation.repair_estimate) +
+        Number(valuation.rto_expense) +
+        Number(valuation.documentation_expense) +
+        Number(valuation.transportation_expense) +
+        Number(valuation.insurance_expense) +
+        Number(valuation.brokerage) +
+        Number(valuation.holding_cost) +
+        Number(valuation.other_costs);
     return Number(valuation.expected_retail_price) - expenses - Number(valuation.target_profit);
 });
 function saveValuation() {
@@ -138,7 +146,7 @@ function requestApproval() {
     approval.post(`/admin/purchase-leads/${props.lead.id}/request-approval`, { preserveScroll: true });
 }
 function decide(approvalId: number, decision: 'approve' | 'reject') {
-    const remarks = decision === 'reject' ? prompt('Reason for rejection?') ?? '' : '';
+    const remarks = decision === 'reject' ? (prompt('Reason for rejection?') ?? '') : '';
     post(`/admin/approvals/${approvalId}/decide`, { decision, remarks });
 }
 
@@ -155,9 +163,21 @@ function approvePayment(id: number) {
     post(`/admin/seller-payments/${id}/approve`, {});
 }
 const possession = useForm({
-    vehicle_received: true, original_rc_received: false, insurance_received: false, puc_received: false,
-    noc_received: false, form_35_received: false, main_key: true, spare_key: false, service_book: false,
-    tool_kit: false, spare_wheel: false, accessories: false, odometer_km: null as number | null, fuel_level: '', remarks: '',
+    vehicle_received: true,
+    original_rc_received: false,
+    insurance_received: false,
+    puc_received: false,
+    noc_received: false,
+    form_35_received: false,
+    main_key: true,
+    spare_key: false,
+    service_book: false,
+    tool_kit: false,
+    spare_wheel: false,
+    accessories: false,
+    odometer_km: null as number | null,
+    fuel_level: '',
+    remarks: '',
 });
 function confirmPossession() {
     possession.post(`/admin/purchases/${purchase.value.id}/possession`, { preserveScroll: true });
@@ -177,7 +197,9 @@ const verificationStatuses = ['pending', 'received', 'verified', 'rejected', 'ex
                 <div>
                     <div class="flex items-center gap-3">
                         <h1 class="text-xl font-semibold">{{ lead.lead_number }}</h1>
-                        <span class="inline-flex rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-900/40 dark:text-blue-400">
+                        <span
+                            class="inline-flex rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-900/40 dark:text-blue-400"
+                        >
                             {{ statusLabel(lead.status) }}
                         </span>
                     </div>
@@ -225,8 +247,11 @@ const verificationStatuses = ['pending', 'received', 'verified', 'rejected', 'ex
                     <span
                         v-if="tab === 'Documents' && documentsBadge"
                         class="inline-flex min-w-[1.25rem] items-center justify-center rounded-full bg-brand-red px-1.5 text-xs font-semibold leading-5 text-white"
-                        :title="pendingVerifications > 0 ? `${pendingVerifications} document(s) pending verification` : 'Documents / seller KYC pending'"
-                    >{{ documentsBadge }}</span>
+                        :title="
+                            pendingVerifications > 0 ? `${pendingVerifications} document(s) pending verification` : 'Documents / seller KYC pending'
+                        "
+                        >{{ documentsBadge }}</span
+                    >
                 </button>
             </div>
 
@@ -240,7 +265,8 @@ const verificationStatuses = ['pending', 'received', 'verified', 'rejected', 'ex
                         <span class="text-muted-foreground">Branch</span><span>{{ lead.branch?.name ?? '—' }}</span>
                         <span class="text-muted-foreground">Expected Price</span><span>{{ money(lead.expected_price) }}</span>
                         <span class="text-muted-foreground">Odometer</span><span>{{ lead.odometer_km ? lead.odometer_km + ' km' : '—' }}</span>
-                        <span class="text-muted-foreground">Loan Status</span><span class="capitalize">{{ (lead.loan_status ?? '').replace('_', ' ') }}</span>
+                        <span class="text-muted-foreground">Loan Status</span
+                        ><span class="capitalize">{{ (lead.loan_status ?? '').replace('_', ' ') }}</span>
                     </CardContent>
                 </Card>
                 <Card>
@@ -249,7 +275,11 @@ const verificationStatuses = ['pending', 'received', 'verified', 'rejected', 'ex
                         <div class="flex items-end gap-2">
                             <div class="grid flex-1 gap-1">
                                 <Label class="text-xs">Assigned To</Label>
-                                <select v-model="assignForm.assigned_to" :disabled="!can.assign" class="h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-sm">
+                                <select
+                                    v-model="assignForm.assigned_to"
+                                    :disabled="!can.assign"
+                                    class="h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-sm"
+                                >
                                     <option :value="null">Unassigned</option>
                                     <option v-for="e in employees" :key="e.id" :value="e.id">{{ e.name }}</option>
                                 </select>
@@ -268,8 +298,13 @@ const verificationStatuses = ['pending', 'received', 'verified', 'rejected', 'ex
                     <CardContent>
                         <ol class="space-y-2 text-sm">
                             <li v-for="h in lead.status_histories" :key="h.id" class="flex items-center justify-between border-b pb-2 last:border-0">
-                                <span>{{ statusLabel(h.to_status) }}<span v-if="h.remarks" class="text-muted-foreground"> — {{ h.remarks }}</span></span>
-                                <span class="text-xs text-muted-foreground">{{ h.changer?.name ?? 'System' }} · {{ new Date(h.created_at).toLocaleString() }}</span>
+                                <span
+                                    >{{ statusLabel(h.to_status)
+                                    }}<span v-if="h.remarks" class="text-muted-foreground"> — {{ h.remarks }}</span></span
+                                >
+                                <span class="text-xs text-muted-foreground"
+                                    >{{ h.changer?.name ?? 'System' }} · {{ new Date(h.created_at).toLocaleString() }}</span
+                                >
                             </li>
                         </ol>
                     </CardContent>
@@ -284,7 +319,10 @@ const verificationStatuses = ['pending', 'received', 'verified', 'rejected', 'ex
                         <div class="grid gap-1">
                             <Label class="text-xs">Mode</Label>
                             <select v-model="followup.contact_mode" class="h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-sm">
-                                <option value="call">Call</option><option value="whatsapp">WhatsApp</option><option value="visit">Visit</option><option value="other">Other</option>
+                                <option value="call">Call</option>
+                                <option value="whatsapp">WhatsApp</option>
+                                <option value="visit">Visit</option>
+                                <option value="other">Other</option>
                             </select>
                         </div>
                         <div class="grid flex-1 gap-1">
@@ -305,10 +343,14 @@ const verificationStatuses = ['pending', 'received', 'verified', 'rejected', 'ex
                             <li v-for="f in lead.followups" :key="f.id" class="border-b pb-2 last:border-0">
                                 <div class="flex justify-between">
                                     <span class="font-medium capitalize">{{ f.contact_mode }}</span>
-                                    <span class="text-xs text-muted-foreground">{{ f.user?.name }} · {{ new Date(f.created_at).toLocaleString() }}</span>
+                                    <span class="text-xs text-muted-foreground"
+                                        >{{ f.user?.name }} · {{ new Date(f.created_at).toLocaleString() }}</span
+                                    >
                                 </div>
                                 <p v-if="f.remarks" class="text-muted-foreground">{{ f.remarks }}</p>
-                                <p v-if="f.next_follow_up_at" class="text-xs text-blue-600 dark:text-blue-400">Next: {{ new Date(f.next_follow_up_at).toLocaleString() }}</p>
+                                <p v-if="f.next_follow_up_at" class="text-xs text-blue-600 dark:text-blue-400">
+                                    Next: {{ new Date(f.next_follow_up_at).toLocaleString() }}
+                                </p>
                             </li>
                         </ol>
                     </CardContent>
@@ -327,7 +369,12 @@ const verificationStatuses = ['pending', 'received', 'verified', 'rejected', 'ex
                                     <option v-for="t in docTypes" :key="t" :value="t">{{ t.replace(/_/g, ' ') }}</option>
                                 </select>
                             </div>
-                            <input type="file" class="text-sm" accept=".jpg,.jpeg,.png,.pdf" @input="docForm.file = ($event.target as HTMLInputElement).files?.[0] ?? null" />
+                            <input
+                                type="file"
+                                class="text-sm"
+                                accept=".jpg,.jpeg,.png,.pdf"
+                                @input="docForm.file = ($event.target as HTMLInputElement).files?.[0] ?? null"
+                            />
                             <Button size="sm" :disabled="!docForm.file || docForm.processing" @click="uploadDoc">Upload</Button>
                         </div>
                         <InputError v-if="docForm.errors.file" :message="docForm.errors.file" />
@@ -363,28 +410,40 @@ const verificationStatuses = ['pending', 'received', 'verified', 'rejected', 'ex
             <!-- Valuation -->
             <div v-show="activeTab === 'Valuation'" class="grid gap-4">
                 <Card v-if="!can.viewCost && !lead.valuation">
-                    <CardContent class="py-8 text-center text-sm text-muted-foreground">You do not have permission to view valuation costs.</CardContent>
+                    <CardContent class="py-8 text-center text-sm text-muted-foreground"
+                        >You do not have permission to view valuation costs.</CardContent
+                    >
                 </Card>
                 <Card v-else>
                     <CardHeader><CardTitle>Vehicle Valuation</CardTitle></CardHeader>
                     <CardContent class="grid gap-4">
                         <div class="grid grid-cols-2 gap-4 md:grid-cols-4">
-                            <div v-for="field in [
-                                ['expected_retail_price', 'Expected Retail'],
-                                ['seller_expected_price', 'Seller Expected'],
-                                ['repair_estimate', 'Repair Est.'],
-                                ['rto_expense', 'RTO'],
-                                ['documentation_expense', 'Documentation'],
-                                ['transportation_expense', 'Transport'],
-                                ['insurance_expense', 'Insurance'],
-                                ['brokerage', 'Brokerage'],
-                                ['holding_cost', 'Holding'],
-                                ['other_costs', 'Other'],
-                                ['target_profit', 'Target Profit'],
-                                ['final_negotiated_price', 'Negotiated Price'],
-                            ]" :key="field[0]" class="grid gap-1">
+                            <div
+                                v-for="field in [
+                                    ['expected_retail_price', 'Expected Retail'],
+                                    ['seller_expected_price', 'Seller Expected'],
+                                    ['repair_estimate', 'Repair Est.'],
+                                    ['rto_expense', 'RTO'],
+                                    ['documentation_expense', 'Documentation'],
+                                    ['transportation_expense', 'Transport'],
+                                    ['insurance_expense', 'Insurance'],
+                                    ['brokerage', 'Brokerage'],
+                                    ['holding_cost', 'Holding'],
+                                    ['other_costs', 'Other'],
+                                    ['target_profit', 'Target Profit'],
+                                    ['final_negotiated_price', 'Negotiated Price'],
+                                ]"
+                                :key="field[0]"
+                                class="grid gap-1"
+                            >
                                 <Label class="text-xs">{{ field[1] }}</Label>
-                                <Input v-model.number="(valuation as any)[field[0]]" type="number" min="0" class="h-9" :disabled="can.saveValuation === false" />
+                                <Input
+                                    v-model.number="(valuation as any)[field[0]]"
+                                    type="number"
+                                    min="0"
+                                    class="h-9"
+                                    :disabled="can.saveValuation === false"
+                                />
                             </div>
                         </div>
                         <div class="flex flex-wrap items-center justify-between gap-4 rounded-lg bg-muted/50 p-4">
@@ -393,8 +452,12 @@ const verificationStatuses = ['pending', 'received', 'verified', 'rejected', 'ex
                                 <p class="text-2xl font-bold">{{ money(liveRecommended) }}</p>
                             </div>
                             <div v-if="lead.valuation" class="text-sm">
-                                <p>Expected Net Profit: <strong>{{ money(lead.valuation.expected_net_profit) }}</strong></p>
-                                <p>Expected Margin: <strong>{{ lead.valuation.expected_margin_pct }}%</strong></p>
+                                <p>
+                                    Expected Net Profit: <strong>{{ money(lead.valuation.expected_net_profit) }}</strong>
+                                </p>
+                                <p>
+                                    Expected Margin: <strong>{{ lead.valuation.expected_margin_pct }}%</strong>
+                                </p>
                             </div>
                             <Button v-if="can.saveValuation" :disabled="valuation.processing" @click="saveValuation">Save Valuation</Button>
                         </div>
@@ -420,7 +483,9 @@ const verificationStatuses = ['pending', 'received', 'verified', 'rejected', 'ex
                 </Card>
 
                 <Card v-if="approval_request">
-                    <CardHeader><CardTitle>Approval {{ approval_request.approval_number }}</CardTitle></CardHeader>
+                    <CardHeader
+                        ><CardTitle>Approval {{ approval_request.approval_number }}</CardTitle></CardHeader
+                    >
                     <CardContent class="grid gap-3 text-sm">
                         <div class="flex items-center gap-2">
                             <span class="rounded-full bg-muted px-2 py-0.5 text-xs capitalize">{{ approval_request.status }}</span>
@@ -428,7 +493,11 @@ const verificationStatuses = ['pending', 'received', 'verified', 'rejected', 'ex
                             <span v-if="approval_request.approved_amount">· Approved: {{ money(approval_request.approved_amount) }}</span>
                         </div>
                         <div v-if="approval_request.reasons?.length" class="flex flex-wrap gap-1">
-                            <span v-for="r in approval_request.reasons" :key="r" class="rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-700 dark:bg-amber-900/40 dark:text-amber-400">
+                            <span
+                                v-for="r in approval_request.reasons"
+                                :key="r"
+                                class="rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-700 dark:bg-amber-900/40 dark:text-amber-400"
+                            >
                                 {{ r.replace(/_/g, ' ') }}
                             </span>
                         </div>
@@ -442,7 +511,7 @@ const verificationStatuses = ['pending', 'received', 'verified', 'rejected', 'ex
                             <Button size="sm" @click="decide(approval_request.id, 'approve')">Approve</Button>
                             <Button size="sm" variant="destructive" @click="decide(approval_request.id, 'reject')">Reject</Button>
                         </div>
-                        <p v-else-if="hasPendingApproval" class="text-xs text-muted-foreground">Awaiting decision by {{ approval_request.steps?.find((s: Record<string, any>) => s.status === 'pending')?.role?.name ?? 'the approver' }}.</p>
+                        <p v-else-if="hasPendingApproval" class="text-xs text-muted-foreground">Awaiting decision by {{ pendingApproverName }}.</p>
                     </CardContent>
                 </Card>
                 <Card v-else-if="!can.requestApproval">
@@ -459,17 +528,27 @@ const verificationStatuses = ['pending', 'received', 'verified', 'rejected', 'ex
                 </Card>
                 <template v-else>
                     <Card>
-                        <CardHeader><CardTitle>Purchase {{ lead.purchase.purchase_number }}</CardTitle></CardHeader>
+                        <CardHeader
+                            ><CardTitle>Purchase {{ lead.purchase.purchase_number }}</CardTitle></CardHeader
+                        >
                         <CardContent class="grid gap-3 text-sm">
                             <div class="flex flex-wrap items-center gap-4">
-                                <span>Agreed Price: <strong>{{ money(lead.purchase.agreed_price) }}</strong></span>
-                                <span class="rounded-full bg-muted px-2 py-0.5 text-xs capitalize">{{ (lead.purchase.status ?? '').replace(/_/g, ' ') }}</span>
+                                <span
+                                    >Agreed Price: <strong>{{ money(lead.purchase.agreed_price) }}</strong></span
+                                >
+                                <span class="rounded-full bg-muted px-2 py-0.5 text-xs capitalize">{{
+                                    (lead.purchase.status ?? '').replace(/_/g, ' ')
+                                }}</span>
                             </div>
                             <div v-if="can.generateAgreement && !lead.purchase.agreement_document_id">
                                 <Button size="sm" @click="generateAgreement">Generate Purchase Agreement</Button>
                             </div>
                             <div v-else-if="lead.purchase.agreement_document_id">
-                                <a :href="`/admin/documents/${lead.purchase.agreement_document_id}/download`" class="text-sm text-blue-600 underline dark:text-blue-400">Download Agreement PDF</a>
+                                <a
+                                    :href="`/admin/documents/${lead.purchase.agreement_document_id}/download`"
+                                    class="text-sm text-blue-600 underline dark:text-blue-400"
+                                    >Download Agreement PDF</a
+                                >
                             </div>
                         </CardContent>
                     </Card>
@@ -481,11 +560,19 @@ const verificationStatuses = ['pending', 'received', 'verified', 'rejected', 'ex
                                 <div class="grid gap-1">
                                     <Label class="text-xs">Type</Label>
                                     <select v-model="payment.type" class="h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-sm">
-                                        <option value="token">Token</option><option value="advance">Advance</option><option value="full">Full</option><option value="balance">Balance</option>
+                                        <option value="token">Token</option>
+                                        <option value="advance">Advance</option>
+                                        <option value="full">Full</option>
+                                        <option value="balance">Balance</option>
                                     </select>
                                 </div>
-                                <div class="grid gap-1"><Label class="text-xs">Amount</Label><Input v-model.number="payment.amount" type="number" min="0" class="h-9 w-32" /></div>
-                                <div class="grid gap-1"><Label class="text-xs">Reference</Label><Input v-model="payment.reference_number" class="h-9" /></div>
+                                <div class="grid gap-1">
+                                    <Label class="text-xs">Amount</Label
+                                    ><Input v-model.number="payment.amount" type="number" min="0" class="h-9 w-32" />
+                                </div>
+                                <div class="grid gap-1">
+                                    <Label class="text-xs">Reference</Label><Input v-model="payment.reference_number" class="h-9" />
+                                </div>
                                 <Button size="sm" :disabled="payment.processing || payment.amount <= 0" @click="recordPayment">Record</Button>
                             </div>
                             <p v-if="!lead.purchase.payments?.length" class="py-2 text-center text-sm text-muted-foreground">No payments recorded.</p>
@@ -493,8 +580,16 @@ const verificationStatuses = ['pending', 'received', 'verified', 'rejected', 'ex
                                 <li v-for="p in lead.purchase.payments" :key="p.id" class="flex items-center justify-between py-2">
                                     <span class="capitalize">{{ p.type }} · {{ money(p.amount) }}</span>
                                     <span class="flex items-center gap-2">
-                                        <span class="rounded-full bg-muted px-2 py-0.5 text-xs capitalize">{{ (p.status ?? '').replace('_', ' ') }}</span>
-                                        <Button v-if="can.approvePayment && p.status === 'pending_approval'" size="sm" variant="outline" @click="approvePayment(p.id)">Approve</Button>
+                                        <span class="rounded-full bg-muted px-2 py-0.5 text-xs capitalize">{{
+                                            (p.status ?? '').replace('_', ' ')
+                                        }}</span>
+                                        <Button
+                                            v-if="can.approvePayment && p.status === 'pending_approval'"
+                                            size="sm"
+                                            variant="outline"
+                                            @click="approvePayment(p.id)"
+                                            >Approve</Button
+                                        >
                                     </span>
                                 </li>
                             </ul>
@@ -506,26 +601,47 @@ const verificationStatuses = ['pending', 'received', 'verified', 'rejected', 'ex
                         <CardContent class="grid gap-3">
                             <p class="text-xs text-muted-foreground">Confirming possession creates the stock entry automatically.</p>
                             <div class="grid grid-cols-2 gap-2 md:grid-cols-4">
-                                <label v-for="item in [
-                                    ['vehicle_received', 'Vehicle received'], ['original_rc_received', 'Original RC'], ['insurance_received', 'Insurance'],
-                                    ['puc_received', 'PUC'], ['noc_received', 'NOC'], ['form_35_received', 'Form 35'],
-                                    ['main_key', 'Main key'], ['spare_key', 'Spare key'], ['service_book', 'Service book'],
-                                    ['tool_kit', 'Tool kit'], ['spare_wheel', 'Spare wheel'], ['accessories', 'Accessories'],
-                                ]" :key="item[0]" class="flex items-center gap-2 text-sm">
+                                <label
+                                    v-for="item in [
+                                        ['vehicle_received', 'Vehicle received'],
+                                        ['original_rc_received', 'Original RC'],
+                                        ['insurance_received', 'Insurance'],
+                                        ['puc_received', 'PUC'],
+                                        ['noc_received', 'NOC'],
+                                        ['form_35_received', 'Form 35'],
+                                        ['main_key', 'Main key'],
+                                        ['spare_key', 'Spare key'],
+                                        ['service_book', 'Service book'],
+                                        ['tool_kit', 'Tool kit'],
+                                        ['spare_wheel', 'Spare wheel'],
+                                        ['accessories', 'Accessories'],
+                                    ]"
+                                    :key="item[0]"
+                                    class="flex items-center gap-2 text-sm"
+                                >
                                     <input type="checkbox" v-model="(possession as any)[item[0]]" />{{ item[1] }}
                                 </label>
                             </div>
                             <div class="flex items-end gap-2">
-                                <div class="grid gap-1"><Label class="text-xs">Odometer</Label><Input v-model.number="possession.odometer_km" type="number" class="h-9 w-32" /></div>
-                                <div class="grid gap-1"><Label class="text-xs">Fuel</Label><Input v-model="possession.fuel_level" class="h-9 w-24" /></div>
-                                <Button :disabled="!possession.vehicle_received || possession.processing" @click="confirmPossession">Confirm Possession &amp; Create Stock</Button>
+                                <div class="grid gap-1">
+                                    <Label class="text-xs">Odometer</Label
+                                    ><Input v-model.number="possession.odometer_km" type="number" class="h-9 w-32" />
+                                </div>
+                                <div class="grid gap-1">
+                                    <Label class="text-xs">Fuel</Label><Input v-model="possession.fuel_level" class="h-9 w-24" />
+                                </div>
+                                <Button :disabled="!possession.vehicle_received || possession.processing" @click="confirmPossession"
+                                    >Confirm Possession &amp; Create Stock</Button
+                                >
                             </div>
                         </CardContent>
                     </Card>
                     <Card v-else-if="lead.purchase.possession">
                         <CardContent class="py-4 text-sm">
                             <p class="font-medium text-green-700 dark:text-green-400">Possession confirmed.</p>
-                            <p class="text-muted-foreground">Vehicle possessed on {{ new Date(lead.purchase.possession.possessed_at).toLocaleString() }}.</p>
+                            <p class="text-muted-foreground">
+                                Vehicle possessed on {{ new Date(lead.purchase.possession.possessed_at).toLocaleString() }}.
+                            </p>
                         </CardContent>
                     </Card>
                 </template>

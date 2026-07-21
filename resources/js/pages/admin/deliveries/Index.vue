@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import AppLayout from '@/layouts/AppLayout.vue';
 import type { BreadcrumbItem, Paginated } from '@/types';
 import { Head, router, useForm } from '@inertiajs/vue3';
-import { Search, Plus } from 'lucide-vue-next';
+import { Plus, Search } from 'lucide-vue-next';
 import { reactive, ref, watch } from 'vue';
 
 interface DeliveryRow {
@@ -80,18 +80,17 @@ function fmtDate(v: string | null): string {
                     <h1 class="text-xl font-semibold">Deliveries</h1>
                     <p class="text-sm text-muted-foreground">Delivery approval checklist and vehicle handover.</p>
                 </div>
-                <Button v-if="can.create" size="sm" @click="showCreate = !showCreate">
-                    <Plus class="mr-1 size-4" /> New Delivery
-                </Button>
+                <Button v-if="can.create" size="sm" @click="showCreate = !showCreate"> <Plus class="mr-1 size-4" /> New Delivery </Button>
             </div>
 
             <div v-if="showCreate" class="rounded-xl border border-sidebar-border/70 bg-muted/30 p-4 dark:border-sidebar-border">
                 <p class="mb-2 text-sm font-medium">Open a delivery for a booking</p>
-                <div v-if="eligibleBookings.length === 0" class="text-sm text-muted-foreground">
-                    No confirmed bookings are awaiting delivery.
-                </div>
+                <div v-if="eligibleBookings.length === 0" class="text-sm text-muted-foreground">No confirmed bookings are awaiting delivery.</div>
                 <div v-else class="flex flex-wrap items-center gap-2">
-                    <select v-model="createForm.booking_id" class="h-9 min-w-[320px] rounded-md border border-input bg-transparent px-3 text-sm shadow-sm">
+                    <select
+                        v-model="createForm.booking_id"
+                        class="h-9 min-w-[320px] rounded-md border border-input bg-transparent px-3 text-sm shadow-sm"
+                    >
                         <option :value="null">Select booking…</option>
                         <option v-for="b in eligibleBookings" :key="b.id" :value="b.id">{{ b.label }}</option>
                     </select>
@@ -124,8 +123,15 @@ function fmtDate(v: string | null): string {
                         </tr>
                     </thead>
                     <tbody>
-                        <tr v-if="deliveries.data.length === 0"><td colspan="6" class="px-4 py-10 text-center text-muted-foreground">No deliveries yet.</td></tr>
-                        <tr v-for="d in deliveries.data" :key="d.id" class="cursor-pointer border-b last:border-0 hover:bg-muted/30" @click="router.get(`/admin/deliveries/${d.id}`)">
+                        <tr v-if="deliveries.data.length === 0">
+                            <td colspan="6" class="px-4 py-10 text-center text-muted-foreground">No deliveries yet.</td>
+                        </tr>
+                        <tr
+                            v-for="d in deliveries.data"
+                            :key="d.id"
+                            class="cursor-pointer border-b last:border-0 hover:bg-muted/30"
+                            @click="router.get(`/admin/deliveries/${d.id}`)"
+                        >
                             <td class="px-4 py-3 font-mono text-xs">{{ d.delivery_number }}</td>
                             <td class="px-4 py-3">
                                 <div class="font-medium">{{ d.customer?.name }}</div>
@@ -136,7 +142,13 @@ function fmtDate(v: string | null): string {
                                 <div class="text-xs text-muted-foreground">{{ d.vehicle?.stock_number }}</div>
                             </td>
                             <td class="px-4 py-3 font-mono text-xs">{{ d.booking?.booking_number ?? '—' }}</td>
-                            <td class="px-4 py-3"><span class="inline-flex rounded-full px-2 py-0.5 text-xs font-medium" :class="statusStyle[d.status] ?? 'bg-muted text-muted-foreground'">{{ d.status_label }}</span></td>
+                            <td class="px-4 py-3">
+                                <span
+                                    class="inline-flex rounded-full px-2 py-0.5 text-xs font-medium"
+                                    :class="statusStyle[d.status] ?? 'bg-muted text-muted-foreground'"
+                                    >{{ d.status_label }}</span
+                                >
+                            </td>
                             <td class="px-4 py-3 text-xs text-muted-foreground">{{ fmtDate(d.delivered_at) }}</td>
                         </tr>
                     </tbody>

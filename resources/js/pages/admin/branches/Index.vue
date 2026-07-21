@@ -4,12 +4,7 @@ import InputError from '@/components/InputError.vue';
 import Pagination from '@/components/Pagination.vue';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import AppLayout from '@/layouts/AppLayout.vue';
@@ -122,9 +117,7 @@ function confirmDelete() {
                     <h1 class="text-xl font-semibold">Branches</h1>
                     <p class="text-sm text-muted-foreground">Manage dealership branch locations.</p>
                 </div>
-                <Button v-if="can.create" @click="openCreate">
-                    <Plus class="mr-1 size-4" /> New Branch
-                </Button>
+                <Button v-if="can.create" @click="openCreate"> <Plus class="mr-1 size-4" /> New Branch </Button>
             </div>
 
             <div class="relative w-full max-w-sm">
@@ -160,7 +153,11 @@ function confirmDelete() {
                             <td class="px-4 py-3">
                                 <span
                                     class="inline-flex rounded-full px-2 py-0.5 text-xs font-medium"
-                                    :class="branch.is_active ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400' : 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400'"
+                                    :class="
+                                        branch.is_active
+                                            ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400'
+                                            : 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400'
+                                    "
                                 >
                                     {{ branch.is_active ? 'Active' : 'Inactive' }}
                                 </span>

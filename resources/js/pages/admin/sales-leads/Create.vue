@@ -96,13 +96,26 @@ function submit() {
                             </div>
                         </div>
                         <div class="flex flex-wrap gap-6">
-                            <label class="flex items-center gap-2 text-sm"><Checkbox :model-value="form.finance_required" @update:model-value="form.finance_required = $event === true" /> Finance required</label>
-                            <label class="flex items-center gap-2 text-sm"><Checkbox :model-value="form.exchange_required" @update:model-value="form.exchange_required = $event === true" /> Exchange required</label>
+                            <label class="flex items-center gap-2 text-sm"
+                                ><Checkbox :model-value="form.finance_required" @update:model-value="form.finance_required = $event === true" />
+                                Finance required</label
+                            >
+                            <label class="flex items-center gap-2 text-sm"
+                                ><Checkbox :model-value="form.exchange_required" @update:model-value="form.exchange_required = $event === true" />
+                                Exchange required</label
+                            >
                         </div>
                         <div class="grid gap-2">
                             <Label for="priority">Priority</Label>
-                            <select id="priority" v-model="form.priority" class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-sm">
-                                <option value="low">Low</option><option value="normal">Normal</option><option value="high">High</option><option value="hot">Hot</option>
+                            <select
+                                id="priority"
+                                v-model="form.priority"
+                                class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-sm"
+                            >
+                                <option value="low">Low</option>
+                                <option value="normal">Normal</option>
+                                <option value="high">High</option>
+                                <option value="hot">Hot</option>
                             </select>
                         </div>
                     </CardContent>
@@ -114,13 +127,22 @@ function submit() {
                         <div class="grid grid-cols-2 gap-4">
                             <div class="grid gap-2">
                                 <Label for="source">Source *</Label>
-                                <select id="source" v-model="form.source" required class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-sm">
+                                <select
+                                    id="source"
+                                    v-model="form.source"
+                                    required
+                                    class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-sm"
+                                >
                                     <option v-for="s in sources" :key="s.value" :value="s.value">{{ s.label }}</option>
                                 </select>
                             </div>
                             <div class="grid gap-2">
                                 <Label for="branch">Branch</Label>
-                                <select id="branch" v-model="form.branch_id" class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-sm">
+                                <select
+                                    id="branch"
+                                    v-model="form.branch_id"
+                                    class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-sm"
+                                >
                                     <option :value="null">—</option>
                                     <option v-for="b in branches" :key="b.id" :value="b.id">{{ b.name }}</option>
                                 </select>
@@ -128,7 +150,11 @@ function submit() {
                         </div>
                         <div class="grid gap-2">
                             <Label for="telecaller">Assign Telecaller</Label>
-                            <select id="telecaller" v-model="form.telecaller_id" class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-sm">
+                            <select
+                                id="telecaller"
+                                v-model="form.telecaller_id"
+                                class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-sm"
+                            >
                                 <option :value="null">Unassigned</option>
                                 <option v-for="t in telecallers" :key="t.id" :value="t.id">{{ t.name }}</option>
                             </select>
@@ -139,7 +165,12 @@ function submit() {
                 <Card>
                     <CardHeader><CardTitle>Remarks</CardTitle></CardHeader>
                     <CardContent>
-                        <textarea v-model="form.remarks" rows="4" class="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm" placeholder="Notes about this lead…" />
+                        <textarea
+                            v-model="form.remarks"
+                            rows="4"
+                            class="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm"
+                            placeholder="Notes about this lead…"
+                        />
                     </CardContent>
                 </Card>
             </div>

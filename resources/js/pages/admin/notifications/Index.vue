@@ -32,12 +32,16 @@ function setFilter(f: string) {
 }
 
 function open(n: AppNotification) {
-    router.post(`/admin/notifications/${n.id}/read`, {}, {
-        preserveScroll: true,
-        onSuccess: () => {
-            if (n.action_url) router.visit(n.action_url);
+    router.post(
+        `/admin/notifications/${n.id}/read`,
+        {},
+        {
+            preserveScroll: true,
+            onSuccess: () => {
+                if (n.action_url) router.visit(n.action_url);
+            },
         },
-    });
+    );
 }
 
 function markRead(n: AppNotification) {
@@ -69,12 +73,16 @@ function fmt(iso: string): string {
                             class="rounded px-3 py-1"
                             :class="activeFilter === 'all' ? 'bg-muted font-medium' : 'text-muted-foreground'"
                             @click="setFilter('all')"
-                        >All</button>
+                        >
+                            All
+                        </button>
                         <button
                             class="rounded px-3 py-1"
                             :class="activeFilter === 'unread' ? 'bg-muted font-medium' : 'text-muted-foreground'"
                             @click="setFilter('unread')"
-                        >Unread</button>
+                        >
+                            Unread
+                        </button>
                     </div>
                     <Button v-if="unread > 0" size="sm" variant="outline" @click="markAllRead">
                         <CheckCheck class="mr-1 size-4" /> Mark all read
@@ -97,7 +105,9 @@ function fmt(iso: string): string {
                         <button class="flex-1 text-left" @click="open(n)">
                             <div class="flex items-center gap-2">
                                 <span class="text-sm font-medium">{{ n.title }}</span>
-                                <span v-if="!n.read" class="rounded-full bg-brand-red/15 px-1.5 py-0.5 text-[10px] font-medium text-brand-red">New</span>
+                                <span v-if="!n.read" class="rounded-full bg-brand-red/15 px-1.5 py-0.5 text-[10px] font-medium text-brand-red"
+                                    >New</span
+                                >
                             </div>
                             <p v-if="n.body" class="mt-0.5 text-sm text-muted-foreground">{{ n.body }}</p>
                             <p class="mt-1 text-xs text-muted-foreground">{{ fmt(n.created_at) }}</p>

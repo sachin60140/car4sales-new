@@ -54,8 +54,19 @@ const { can } = usePermissions();
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'Dashboard', href: '/dashboard' }];
 
 const icons: Record<string, LucideIcon> = {
-    ShoppingCart, PhoneCall, ClipboardCheck, Car, Users, Building2, Network, UsersRound, LayoutGrid,
-    BookMarked, Truck, FileCheck2, Wallet,
+    ShoppingCart,
+    PhoneCall,
+    ClipboardCheck,
+    Car,
+    Users,
+    Building2,
+    Network,
+    UsersRound,
+    LayoutGrid,
+    BookMarked,
+    Truck,
+    FileCheck2,
+    Wallet,
 };
 
 const accentChip: Record<Stat['accent'], string> = {
@@ -137,7 +148,11 @@ function formatDate(value: string): string {
                             :variant="action.icon === Plus ? 'default' : 'secondary'"
                             size="sm"
                             as-child
-                            :class="action.icon === Plus ? 'bg-brand-yellow text-brand-maroon hover:bg-brand-yellow/90' : 'bg-white/15 text-white hover:bg-white/25'"
+                            :class="
+                                action.icon === Plus
+                                    ? 'bg-brand-yellow text-brand-maroon hover:bg-brand-yellow/90'
+                                    : 'bg-white/15 text-white hover:bg-white/25'
+                            "
                         >
                             <Link :href="action.href"><component :is="action.icon" class="mr-1 size-4" /> {{ action.label }}</Link>
                         </Button>
@@ -225,11 +240,13 @@ function formatDate(value: string): string {
                                     <td class="py-2 pr-4">
                                         <span
                                             class="inline-flex rounded-full px-2 py-0.5 text-xs font-medium capitalize"
-                                            :class="entry.event === 'failed'
-                                                ? 'bg-brand-red/15 text-brand-red'
-                                                : entry.event === 'login'
-                                                    ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400'
-                                                    : 'bg-muted text-muted-foreground'"
+                                            :class="
+                                                entry.event === 'failed'
+                                                    ? 'bg-brand-red/15 text-brand-red'
+                                                    : entry.event === 'login'
+                                                      ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400'
+                                                      : 'bg-muted text-muted-foreground'
+                                            "
                                         >
                                             {{ entry.event.replace('_', ' ') }}
                                         </span>

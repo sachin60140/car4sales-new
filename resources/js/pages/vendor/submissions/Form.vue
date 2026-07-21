@@ -9,8 +9,19 @@ import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { Trash2, Upload } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 
-interface Item { section: string; label: string; result: string; rating: number | null; remarks: string; [key: string]: string | number | null }
-interface Media { id: number; caption: string | null; url: string }
+interface Item {
+    section: string;
+    label: string;
+    result: string;
+    rating: number | null;
+    remarks: string;
+    [key: string]: string | number | null;
+}
+interface Media {
+    id: number;
+    caption: string | null;
+    url: string;
+}
 
 const props = defineProps<{
     submission: Record<string, any> | null;
@@ -100,14 +111,18 @@ function pickAndUpload(type: 'gallery' | 'damage', event: Event) {
     const files = Array.from(input.files ?? []);
     if (files.length === 0) return;
     uploading.value = type;
-    router.post(`/vendor/submissions/${props.submission!.id}/media`, { files, type }, {
-        preserveScroll: true,
-        forceFormData: true,
-        onFinish: () => {
-            uploading.value = null;
-            input.value = '';
+    router.post(
+        `/vendor/submissions/${props.submission!.id}/media`,
+        { files, type },
+        {
+            preserveScroll: true,
+            forceFormData: true,
+            onFinish: () => {
+                uploading.value = null;
+                input.value = '';
+            },
         },
-    });
+    );
 }
 
 function removeImage(id: number) {
@@ -145,8 +160,16 @@ const resultStyle: Record<string, string> = {
                     <div class="grid gap-1.5"><Label>Make *</Label><Input v-model="form.make" /><InputError :message="form.errors.make" /></div>
                     <div class="grid gap-1.5"><Label>Model *</Label><Input v-model="form.model" /><InputError :message="form.errors.model" /></div>
                     <div class="grid gap-1.5"><Label>Variant</Label><Input v-model="form.variant" /></div>
-                    <div class="grid gap-1.5"><Label>Mfg. Year</Label><Input v-model.number="form.manufacturing_year" type="number" /><InputError :message="form.errors.manufacturing_year" /></div>
-                    <div class="grid gap-1.5"><Label>Registration No. *</Label><Input v-model="form.registration_number" placeholder="e.g. UP32 AB 1234" /><InputError :message="form.errors.registration_number" /></div>
+                    <div class="grid gap-1.5">
+                        <Label>Mfg. Year</Label><Input v-model.number="form.manufacturing_year" type="number" /><InputError
+                            :message="form.errors.manufacturing_year"
+                        />
+                    </div>
+                    <div class="grid gap-1.5">
+                        <Label>Registration No. *</Label><Input v-model="form.registration_number" placeholder="e.g. UP32 AB 1234" /><InputError
+                            :message="form.errors.registration_number"
+                        />
+                    </div>
                     <div class="grid gap-1.5"><Label>Registration State</Label><Input v-model="form.registration_state" placeholder="e.g. UP" /></div>
                     <div class="grid gap-1.5">
                         <Label>Fuel</Label>
@@ -194,7 +217,11 @@ const resultStyle: Record<string, string> = {
                         <span class="col-span-2">Rating</span>
                         <span class="col-span-3">Remarks</span>
                     </div>
-                    <div v-for="(item, i) in form.items" :key="i" class="grid grid-cols-1 items-center gap-2 rounded-lg border border-sidebar-border/60 p-2 sm:grid-cols-12">
+                    <div
+                        v-for="(item, i) in form.items"
+                        :key="i"
+                        class="grid grid-cols-1 items-center gap-2 rounded-lg border border-sidebar-border/60 p-2 sm:grid-cols-12"
+                    >
                         <div class="sm:col-span-4">
                             <p class="text-sm font-medium">{{ item.label }}</p>
                             <p class="text-xs text-muted-foreground">{{ item.section }}</p>
@@ -207,10 +234,15 @@ const resultStyle: Record<string, string> = {
                                 class="rounded-md px-2.5 py-1 text-xs font-medium transition"
                                 :class="item.result === r.value ? resultStyle[r.value] : 'bg-muted/40 text-muted-foreground hover:bg-muted'"
                                 @click="item.result = r.value"
-                            >{{ r.label }}</button>
+                            >
+                                {{ r.label }}
+                            </button>
                         </div>
                         <div class="sm:col-span-2">
-                            <select v-model.number="item.rating" class="h-8 w-full rounded-md border border-input bg-transparent px-2 text-xs shadow-sm">
+                            <select
+                                v-model.number="item.rating"
+                                class="h-8 w-full rounded-md border border-input bg-transparent px-2 text-xs shadow-sm"
+                            >
                                 <option :value="null">—</option>
                                 <option v-for="n in 5" :key="n" :value="n">{{ n }}★</option>
                             </select>
@@ -253,11 +285,15 @@ const resultStyle: Record<string, string> = {
             <!-- Images + submit (edit only) -->
             <template v-if="isEdit">
                 <Card :class="gallery.length === 0 ? 'border-brand-orange/40' : ''">
-                    <CardHeader><CardTitle class="text-base">Vehicle Photos <span class="text-brand-red">*</span></CardTitle></CardHeader>
+                    <CardHeader
+                        ><CardTitle class="text-base">Vehicle Photos <span class="text-brand-red">*</span></CardTitle></CardHeader
+                    >
                     <CardContent>
                         <div class="mb-2 flex items-center justify-between">
                             <p class="text-sm text-muted-foreground">At least one vehicle photo is required.</p>
-                            <label class="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-input px-3 py-1.5 text-sm hover:bg-muted">
+                            <label
+                                class="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-input px-3 py-1.5 text-sm hover:bg-muted"
+                            >
                                 <Upload class="size-4" /> {{ uploading === 'gallery' ? 'Uploading…' : 'Add images' }}
                                 <input type="file" accept="image/*" multiple class="hidden" @change="pickAndUpload('gallery', $event)" />
                             </label>
@@ -265,7 +301,12 @@ const resultStyle: Record<string, string> = {
                         <div v-if="gallery.length" class="grid grid-cols-2 gap-2 sm:grid-cols-4">
                             <div v-for="m in gallery" :key="m.id" class="group relative overflow-hidden rounded-lg border">
                                 <img :src="m.url" alt="" class="aspect-video w-full object-cover" />
-                                <button class="absolute right-1 top-1 rounded-md bg-black/60 p-1 text-white opacity-0 transition group-hover:opacity-100" @click="removeImage(m.id)"><Trash2 class="size-3.5" /></button>
+                                <button
+                                    class="absolute right-1 top-1 rounded-md bg-black/60 p-1 text-white opacity-0 transition group-hover:opacity-100"
+                                    @click="removeImage(m.id)"
+                                >
+                                    <Trash2 class="size-3.5" />
+                                </button>
                             </div>
                         </div>
                         <p v-else class="py-4 text-center text-sm text-muted-foreground">No gallery images yet.</p>
@@ -277,7 +318,9 @@ const resultStyle: Record<string, string> = {
                     <CardContent>
                         <div class="mb-2 flex items-center justify-between">
                             <p class="text-sm text-muted-foreground">Close-ups of any dents, scratches or damage.</p>
-                            <label class="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-input px-3 py-1.5 text-sm hover:bg-muted">
+                            <label
+                                class="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-input px-3 py-1.5 text-sm hover:bg-muted"
+                            >
                                 <Upload class="size-4" /> {{ uploading === 'damage' ? 'Uploading…' : 'Add images' }}
                                 <input type="file" accept="image/*" multiple class="hidden" @change="pickAndUpload('damage', $event)" />
                             </label>
@@ -285,7 +328,12 @@ const resultStyle: Record<string, string> = {
                         <div v-if="damage.length" class="grid grid-cols-2 gap-2 sm:grid-cols-4">
                             <div v-for="m in damage" :key="m.id" class="group relative overflow-hidden rounded-lg border">
                                 <img :src="m.url" alt="" class="aspect-video w-full object-cover" />
-                                <button class="absolute right-1 top-1 rounded-md bg-black/60 p-1 text-white opacity-0 transition group-hover:opacity-100" @click="removeImage(m.id)"><Trash2 class="size-3.5" /></button>
+                                <button
+                                    class="absolute right-1 top-1 rounded-md bg-black/60 p-1 text-white opacity-0 transition group-hover:opacity-100"
+                                    @click="removeImage(m.id)"
+                                >
+                                    <Trash2 class="size-3.5" />
+                                </button>
                             </div>
                         </div>
                         <p v-else class="py-4 text-center text-sm text-muted-foreground">No damage images.</p>
@@ -296,7 +344,9 @@ const resultStyle: Record<string, string> = {
                     <CardContent class="flex flex-wrap items-center justify-between gap-3 p-4">
                         <div>
                             <p class="font-medium">Ready to submit?</p>
-                            <p class="text-sm text-muted-foreground">Once submitted, our team will review it. You can't edit while it's under review.</p>
+                            <p class="text-sm text-muted-foreground">
+                                Once submitted, our team will review it. You can't edit while it's under review.
+                            </p>
                             <p v-if="submitBlockedReason" class="mt-1 text-sm font-medium text-brand-orange">{{ submitBlockedReason }}</p>
                         </div>
                         <Button :disabled="!!submitBlockedReason" @click="submitForReview">Submit for Review</Button>

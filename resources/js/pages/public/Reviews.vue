@@ -8,7 +8,10 @@ defineProps<{
 </script>
 
 <template>
-    <SeoHead title="Customer Reviews — Car4Sales" description="Read what our customers say about their experience buying and selling cars with Car4Sales." />
+    <SeoHead
+        title="Customer Reviews — Car4Sales"
+        description="Read what our customers say about their experience buying and selling cars with Car4Sales."
+    />
 
     <PublicLayout>
         <section class="bg-gradient-to-br from-brand-yellow to-brand-gold py-12 text-brand-maroon">
@@ -25,7 +28,9 @@ defineProps<{
                         <span v-for="n in 5" :key="n">{{ n <= t.rating ? '★' : '☆' }}</span>
                     </div>
                     <p class="mt-3 text-sm text-neutral-700">"{{ t.message }}"</p>
-                    <p class="mt-3 text-sm font-semibold text-neutral-900">{{ t.customer_name }}<span v-if="t.city" class="font-normal text-neutral-500">, {{ t.city }}</span></p>
+                    <p class="mt-3 text-sm font-semibold text-neutral-900">
+                        {{ t.customer_name }}<span v-if="t.city" class="font-normal text-neutral-500">, {{ t.city }}</span>
+                    </p>
                 </div>
             </div>
             <p v-else class="rounded-xl border bg-white py-12 text-center text-neutral-500">No reviews yet.</p>

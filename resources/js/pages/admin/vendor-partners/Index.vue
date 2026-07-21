@@ -86,27 +86,39 @@ const statusStyle: Record<string, string> = {
                             <th class="px-4 py-3 font-medium">Contact</th>
                             <th class="px-4 py-3 font-medium">GST</th>
                             <th class="px-4 py-3 font-medium">Status</th>
-                            <th class="px-4 py-3 font-medium text-right">Actions</th>
+                            <th class="px-4 py-3 text-right font-medium">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <tr v-if="partners.data.length === 0"><td colspan="5" class="px-4 py-10 text-center text-muted-foreground">No vendor partners.</td></tr>
+                        <tr v-if="partners.data.length === 0">
+                            <td colspan="5" class="px-4 py-10 text-center text-muted-foreground">No vendor partners.</td>
+                        </tr>
                         <tr v-for="p in partners.data" :key="p.id" class="border-b last:border-0">
                             <td class="px-4 py-3">
                                 <div class="font-medium">{{ p.company_name ?? p.name }}</div>
-                                <div class="text-xs text-muted-foreground">{{ p.name }}<span v-if="p.city"> · {{ p.city }}</span></div>
+                                <div class="text-xs text-muted-foreground">
+                                    {{ p.name }}<span v-if="p.city"> · {{ p.city }}</span>
+                                </div>
                             </td>
                             <td class="px-4 py-3">
                                 <div>{{ p.phone ?? '—' }}</div>
                                 <div class="text-xs text-muted-foreground">{{ p.email }}</div>
                             </td>
                             <td class="px-4 py-3">{{ p.gst_number ?? '—' }}</td>
-                            <td class="px-4 py-3"><span class="inline-flex rounded-full px-2 py-0.5 text-xs font-medium" :class="statusStyle[p.status]">{{ p.status_label }}</span></td>
+                            <td class="px-4 py-3">
+                                <span class="inline-flex rounded-full px-2 py-0.5 text-xs font-medium" :class="statusStyle[p.status]">{{
+                                    p.status_label
+                                }}</span>
+                            </td>
                             <td class="px-4 py-3">
                                 <div v-if="can.activate" class="flex justify-end gap-1.5">
                                     <Button v-if="p.status !== 'active'" size="sm" @click="setStatus(p, 'active')">Activate</Button>
-                                    <Button v-if="p.status === 'pending_activation'" size="sm" variant="destructive" @click="setStatus(p, 'rejected')">Reject</Button>
-                                    <Button v-if="p.status === 'active'" size="sm" variant="outline" @click="setStatus(p, 'suspended')">Suspend</Button>
+                                    <Button v-if="p.status === 'pending_activation'" size="sm" variant="destructive" @click="setStatus(p, 'rejected')"
+                                        >Reject</Button
+                                    >
+                                    <Button v-if="p.status === 'active'" size="sm" variant="outline" @click="setStatus(p, 'suspended')"
+                                        >Suspend</Button
+                                    >
                                 </div>
                                 <span v-else class="text-xs text-muted-foreground">—</span>
                             </td>

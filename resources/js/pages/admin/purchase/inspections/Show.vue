@@ -88,8 +88,14 @@ function uploadMedia() {
                 <div>
                     <div class="flex items-center gap-3">
                         <h1 class="text-xl font-semibold">{{ inspection.inspection_number }}</h1>
-                        <span class="rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium capitalize">{{ inspection.status.replace('_', ' ') }}</span>
-                        <span v-if="locked" class="rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-700 dark:bg-green-900/40 dark:text-green-400">Locked</span>
+                        <span class="rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium capitalize">{{
+                            inspection.status.replace('_', ' ')
+                        }}</span>
+                        <span
+                            v-if="locked"
+                            class="rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-700 dark:bg-green-900/40 dark:text-green-400"
+                            >Locked</span
+                        >
                     </div>
                     <p class="mt-1 text-sm text-muted-foreground">
                         <Link v-if="inspection.purchase_lead" :href="`/admin/purchase-leads/${inspection.purchase_lead.id}`" class="underline">
@@ -113,8 +119,16 @@ function uploadMedia() {
                     </div>
                     <div class="grid gap-1">
                         <Label class="text-xs">Overall Grade</Label>
-                        <select v-model="form.overall_grade" :disabled="locked" class="h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-sm">
-                            <option value="">—</option><option>A</option><option>B</option><option>C</option><option>D</option>
+                        <select
+                            v-model="form.overall_grade"
+                            :disabled="locked"
+                            class="h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-sm"
+                        >
+                            <option value="">—</option>
+                            <option>A</option>
+                            <option>B</option>
+                            <option>C</option>
+                            <option>D</option>
                         </select>
                     </div>
                     <div class="grid flex-1 gap-1">
@@ -135,19 +149,40 @@ function uploadMedia() {
                         <div class="flex flex-wrap items-center justify-between gap-2">
                             <span class="font-medium capitalize">{{ inspection.sections[idx].label }}</span>
                             <div class="flex items-center gap-2">
-                                <select v-model="section.status" :disabled="locked" class="h-8 rounded-md border border-input bg-transparent px-2 text-xs shadow-sm">
-                                    <option value="pass">Pass</option><option value="fail">Fail</option><option value="na">N/A</option>
+                                <select
+                                    v-model="section.status"
+                                    :disabled="locked"
+                                    class="h-8 rounded-md border border-input bg-transparent px-2 text-xs shadow-sm"
+                                >
+                                    <option value="pass">Pass</option>
+                                    <option value="fail">Fail</option>
+                                    <option value="na">N/A</option>
                                 </select>
-                                <select v-model.number="section.rating" :disabled="locked" class="h-8 rounded-md border border-input bg-transparent px-2 text-xs shadow-sm">
-                                    <option :value="null">Rating</option><option v-for="n in 5" :key="n" :value="n">{{ n }}/5</option>
+                                <select
+                                    v-model.number="section.rating"
+                                    :disabled="locked"
+                                    class="h-8 rounded-md border border-input bg-transparent px-2 text-xs shadow-sm"
+                                >
+                                    <option :value="null">Rating</option>
+                                    <option v-for="n in 5" :key="n" :value="n">{{ n }}/5</option>
                                 </select>
-                                <Input v-model.number="section.repair_estimate" type="number" min="0" placeholder="Repair ₹" class="h-8 w-28" :disabled="locked" />
+                                <Input
+                                    v-model.number="section.repair_estimate"
+                                    type="number"
+                                    min="0"
+                                    placeholder="Repair ₹"
+                                    class="h-8 w-28"
+                                    :disabled="locked"
+                                />
                             </div>
                         </div>
                         <div class="flex flex-wrap gap-1 text-xs text-muted-foreground">
-                            <span v-for="item in inspection.sections[idx].items" :key="item.id"
+                            <span
+                                v-for="item in inspection.sections[idx].items"
+                                :key="item.id"
                                 class="rounded-full px-2 py-0.5"
-                                :class="item.severity === 'critical' ? 'bg-red-50 text-red-600 dark:bg-red-950/40' : 'bg-muted'">
+                                :class="item.severity === 'critical' ? 'bg-red-50 text-red-600 dark:bg-red-950/40' : 'bg-muted'"
+                            >
                                 {{ item.label }}
                             </span>
                         </div>
@@ -160,7 +195,12 @@ function uploadMedia() {
                 <CardHeader><CardTitle>Media</CardTitle></CardHeader>
                 <CardContent class="grid gap-3">
                     <div v-if="can.edit && !locked" class="flex items-end gap-2">
-                        <input type="file" accept=".jpg,.jpeg,.png,.mp4,.mov" class="text-sm" @input="mediaForm.file = ($event.target as HTMLInputElement).files?.[0] ?? null" />
+                        <input
+                            type="file"
+                            accept=".jpg,.jpeg,.png,.mp4,.mov"
+                            class="text-sm"
+                            @input="mediaForm.file = ($event.target as HTMLInputElement).files?.[0] ?? null"
+                        />
                         <Input v-model="mediaForm.category" placeholder="Category (optional)" class="h-9 w-48" />
                         <Button size="sm" :disabled="!mediaForm.file || mediaForm.processing" @click="uploadMedia">Upload</Button>
                     </div>

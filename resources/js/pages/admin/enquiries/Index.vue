@@ -99,8 +99,11 @@ const statusStyle: Record<string, string> = {
                 </select>
                 <select v-model="filters.status" class="h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-sm">
                     <option value="">All statuses</option>
-                    <option value="new">New</option><option value="contacted">Contacted</option>
-                    <option value="converted">Converted</option><option value="closed">Closed</option><option value="spam">Spam</option>
+                    <option value="new">New</option>
+                    <option value="contacted">Contacted</option>
+                    <option value="converted">Converted</option>
+                    <option value="closed">Closed</option>
+                    <option value="spam">Spam</option>
                 </select>
                 <select v-model="filters.branch_id" class="h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-sm">
                     <option value="">All branches</option>
@@ -128,20 +131,35 @@ const statusStyle: Record<string, string> = {
                         <tr v-for="e in enquiries.data" :key="e.id" class="border-b align-top last:border-0 hover:bg-muted/30">
                             <td class="px-4 py-3 font-mono text-xs">{{ e.enquiry_number }}</td>
                             <td class="px-4 py-3">
-                                <span class="inline-flex rounded-full px-2 py-0.5 text-xs font-medium" :class="typeStyle[e.type] ?? 'bg-muted text-muted-foreground'">{{ e.type_label }}</span>
+                                <span
+                                    class="inline-flex rounded-full px-2 py-0.5 text-xs font-medium"
+                                    :class="typeStyle[e.type] ?? 'bg-muted text-muted-foreground'"
+                                    >{{ e.type_label }}</span
+                                >
                             </td>
                             <td class="px-4 py-3">
                                 <div class="font-medium">{{ e.name }}</div>
-                                <div class="text-xs text-muted-foreground">{{ e.mobile }}<span v-if="e.city"> · {{ e.city }}</span></div>
+                                <div class="text-xs text-muted-foreground">
+                                    {{ e.mobile }}<span v-if="e.city"> · {{ e.city }}</span>
+                                </div>
                             </td>
                             <td class="px-4 py-3 text-xs">
                                 <div v-if="e.vehicle">{{ e.vehicle.stock_number }} — {{ e.vehicle.make }} {{ e.vehicle.model }}</div>
-                                <Link v-if="e.purchase_lead" :href="`/admin/purchase-leads/${e.purchase_lead.id}`" class="text-brand-maroon underline dark:text-brand-yellow">{{ e.purchase_lead.lead_number }}</Link>
+                                <Link
+                                    v-if="e.purchase_lead"
+                                    :href="`/admin/purchase-leads/${e.purchase_lead.id}`"
+                                    class="text-brand-maroon underline dark:text-brand-yellow"
+                                    >{{ e.purchase_lead.lead_number }}</Link
+                                >
                                 <div v-if="e.message" class="max-w-xs truncate text-muted-foreground" :title="e.message">{{ e.message }}</div>
                             </td>
                             <td class="whitespace-nowrap px-4 py-3 text-xs text-muted-foreground">{{ new Date(e.created_at).toLocaleString() }}</td>
                             <td class="px-4 py-3">
-                                <span class="inline-flex rounded-full px-2 py-0.5 text-xs font-medium capitalize" :class="statusStyle[e.status] ?? 'bg-muted'">{{ e.status }}</span>
+                                <span
+                                    class="inline-flex rounded-full px-2 py-0.5 text-xs font-medium capitalize"
+                                    :class="statusStyle[e.status] ?? 'bg-muted'"
+                                    >{{ e.status }}</span
+                                >
                             </td>
                             <td class="px-4 py-3 text-right">
                                 <Button v-if="can.update" variant="ghost" size="sm" @click="openEdit(e)">Update</Button>
@@ -156,18 +174,32 @@ const statusStyle: Record<string, string> = {
 
         <Dialog :open="editing !== null" @update:open="editing = $event ? editing : null">
             <DialogContent class="sm:max-w-md">
-                <DialogHeader><DialogTitle>Update {{ editing?.enquiry_number }}</DialogTitle></DialogHeader>
+                <DialogHeader
+                    ><DialogTitle>Update {{ editing?.enquiry_number }}</DialogTitle></DialogHeader
+                >
                 <form class="grid gap-4" @submit.prevent="save">
                     <div class="grid gap-2">
                         <Label for="enq-status">Status</Label>
-                        <select id="enq-status" v-model="form.status" class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-sm">
-                            <option value="new">New</option><option value="contacted">Contacted</option>
-                            <option value="converted">Converted</option><option value="closed">Closed</option><option value="spam">Spam</option>
+                        <select
+                            id="enq-status"
+                            v-model="form.status"
+                            class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-sm"
+                        >
+                            <option value="new">New</option>
+                            <option value="contacted">Contacted</option>
+                            <option value="converted">Converted</option>
+                            <option value="closed">Closed</option>
+                            <option value="spam">Spam</option>
                         </select>
                     </div>
                     <div class="grid gap-2">
                         <Label for="enq-remarks">Remarks</Label>
-                        <textarea id="enq-remarks" v-model="form.remarks" rows="3" class="rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm" />
+                        <textarea
+                            id="enq-remarks"
+                            v-model="form.remarks"
+                            rows="3"
+                            class="rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm"
+                        />
                     </div>
                     <div class="flex justify-end gap-2">
                         <Button type="button" variant="outline" @click="editing = null">Cancel</Button>

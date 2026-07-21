@@ -31,7 +31,14 @@ const props = defineProps<{
     statuses: { value: string; label: string }[];
     branches: { id: number; name: string }[];
     telecallers: { id: number; name: string }[];
-    filters: { search: string; status: string | null; priority: string | null; branch_id: number | null; telecaller_id: number | null; queue: string | null };
+    filters: {
+        search: string;
+        status: string | null;
+        priority: string | null;
+        branch_id: number | null;
+        telecaller_id: number | null;
+        queue: string | null;
+    };
     can: { create: boolean; assign: boolean };
 }>();
 
@@ -91,13 +98,35 @@ const statusStyle: Record<string, string> = {
                     <h1 class="text-xl font-semibold">Sales Leads</h1>
                     <p class="text-sm text-muted-foreground">Telecaller work queue and lead pipeline.</p>
                 </div>
-                <Button v-if="can.create" as-child><Link href="/admin/sales-leads/create"><Plus class="mr-1 size-4" /> New Lead</Link></Button>
+                <Button v-if="can.create" as-child
+                    ><Link href="/admin/sales-leads/create"><Plus class="mr-1 size-4" /> New Lead</Link></Button
+                >
             </div>
 
             <!-- Quick queues -->
             <div class="flex flex-wrap gap-2">
-                <button class="rounded-full px-3 py-1 text-sm font-medium" :class="filters.queue === 'my' ? 'bg-brand-maroon text-white dark:bg-brand-yellow dark:text-brand-maroon' : 'bg-muted text-muted-foreground'" @click="setQueue('my')">My Queue</button>
-                <button class="rounded-full px-3 py-1 text-sm font-medium" :class="filters.queue === 'due' ? 'bg-brand-maroon text-white dark:bg-brand-yellow dark:text-brand-maroon' : 'bg-muted text-muted-foreground'" @click="setQueue('due')">Follow-ups Due</button>
+                <button
+                    class="rounded-full px-3 py-1 text-sm font-medium"
+                    :class="
+                        filters.queue === 'my'
+                            ? 'bg-brand-maroon text-white dark:bg-brand-yellow dark:text-brand-maroon'
+                            : 'bg-muted text-muted-foreground'
+                    "
+                    @click="setQueue('my')"
+                >
+                    My Queue
+                </button>
+                <button
+                    class="rounded-full px-3 py-1 text-sm font-medium"
+                    :class="
+                        filters.queue === 'due'
+                            ? 'bg-brand-maroon text-white dark:bg-brand-yellow dark:text-brand-maroon'
+                            : 'bg-muted text-muted-foreground'
+                    "
+                    @click="setQueue('due')"
+                >
+                    Follow-ups Due
+                </button>
             </div>
 
             <div class="flex flex-wrap items-center gap-3">
@@ -111,7 +140,10 @@ const statusStyle: Record<string, string> = {
                 </select>
                 <select v-model="filters.priority" class="h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-sm">
                     <option value="">Any priority</option>
-                    <option value="hot">Hot</option><option value="high">High</option><option value="normal">Normal</option><option value="low">Low</option>
+                    <option value="hot">Hot</option>
+                    <option value="high">High</option>
+                    <option value="normal">Normal</option>
+                    <option value="low">Low</option>
                 </select>
                 <select v-model="filters.telecaller_id" class="h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-sm">
                     <option value="">All telecallers</option>
@@ -135,14 +167,33 @@ const statusStyle: Record<string, string> = {
                         <tr v-if="leads.data.length === 0">
                             <td colspan="6" class="px-4 py-10 text-center text-muted-foreground">No leads in this view.</td>
                         </tr>
-                        <tr v-for="l in leads.data" :key="l.id" class="cursor-pointer border-b last:border-0 hover:bg-muted/30" @click="router.get(`/admin/sales-leads/${l.id}`)">
+                        <tr
+                            v-for="l in leads.data"
+                            :key="l.id"
+                            class="cursor-pointer border-b last:border-0 hover:bg-muted/30"
+                            @click="router.get(`/admin/sales-leads/${l.id}`)"
+                        >
                             <td class="px-4 py-3 font-mono text-xs">{{ l.lead_number }}</td>
                             <td class="px-4 py-3">
                                 <div class="font-medium">{{ l.name }}</div>
-                                <div class="text-xs text-muted-foreground">{{ l.mobile }}<span v-if="l.city"> · {{ l.city }}</span></div>
+                                <div class="text-xs text-muted-foreground">
+                                    {{ l.mobile }}<span v-if="l.city"> · {{ l.city }}</span>
+                                </div>
                             </td>
-                            <td class="px-4 py-3"><span class="inline-flex rounded-full px-2 py-0.5 text-xs font-medium capitalize" :class="priorityStyle[l.priority]">{{ l.priority }}</span></td>
-                            <td class="px-4 py-3"><span class="inline-flex rounded-full px-2 py-0.5 text-xs font-medium" :class="statusStyle[l.status] ?? 'bg-muted text-muted-foreground'">{{ l.status_label }}</span></td>
+                            <td class="px-4 py-3">
+                                <span
+                                    class="inline-flex rounded-full px-2 py-0.5 text-xs font-medium capitalize"
+                                    :class="priorityStyle[l.priority]"
+                                    >{{ l.priority }}</span
+                                >
+                            </td>
+                            <td class="px-4 py-3">
+                                <span
+                                    class="inline-flex rounded-full px-2 py-0.5 text-xs font-medium"
+                                    :class="statusStyle[l.status] ?? 'bg-muted text-muted-foreground'"
+                                    >{{ l.status_label }}</span
+                                >
+                            </td>
                             <td class="px-4 py-3">{{ l.telecaller?.name ?? '—' }}</td>
                             <td class="px-4 py-3">
                                 <span v-if="l.next_follow_up_at" :class="l.overdue ? 'font-semibold text-brand-red' : 'text-muted-foreground'">

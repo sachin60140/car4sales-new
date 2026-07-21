@@ -35,11 +35,13 @@ function toggleFavourite(id: number) {
             <span
                 v-if="vehicle.availability === 'reserved'"
                 class="absolute left-2 top-2 rounded-full bg-brand-red px-2 py-0.5 text-xs font-semibold text-white"
-            >Reserved</span>
+                >Reserved</span
+            >
             <span
                 v-if="vehicle.is_featured"
                 class="absolute right-2 top-2 rounded-full bg-brand-yellow px-2 py-0.5 text-xs font-semibold text-brand-maroon"
-            >Featured</span>
+                >Featured</span
+            >
             <button
                 class="absolute bottom-2 right-2 flex size-8 items-center justify-center rounded-full bg-white/90 shadow"
                 :aria-label="favourite ? 'Remove from favourites' : 'Add to favourites'"
@@ -56,7 +58,9 @@ function toggleFavourite(id: number) {
             <p class="mt-0.5 text-sm text-neutral-500">{{ vehicle.manufacturing_year }}</p>
 
             <div class="mt-3 grid grid-cols-3 gap-2 text-xs text-neutral-600">
-                <span class="flex items-center gap-1"><Gauge class="size-3.5" /> {{ vehicle.odometer_km ? Number(vehicle.odometer_km).toLocaleString('en-IN') + ' km' : '—' }}</span>
+                <span class="flex items-center gap-1"
+                    ><Gauge class="size-3.5" /> {{ vehicle.odometer_km ? Number(vehicle.odometer_km).toLocaleString('en-IN') + ' km' : '—' }}</span
+                >
                 <span class="flex items-center gap-1"><Fuel class="size-3.5" /> {{ vehicle.fuel_type ?? '—' }}</span>
                 <span class="flex items-center gap-1"><Settings2 class="size-3.5" /> {{ vehicle.transmission ?? '—' }}</span>
             </div>
@@ -68,7 +72,10 @@ function toggleFavourite(id: number) {
                         <MapPin class="size-3" /> {{ vehicle.branch.city ?? vehicle.branch.name }}
                     </p>
                 </div>
-                <Link :href="`/cars/${vehicle.slug}`" class="rounded-lg bg-brand-yellow px-3 py-1.5 text-xs font-semibold text-brand-maroon hover:bg-brand-yellow/90">
+                <Link
+                    :href="`/cars/${vehicle.slug}`"
+                    class="rounded-lg bg-brand-yellow px-3 py-1.5 text-xs font-semibold text-brand-maroon hover:bg-brand-yellow/90"
+                >
                     View
                 </Link>
             </div>

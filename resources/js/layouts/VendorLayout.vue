@@ -29,15 +29,24 @@ function logout() {
                 </Link>
 
                 <nav class="flex items-center gap-1 text-sm">
-                    <Link href="/vendor" class="inline-flex items-center gap-1.5 rounded-md px-3 py-2 text-muted-foreground transition hover:bg-muted hover:text-foreground">
+                    <Link
+                        href="/vendor"
+                        class="inline-flex items-center gap-1.5 rounded-md px-3 py-2 text-muted-foreground transition hover:bg-muted hover:text-foreground"
+                    >
                         <LayoutGrid class="size-4" /> <span class="hidden sm:inline">Dashboard</span>
                     </Link>
-                    <Link href="/vendor/submissions" class="inline-flex items-center gap-1.5 rounded-md px-3 py-2 text-muted-foreground transition hover:bg-muted hover:text-foreground">
+                    <Link
+                        href="/vendor/submissions"
+                        class="inline-flex items-center gap-1.5 rounded-md px-3 py-2 text-muted-foreground transition hover:bg-muted hover:text-foreground"
+                    >
                         <ListChecks class="size-4" /> <span class="hidden sm:inline">My Submissions</span>
                     </Link>
                     <div class="mx-1 hidden h-6 w-px bg-border sm:block" />
                     <span class="hidden px-2 text-sm text-muted-foreground sm:inline">{{ user?.name }}</span>
-                    <button class="inline-flex items-center gap-1.5 rounded-md px-3 py-2 text-muted-foreground transition hover:bg-muted hover:text-foreground" @click="logout">
+                    <button
+                        class="inline-flex items-center gap-1.5 rounded-md px-3 py-2 text-muted-foreground transition hover:bg-muted hover:text-foreground"
+                        @click="logout"
+                    >
                         <LogOut class="size-4" /> <span class="hidden sm:inline">Logout</span>
                     </button>
                 </nav>

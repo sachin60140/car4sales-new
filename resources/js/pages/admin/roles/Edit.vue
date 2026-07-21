@@ -155,13 +155,23 @@ function submit() {
                             <div v-for="group in grantedByModule" :key="group.module" class="flex flex-wrap items-baseline gap-x-2 gap-y-1 text-sm">
                                 <span class="min-w-32 font-medium capitalize">{{ group.module.replace(/-/g, ' ') }}</span>
                                 <span class="flex flex-wrap gap-1">
-                                    <span v-for="action in group.actions" :key="action" class="rounded-full border bg-background px-2 py-0.5 text-xs text-muted-foreground">{{ action.replace(/-/g, ' ') }}</span>
+                                    <span
+                                        v-for="action in group.actions"
+                                        :key="action"
+                                        class="rounded-full border bg-background px-2 py-0.5 text-xs text-muted-foreground"
+                                        >{{ action.replace(/-/g, ' ') }}</span
+                                    >
                                 </span>
                             </div>
                             <div v-if="grantedGlobals.length" class="flex flex-wrap items-baseline gap-x-2 gap-y-1 text-sm">
                                 <span class="min-w-32 font-medium">Global</span>
                                 <span class="flex flex-wrap gap-1">
-                                    <span v-for="permission in grantedGlobals" :key="permission" class="rounded-full border bg-background px-2 py-0.5 text-xs text-muted-foreground">{{ permission.replace(/-/g, ' ') }}</span>
+                                    <span
+                                        v-for="permission in grantedGlobals"
+                                        :key="permission"
+                                        class="rounded-full border bg-background px-2 py-0.5 text-xs text-muted-foreground"
+                                        >{{ permission.replace(/-/g, ' ') }}</span
+                                    >
                                 </span>
                             </div>
                         </div>
@@ -177,7 +187,9 @@ function submit() {
                                 @update:model-value="toggleModule(module, $event === true)"
                             />
                             {{ module.replace(/-/g, ' ') }}
-                            <span class="text-xs font-normal normal-case text-muted-foreground">{{ moduleGrantedCount(module) }}/{{ registry[module].length }}</span>
+                            <span class="text-xs font-normal normal-case text-muted-foreground"
+                                >{{ moduleGrantedCount(module) }}/{{ registry[module].length }}</span
+                            >
                         </label>
                         <div class="grid grid-cols-2 gap-2 pl-6 sm:grid-cols-4 lg:grid-cols-6">
                             <label v-for="action in actionsFor(module)" :key="action" class="flex items-center gap-2 text-sm">

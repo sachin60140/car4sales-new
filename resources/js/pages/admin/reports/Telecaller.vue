@@ -8,7 +8,17 @@ import { reactive, watch } from 'vue';
 
 const props = defineProps<{
     summary: Record<string, number>;
-    telecallers: { telecaller_id: number; name: string; assigned: number; contacted: number; calls: number; connected: number; interested: number; lost: number; conversion: number }[];
+    telecallers: {
+        telecaller_id: number;
+        name: string;
+        assigned: number;
+        contacted: number;
+        calls: number;
+        connected: number;
+        interested: number;
+        lost: number;
+        conversion: number;
+    }[];
     sources: { source: string; total: number; interested: number }[];
     outcomes: { call_outcome: string; total: number }[];
     range: { from: string; to: string };
@@ -89,9 +99,17 @@ const cards = [
                                 <td class="py-2 pr-3 font-medium text-emerald-600">{{ t.interested }}</td>
                                 <td class="py-2 pr-3 text-brand-red">{{ t.lost }}</td>
                                 <td class="py-2 pr-3">{{ t.conversion }}%</td>
-                                <td class="py-2 text-right"><Link :href="`/admin/sales-leads?telecaller_id=${t.telecaller_id}`" class="text-xs text-brand-maroon underline dark:text-brand-yellow">View leads →</Link></td>
+                                <td class="py-2 text-right">
+                                    <Link
+                                        :href="`/admin/sales-leads?telecaller_id=${t.telecaller_id}`"
+                                        class="text-xs text-brand-maroon underline dark:text-brand-yellow"
+                                        >View leads →</Link
+                                    >
+                                </td>
                             </tr>
-                            <tr v-if="!telecallers.length"><td colspan="9" class="py-6 text-center text-muted-foreground">No telecaller activity in this period.</td></tr>
+                            <tr v-if="!telecallers.length">
+                                <td colspan="9" class="py-6 text-center text-muted-foreground">No telecaller activity in this period.</td>
+                            </tr>
                         </tbody>
                     </table>
                 </CardContent>
@@ -105,7 +123,10 @@ const cards = [
                         <table class="w-full text-sm">
                             <thead>
                                 <tr class="border-b text-left text-muted-foreground">
-                                    <th class="py-2 pr-3 font-medium">Source</th><th class="py-2 pr-3 font-medium">Leads</th><th class="py-2 pr-3 font-medium">Interested</th><th class="py-2 font-medium"></th>
+                                    <th class="py-2 pr-3 font-medium">Source</th>
+                                    <th class="py-2 pr-3 font-medium">Leads</th>
+                                    <th class="py-2 pr-3 font-medium">Interested</th>
+                                    <th class="py-2 font-medium"></th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -113,9 +134,13 @@ const cards = [
                                     <td class="py-2 pr-3 capitalize">{{ (s.source ?? '').replace(/_/g, ' ') }}</td>
                                     <td class="py-2 pr-3">{{ s.total }}</td>
                                     <td class="py-2 pr-3 text-emerald-600">{{ s.interested }}</td>
-                                    <td class="py-2 text-right"><Link :href="`/admin/sales-leads?search=&status=`" class="text-xs text-muted-foreground">—</Link></td>
+                                    <td class="py-2 text-right">
+                                        <Link :href="`/admin/sales-leads?search=&status=`" class="text-xs text-muted-foreground">—</Link>
+                                    </td>
                                 </tr>
-                                <tr v-if="!sources.length"><td colspan="4" class="py-4 text-center text-muted-foreground">No data.</td></tr>
+                                <tr v-if="!sources.length">
+                                    <td colspan="4" class="py-4 text-center text-muted-foreground">No data.</td>
+                                </tr>
                             </tbody>
                         </table>
                     </CardContent>

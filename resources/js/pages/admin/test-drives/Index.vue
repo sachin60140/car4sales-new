@@ -47,8 +47,10 @@ function complete(id: number) {
                 </div>
                 <select v-model="status" class="h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-sm">
                     <option value="">All statuses</option>
-                    <option value="scheduled">Scheduled</option><option value="in_progress">In Progress</option>
-                    <option value="completed">Completed</option><option value="cancelled">Cancelled</option>
+                    <option value="scheduled">Scheduled</option>
+                    <option value="in_progress">In Progress</option>
+                    <option value="completed">Completed</option>
+                    <option value="cancelled">Cancelled</option>
                 </select>
             </div>
 
@@ -65,7 +67,9 @@ function complete(id: number) {
                         </tr>
                     </thead>
                     <tbody>
-                        <tr v-if="drives.data.length === 0"><td colspan="6" class="px-4 py-10 text-center text-muted-foreground">No test drives.</td></tr>
+                        <tr v-if="drives.data.length === 0">
+                            <td colspan="6" class="px-4 py-10 text-center text-muted-foreground">No test drives.</td>
+                        </tr>
                         <tr v-for="t in drives.data" :key="t.id" class="border-b last:border-0 hover:bg-muted/30">
                             <td class="px-4 py-3 font-mono text-xs">{{ t.td_number }}</td>
                             <td class="px-4 py-3">
@@ -74,9 +78,15 @@ function complete(id: number) {
                             </td>
                             <td class="px-4 py-3">{{ t.vehicle ? `${t.vehicle.stock_number} · ${t.vehicle.make} ${t.vehicle.model}` : '—' }}</td>
                             <td class="px-4 py-3">{{ t.scheduled_at ? new Date(t.scheduled_at).toLocaleString() : '—' }}</td>
-                            <td class="px-4 py-3"><span class="inline-flex rounded-full bg-muted px-2 py-0.5 text-xs font-medium capitalize">{{ (t.status ?? '').replace(/_/g, ' ') }}</span></td>
+                            <td class="px-4 py-3">
+                                <span class="inline-flex rounded-full bg-muted px-2 py-0.5 text-xs font-medium capitalize">{{
+                                    (t.status ?? '').replace(/_/g, ' ')
+                                }}</span>
+                            </td>
                             <td class="px-4 py-3 text-right">
-                                <Button v-if="['scheduled','in_progress'].includes(t.status)" size="sm" variant="outline" @click="complete(t.id)">Complete</Button>
+                                <Button v-if="['scheduled', 'in_progress'].includes(t.status)" size="sm" variant="outline" @click="complete(t.id)"
+                                    >Complete</Button
+                                >
                             </td>
                         </tr>
                     </tbody>

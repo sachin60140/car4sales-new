@@ -38,13 +38,15 @@ function reject() {
 
 // --- Settlement ---
 const settlement = computed<string>(() => s.value.settlement_status);
-const payForm = useForm<{ payment_amount: number | null; payment_mode: string; payment_reference: string; payment_date: string; proof: File | null }>({
-    payment_amount: Number(s.value.expected_amount ?? 0),
-    payment_mode: 'neft',
-    payment_reference: '',
-    payment_date: new Date().toISOString().slice(0, 10),
-    proof: null,
-});
+const payForm = useForm<{ payment_amount: number | null; payment_mode: string; payment_reference: string; payment_date: string; proof: File | null }>(
+    {
+        payment_amount: Number(s.value.expected_amount ?? 0),
+        payment_mode: 'neft',
+        payment_reference: '',
+        payment_date: new Date().toISOString().slice(0, 10),
+        proof: null,
+    },
+);
 function onProof(e: Event) {
     payForm.proof = (e.target as HTMLInputElement).files?.[0] ?? null;
 }
@@ -57,7 +59,9 @@ const paymentModes = ['neft', 'rtgs', 'upi', 'cheque', 'cash'];
 const rows = ref<any[]>([]);
 watch(
     () => s.value.verification?.rows,
-    (r) => { rows.value = (r ?? []).map((x: any) => ({ ...x })); },
+    (r) => {
+        rows.value = (r ?? []).map((x: any) => ({ ...x }));
+    },
     { immediate: true, deep: true },
 );
 const verificationExtras = computed<any[]>(() => s.value.verification?.extras ?? []);
@@ -104,10 +108,21 @@ const possessionChecks = [
     { key: 'accessories', label: 'Accessories' },
 ];
 const possessionForm = useForm<Record<string, any>>({
-    vehicle_received: true, original_rc_received: false, insurance_received: false, puc_received: false,
-    noc_received: false, form_35_received: false, main_key: false, spare_key: false,
-    service_book: false, tool_kit: false, spare_wheel: false, accessories: false,
-    odometer_km: s.value.odometer_km ?? null, fuel_level: '', remarks: '',
+    vehicle_received: true,
+    original_rc_received: false,
+    insurance_received: false,
+    puc_received: false,
+    noc_received: false,
+    form_35_received: false,
+    main_key: false,
+    spare_key: false,
+    service_book: false,
+    tool_kit: false,
+    spare_wheel: false,
+    accessories: false,
+    odometer_km: s.value.odometer_km ?? null,
+    fuel_level: '',
+    remarks: '',
 });
 function confirmPossession() {
     possessionForm.post(`/admin/vendor-submissions/${s.value.id}/confirm-possession`, { preserveScroll: true });
@@ -140,7 +155,8 @@ const resultStyle: Record<string, string> = { pass: 'text-emerald-600', fail: 't
 
             <div v-if="s.purchase_lead" class="rounded-lg border border-emerald-500/40 bg-emerald-500/5 px-4 py-3 text-sm">
                 Approved → purchase lead
-                <Link :href="`/admin/purchase-leads/${s.purchase_lead.id}`" class="font-medium underline">{{ s.purchase_lead.lead_number }}</Link>.
+                <Link :href="`/admin/purchase-leads/${s.purchase_lead.id}`" class="font-medium underline">{{ s.purchase_lead.lead_number }}</Link
+                >.
             </div>
 
             <div class="grid gap-4 lg:grid-cols-3">
@@ -149,9 +165,14 @@ const resultStyle: Record<string, string> = { pass: 'text-emerald-600', fail: 't
                         <CardHeader><CardTitle class="text-base">Vehicle</CardTitle></CardHeader>
                         <CardContent class="grid grid-cols-2 gap-y-2 text-sm sm:grid-cols-3">
                             <span class="text-muted-foreground">Year</span><span class="sm:col-span-2">{{ s.manufacturing_year ?? '—' }}</span>
-                            <span class="text-muted-foreground">Reg. No.</span><span class="sm:col-span-2">{{ s.registration_number ?? '—' }} <span v-if="s.registration_state">({{ s.registration_state }})</span></span>
-                            <span class="text-muted-foreground">Fuel / Trans.</span><span class="sm:col-span-2">{{ s.fuel_type ?? '—' }} / {{ s.transmission ?? '—' }}</span>
-                            <span class="text-muted-foreground">Odometer</span><span class="sm:col-span-2">{{ s.odometer_km ? Number(s.odometer_km).toLocaleString('en-IN') + ' km' : '—' }}</span>
+                            <span class="text-muted-foreground">Reg. No.</span
+                            ><span class="sm:col-span-2"
+                                >{{ s.registration_number ?? '—' }} <span v-if="s.registration_state">({{ s.registration_state }})</span></span
+                            >
+                            <span class="text-muted-foreground">Fuel / Trans.</span
+                            ><span class="sm:col-span-2">{{ s.fuel_type ?? '—' }} / {{ s.transmission ?? '—' }}</span>
+                            <span class="text-muted-foreground">Odometer</span
+                            ><span class="sm:col-span-2">{{ s.odometer_km ? Number(s.odometer_km).toLocaleString('en-IN') + ' km' : '—' }}</span>
                             <span class="text-muted-foreground">Colour</span><span class="sm:col-span-2">{{ s.color ?? '—' }}</span>
                             <span class="text-muted-foreground">Owner No.</span><span class="sm:col-span-2">{{ s.ownership_serial ?? '—' }}</span>
                         </CardContent>
@@ -162,10 +183,15 @@ const resultStyle: Record<string, string> = { pass: 'text-emerald-600', fail: 't
                         <CardContent>
                             <ul class="divide-y text-sm">
                                 <li v-for="it in s.items" :key="it.id" class="flex items-center justify-between gap-2 py-2">
-                                    <span>{{ it.label }} <span class="text-xs text-muted-foreground">· {{ it.section }}</span><span v-if="it.remarks" class="text-xs text-muted-foreground"> — {{ it.remarks }}</span></span>
+                                    <span
+                                        >{{ it.label }} <span class="text-xs text-muted-foreground">· {{ it.section }}</span
+                                        ><span v-if="it.remarks" class="text-xs text-muted-foreground"> — {{ it.remarks }}</span></span
+                                    >
                                     <span class="flex items-center gap-2">
                                         <span v-if="it.rating" class="text-xs text-muted-foreground">{{ it.rating }}★</span>
-                                        <span class="font-medium uppercase" :class="resultStyle[it.result]">{{ it.result === 'na' ? 'N/A' : it.result }}</span>
+                                        <span class="font-medium uppercase" :class="resultStyle[it.result]">{{
+                                            it.result === 'na' ? 'N/A' : it.result
+                                        }}</span>
                                     </span>
                                 </li>
                             </ul>
@@ -222,7 +248,9 @@ const resultStyle: Record<string, string> = { pass: 'text-emerald-600', fail: 't
                             <div class="grid gap-1.5 border-t pt-3">
                                 <Label class="text-xs">Reject — reason required</Label>
                                 <Input v-model="rejectForm.remarks" placeholder="Reason for rejection" class="h-9" />
-                                <Button size="sm" variant="destructive" :disabled="!rejectForm.remarks || rejectForm.processing" @click="reject">Reject</Button>
+                                <Button size="sm" variant="destructive" :disabled="!rejectForm.remarks || rejectForm.processing" @click="reject"
+                                    >Reject</Button
+                                >
                             </div>
                         </CardContent>
                     </Card>
@@ -240,19 +268,25 @@ const resultStyle: Record<string, string> = { pass: 'text-emerald-600', fail: 't
                         <CardContent class="grid gap-3 text-sm">
                             <span class="w-fit rounded-full bg-muted px-2 py-0.5 text-xs">{{ s.settlement_label }}</span>
 
-                            <p v-if="settlement === 'kyc_pending'" class="text-xs text-muted-foreground">Waiting for the vendor to submit owner details &amp; documents.</p>
+                            <p v-if="settlement === 'kyc_pending'" class="text-xs text-muted-foreground">
+                                Waiting for the vendor to submit owner details &amp; documents.
+                            </p>
 
                             <!-- Owner (seller) + vehicle identity -->
                             <div v-if="s.owner" class="rounded-lg border border-sidebar-border/60 p-2">
                                 <p class="text-xs font-medium uppercase text-muted-foreground">Owner (Seller)</p>
                                 <p>{{ s.owner.name }}</p>
-                                <p class="text-muted-foreground">{{ s.owner.phone }}<span v-if="s.owner.email"> · {{ s.owner.email }}</span></p>
+                                <p class="text-muted-foreground">
+                                    {{ s.owner.phone }}<span v-if="s.owner.email"> · {{ s.owner.email }}</span>
+                                </p>
                                 <p class="text-muted-foreground">{{ s.owner.address }}</p>
                                 <p v-if="s.owner.pan" class="text-muted-foreground">PAN {{ s.owner.pan }}</p>
                                 <p class="mt-1 border-t pt-1 text-muted-foreground">
                                     <span v-if="s.chassis_number">Chassis {{ s.chassis_number }} · </span>
                                     <span v-if="s.keys_available">Keys: {{ s.keys_available }} · </span>
-                                    <span :class="s.has_hypothecation ? 'text-brand-orange' : ''">{{ s.has_hypothecation ? 'Under hypothecation' : 'No hypothecation' }}</span>
+                                    <span :class="s.has_hypothecation ? 'text-brand-orange' : ''">{{
+                                        s.has_hypothecation ? 'Under hypothecation' : 'No hypothecation'
+                                    }}</span>
                                 </p>
                             </div>
 
@@ -260,7 +294,9 @@ const resultStyle: Record<string, string> = { pass: 'text-emerald-600', fail: 't
                             <div v-if="s.bank" class="rounded-lg border border-sidebar-border/60 p-2">
                                 <p class="text-xs font-medium uppercase text-muted-foreground">Owner's bank account (payout)</p>
                                 <p>{{ s.bank.account_name }}</p>
-                                <p class="text-muted-foreground">A/c {{ s.bank.account_number }} · {{ s.bank.ifsc }}<span v-if="s.bank.bank_name"> · {{ s.bank.bank_name }}</span></p>
+                                <p class="text-muted-foreground">
+                                    A/c {{ s.bank.account_number }} · {{ s.bank.ifsc }}<span v-if="s.bank.bank_name"> · {{ s.bank.bank_name }}</span>
+                                </p>
                             </div>
 
                             <!-- Document verification table -->
@@ -269,72 +305,133 @@ const resultStyle: Record<string, string> = { pass: 'text-emerald-600', fail: 't
                                 <div class="divide-y">
                                     <div v-for="row in rows" :key="row.key" class="grid gap-2 p-2 sm:grid-cols-12 sm:items-start">
                                         <div class="sm:col-span-4">
-                                            <p class="text-sm font-medium">{{ row.label }} <span v-if="row.group !== 'optional'" class="text-brand-red">*</span></p>
+                                            <p class="text-sm font-medium">
+                                                {{ row.label }} <span v-if="row.group !== 'optional'" class="text-brand-red">*</span>
+                                            </p>
                                             <div class="mt-0.5 flex flex-wrap gap-2">
-                                                <a v-for="(f, i) in row.files" :key="i" :href="f.url" target="_blank" class="text-xs underline text-muted-foreground">{{ f.side || 'View' }}</a>
+                                                <a
+                                                    v-for="(f, i) in row.files"
+                                                    :key="i"
+                                                    :href="f.url"
+                                                    target="_blank"
+                                                    class="text-xs text-muted-foreground underline"
+                                                    >{{ f.side || 'View' }}</a
+                                                >
                                                 <span v-if="!row.files.length" class="text-xs text-brand-red">Not uploaded</span>
                                             </div>
                                         </div>
                                         <div class="sm:col-span-8">
                                             <div v-if="can.verifyDocs" class="grid gap-1.5 sm:grid-cols-3">
-                                                <select v-model="row.status" class="h-8 rounded-md border border-input bg-transparent px-2 text-xs shadow-sm">
+                                                <select
+                                                    v-model="row.status"
+                                                    class="h-8 rounded-md border border-input bg-transparent px-2 text-xs shadow-sm"
+                                                >
                                                     <option v-for="st in docStatuses" :key="st" :value="st">{{ st.replace('_', ' ') }}</option>
                                                 </select>
                                                 <Input v-model="row.number" placeholder="Number" class="h-8 text-xs" />
                                                 <Input v-model="row.valid_till" type="date" class="h-8 text-xs" />
                                                 <Input v-model="row.remarks" placeholder="Remarks" class="h-8 text-xs sm:col-span-2" />
-                                                <Button size="sm" variant="outline" class="h-8" :disabled="savingRow === row.key" @click="saveRow(row)">Save</Button>
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    class="h-8"
+                                                    :disabled="savingRow === row.key"
+                                                    @click="saveRow(row)"
+                                                    >Save</Button
+                                                >
                                             </div>
                                             <div v-else class="text-xs">
-                                                <span class="font-medium capitalize" :class="docStatusStyle[row.status]">{{ (row.status || 'pending').replace('_', ' ') }}</span>
+                                                <span class="font-medium capitalize" :class="docStatusStyle[row.status]">{{
+                                                    (row.status || 'pending').replace('_', ' ')
+                                                }}</span>
                                                 <span v-if="row.number" class="text-muted-foreground"> · {{ row.number }}</span>
                                                 <span v-if="row.remarks" class="text-muted-foreground"> · {{ row.remarks }}</span>
                                             </div>
-                                            <p v-if="row.verified_by" class="mt-1 text-[11px] text-muted-foreground">Verified by {{ row.verified_by }}<span v-if="row.verified_at"> · {{ row.verified_at }}</span></p>
+                                            <p v-if="row.verified_by" class="mt-1 text-[11px] text-muted-foreground">
+                                                Verified by {{ row.verified_by }}<span v-if="row.verified_at"> · {{ row.verified_at }}</span>
+                                            </p>
                                         </div>
                                     </div>
                                 </div>
                                 <div v-if="verificationExtras.length" class="flex flex-wrap gap-1.5 border-t px-2 py-1.5">
                                     <span class="text-xs text-muted-foreground">Other:</span>
-                                    <a v-for="(x, i) in verificationExtras" :key="i" :href="x.url" target="_blank" class="text-xs underline">Doc {{ i + 1 }}</a>
+                                    <a v-for="(x, i) in verificationExtras" :key="i" :href="x.url" target="_blank" class="text-xs underline"
+                                        >Doc {{ i + 1 }}</a
+                                    >
                                 </div>
                             </div>
 
                             <!-- Issue agreement / send back -->
                             <div v-if="can.verifyDocs" class="grid gap-2 border-t pt-3">
                                 <Input v-model="kycApproveForm.remarks" placeholder="Note (optional)" class="h-9" />
-                                <Button size="sm" :disabled="!can.issueAgreement || kycApproveForm.processing" @click="issueAgreement">Issue Agreement</Button>
-                                <p v-if="!can.issueAgreement" class="text-xs text-muted-foreground">Mark every required document “verified” to issue the agreement.</p>
+                                <Button size="sm" :disabled="!can.issueAgreement || kycApproveForm.processing" @click="issueAgreement"
+                                    >Issue Agreement</Button
+                                >
+                                <p v-if="!can.issueAgreement" class="text-xs text-muted-foreground">
+                                    Mark every required document “verified” to issue the agreement.
+                                </p>
                                 <div class="border-t pt-2">
                                     <Input v-model="kycRejectForm.remarks" placeholder="Reason to send back" class="h-9" />
-                                    <Button size="sm" variant="destructive" class="mt-2" :disabled="!kycRejectForm.remarks || kycRejectForm.processing" @click="sendBack">Send back to vendor</Button>
+                                    <Button
+                                        size="sm"
+                                        variant="destructive"
+                                        class="mt-2"
+                                        :disabled="!kycRejectForm.remarks || kycRejectForm.processing"
+                                        @click="sendBack"
+                                        >Send back to vendor</Button
+                                    >
                                 </div>
                             </div>
-                            <p v-else-if="s.kyc_remarks && settlement === 'kyc_pending'" class="rounded-lg border border-brand-red/40 bg-brand-red/5 p-2 text-xs text-brand-red">Sent back: {{ s.kyc_remarks }}</p>
+                            <p
+                                v-else-if="s.kyc_remarks && settlement === 'kyc_pending'"
+                                class="rounded-lg border border-brand-red/40 bg-brand-red/5 p-2 text-xs text-brand-red"
+                            >
+                                Sent back: {{ s.kyc_remarks }}
+                            </p>
 
                             <!-- Record payment -->
                             <div v-if="can.recordPayment" class="grid gap-2 border-t pt-3">
-                                <div class="grid gap-1"><Label class="text-xs">Amount paid (₹)</Label><Input v-model.number="payForm.payment_amount" type="number" class="h-9" /></div>
+                                <div class="grid gap-1">
+                                    <Label class="text-xs">Amount paid (₹)</Label
+                                    ><Input v-model.number="payForm.payment_amount" type="number" class="h-9" />
+                                </div>
                                 <div class="grid gap-1">
                                     <Label class="text-xs">Mode</Label>
-                                    <select v-model="payForm.payment_mode" class="h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-sm">
+                                    <select
+                                        v-model="payForm.payment_mode"
+                                        class="h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-sm"
+                                    >
                                         <option v-for="m in paymentModes" :key="m" :value="m" class="uppercase">{{ m.toUpperCase() }}</option>
                                     </select>
                                 </div>
-                                <div class="grid gap-1"><Label class="text-xs">Reference / UTR</Label><Input v-model="payForm.payment_reference" class="h-9" /></div>
-                                <div class="grid gap-1"><Label class="text-xs">Date</Label><Input v-model="payForm.payment_date" type="date" class="h-9" /></div>
-                                <div class="grid gap-1"><Label class="text-xs">Payment Screenshot</Label><input type="file" accept="image/*" class="text-xs" @change="onProof" /></div>
-                                <Button size="sm" :disabled="!payForm.payment_amount || payForm.processing" @click="recordPayment">Record Payment</Button>
+                                <div class="grid gap-1">
+                                    <Label class="text-xs">Reference / UTR</Label><Input v-model="payForm.payment_reference" class="h-9" />
+                                </div>
+                                <div class="grid gap-1">
+                                    <Label class="text-xs">Date</Label><Input v-model="payForm.payment_date" type="date" class="h-9" />
+                                </div>
+                                <div class="grid gap-1">
+                                    <Label class="text-xs">Payment Screenshot</Label
+                                    ><input type="file" accept="image/*" class="text-xs" @change="onProof" />
+                                </div>
+                                <Button size="sm" :disabled="!payForm.payment_amount || payForm.processing" @click="recordPayment"
+                                    >Record Payment</Button
+                                >
                             </div>
 
                             <div v-else-if="s.payment" class="rounded-lg border border-emerald-500/40 bg-emerald-500/5 p-2">
                                 <p class="text-xs font-medium uppercase text-emerald-700 dark:text-emerald-400">Paid</p>
                                 <p class="text-lg font-bold">{{ money(s.payment.amount) }}</p>
-                                <p class="text-muted-foreground capitalize">{{ s.payment.mode }}<span v-if="s.payment.reference"> · {{ s.payment.reference }}</span><span v-if="s.payment.date"> · {{ s.payment.date }}</span></p>
+                                <p class="capitalize text-muted-foreground">
+                                    {{ s.payment.mode }}<span v-if="s.payment.reference"> · {{ s.payment.reference }}</span
+                                    ><span v-if="s.payment.date"> · {{ s.payment.date }}</span>
+                                </p>
                                 <a v-if="s.payment_proof" :href="s.payment_proof.url" target="_blank" class="text-xs underline">Payment proof</a>
                             </div>
 
-                            <p v-else-if="settlement === 'agreement_ready'" class="text-xs text-muted-foreground">Documents verified. Waiting for the vendor to request payment.</p>
+                            <p v-else-if="settlement === 'agreement_ready'" class="text-xs text-muted-foreground">
+                                Documents verified. Waiting for the vendor to request payment.
+                            </p>
 
                             <!-- Confirm possession → create stock -->
                             <div v-if="can.confirmPossession" class="grid gap-2 border-t pt-3">
@@ -346,11 +443,20 @@ const resultStyle: Record<string, string> = { pass: 'text-emerald-600', fail: 't
                                     </label>
                                 </div>
                                 <div class="grid grid-cols-2 gap-2">
-                                    <div class="grid gap-1"><Label class="text-xs">Odometer</Label><Input v-model.number="possessionForm.odometer_km" type="number" class="h-9" /></div>
-                                    <div class="grid gap-1"><Label class="text-xs">Fuel</Label><Input v-model="possessionForm.fuel_level" class="h-9" /></div>
+                                    <div class="grid gap-1">
+                                        <Label class="text-xs">Odometer</Label
+                                        ><Input v-model.number="possessionForm.odometer_km" type="number" class="h-9" />
+                                    </div>
+                                    <div class="grid gap-1">
+                                        <Label class="text-xs">Fuel</Label><Input v-model="possessionForm.fuel_level" class="h-9" />
+                                    </div>
                                 </div>
-                                <Button size="sm" :disabled="!possessionForm.vehicle_received || possessionForm.processing" @click="confirmPossession">Confirm Possession &amp; Create Stock</Button>
-                                <p v-if="!possessionForm.vehicle_received" class="text-xs text-muted-foreground">Tick “Vehicle received” to create the stock entry.</p>
+                                <Button size="sm" :disabled="!possessionForm.vehicle_received || possessionForm.processing" @click="confirmPossession"
+                                    >Confirm Possession &amp; Create Stock</Button
+                                >
+                                <p v-if="!possessionForm.vehicle_received" class="text-xs text-muted-foreground">
+                                    Tick “Vehicle received” to create the stock entry.
+                                </p>
                             </div>
 
                             <!-- Stocked -->

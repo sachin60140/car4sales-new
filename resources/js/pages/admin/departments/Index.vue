@@ -105,9 +105,7 @@ function confirmDelete() {
                     <h1 class="text-xl font-semibold">Departments</h1>
                     <p class="text-sm text-muted-foreground">Configurable operating departments.</p>
                 </div>
-                <Button v-if="can.create" @click="openCreate">
-                    <Plus class="mr-1 size-4" /> New Department
-                </Button>
+                <Button v-if="can.create" @click="openCreate"> <Plus class="mr-1 size-4" /> New Department </Button>
             </div>
 
             <div class="relative w-full max-w-sm">
@@ -139,7 +137,11 @@ function confirmDelete() {
                             <td class="px-4 py-3">
                                 <span
                                     class="inline-flex rounded-full px-2 py-0.5 text-xs font-medium"
-                                    :class="department.is_active ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400' : 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400'"
+                                    :class="
+                                        department.is_active
+                                            ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400'
+                                            : 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400'
+                                    "
                                 >
                                     {{ department.is_active ? 'Active' : 'Inactive' }}
                                 </span>
@@ -149,7 +151,13 @@ function confirmDelete() {
                                     <Button v-if="can.update" variant="ghost" size="icon" aria-label="Edit department" @click="openEdit(department)">
                                         <Pencil class="size-4" />
                                     </Button>
-                                    <Button v-if="can.delete" variant="ghost" size="icon" aria-label="Delete department" @click="deleteTarget = department">
+                                    <Button
+                                        v-if="can.delete"
+                                        variant="ghost"
+                                        size="icon"
+                                        aria-label="Delete department"
+                                        @click="deleteTarget = department"
+                                    >
                                         <Trash2 class="size-4 text-destructive" />
                                     </Button>
                                 </div>

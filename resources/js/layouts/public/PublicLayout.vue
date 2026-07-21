@@ -42,9 +42,7 @@ const year = new Date().getFullYear();
         <div class="bg-brand-maroon text-white">
             <div class="mx-auto flex max-w-7xl items-center justify-between px-4 py-1.5 text-xs">
                 <span class="hidden sm:inline">{{ site.tagline }} · Quality checked pre-owned cars</span>
-                <a :href="`tel:${site.phone}`" class="flex items-center gap-1 font-medium">
-                    <Phone class="size-3.5" /> {{ site.phone }}
-                </a>
+                <a :href="`tel:${site.phone}`" class="flex items-center gap-1 font-medium"> <Phone class="size-3.5" /> {{ site.phone }} </a>
             </div>
         </div>
 
@@ -55,9 +53,7 @@ const year = new Date().getFullYear();
                     <span class="flex size-10 items-center justify-center rounded-lg bg-brand-yellow text-brand-maroon">
                         <AppLogoIcon class="size-7" />
                     </span>
-                    <span class="text-xl font-extrabold tracking-tight text-brand-maroon">
-                        Car<span class="text-brand-yellow">4</span>Sales
-                    </span>
+                    <span class="text-xl font-extrabold tracking-tight text-brand-maroon"> Car<span class="text-brand-yellow">4</span>Sales </span>
                 </Link>
 
                 <nav class="hidden items-center gap-1 lg:flex">
@@ -111,7 +107,9 @@ const year = new Date().getFullYear();
                         </span>
                         <span class="text-lg font-extrabold text-white">Car<span class="text-brand-yellow">4</span>Sales</span>
                     </div>
-                    <p class="mt-3 text-sm text-white/70">{{ site.tagline }}. Certified pre-owned cars with transparent pricing and quality checks.</p>
+                    <p class="mt-3 text-sm text-white/70">
+                        {{ site.tagline }}. Certified pre-owned cars with transparent pricing and quality checks.
+                    </p>
                 </div>
                 <div>
                     <h4 class="mb-3 text-sm font-semibold uppercase tracking-wide text-brand-yellow">Explore</h4>
@@ -167,7 +165,10 @@ const year = new Date().getFullYear();
             leave-active-class="transition duration-150"
             leave-to-class="opacity-0"
         >
-            <div v-if="toast" class="fixed bottom-24 right-5 z-50 flex max-w-sm items-start gap-2 rounded-lg border border-green-300 bg-white px-4 py-3 text-sm text-green-800 shadow-lg">
+            <div
+                v-if="toast"
+                class="fixed bottom-24 right-5 z-50 flex max-w-sm items-start gap-2 rounded-lg border border-green-300 bg-white px-4 py-3 text-sm text-green-800 shadow-lg"
+            >
                 <CheckCircle2 class="mt-0.5 size-5 shrink-0" />
                 <span>{{ toast }}</span>
             </div>

@@ -87,7 +87,11 @@ function submit() {
                         <div class="grid grid-cols-2 gap-4">
                             <div class="grid gap-2">
                                 <Label for="seller_type">Seller Type</Label>
-                                <select id="seller_type" v-model="form.seller_type" class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-sm">
+                                <select
+                                    id="seller_type"
+                                    v-model="form.seller_type"
+                                    class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-sm"
+                                >
                                     <option value="individual">Individual</option>
                                     <option value="dealer">Dealer</option>
                                     <option value="company">Company</option>
@@ -121,7 +125,13 @@ function submit() {
                             </div>
                             <div class="grid gap-2">
                                 <Label for="manufacturing_year">Mfg. Year</Label>
-                                <Input id="manufacturing_year" v-model.number="form.manufacturing_year" type="number" min="1980" :max="new Date().getFullYear() + 1" />
+                                <Input
+                                    id="manufacturing_year"
+                                    v-model.number="form.manufacturing_year"
+                                    type="number"
+                                    min="1980"
+                                    :max="new Date().getFullYear() + 1"
+                                />
                                 <InputError :message="form.errors.manufacturing_year" />
                             </div>
                         </div>
@@ -142,16 +152,29 @@ function submit() {
                         <div class="grid grid-cols-2 gap-4">
                             <div class="grid gap-2">
                                 <Label for="fuel_type">Fuel</Label>
-                                <select id="fuel_type" v-model="form.fuel_type" class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-sm">
+                                <select
+                                    id="fuel_type"
+                                    v-model="form.fuel_type"
+                                    class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-sm"
+                                >
                                     <option value="">—</option>
-                                    <option>Petrol</option><option>Diesel</option><option>CNG</option><option>Electric</option><option>Hybrid</option>
+                                    <option>Petrol</option>
+                                    <option>Diesel</option>
+                                    <option>CNG</option>
+                                    <option>Electric</option>
+                                    <option>Hybrid</option>
                                 </select>
                             </div>
                             <div class="grid gap-2">
                                 <Label for="transmission">Transmission</Label>
-                                <select id="transmission" v-model="form.transmission" class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-sm">
+                                <select
+                                    id="transmission"
+                                    v-model="form.transmission"
+                                    class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-sm"
+                                >
                                     <option value="">—</option>
-                                    <option>Manual</option><option>Automatic</option>
+                                    <option>Manual</option>
+                                    <option>Automatic</option>
                                 </select>
                             </div>
                         </div>
@@ -167,7 +190,11 @@ function submit() {
                         </div>
                         <div class="grid gap-2">
                             <Label for="loan_status">Loan Status</Label>
-                            <select id="loan_status" v-model="form.loan_status" class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-sm">
+                            <select
+                                id="loan_status"
+                                v-model="form.loan_status"
+                                class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-sm"
+                            >
                                 <option value="none">No loan</option>
                                 <option value="active">Active loan (hypothecation)</option>
                                 <option value="closed_pending_noc">Closed, NOC pending</option>
@@ -181,22 +208,37 @@ function submit() {
                     <CardContent class="grid gap-4 sm:grid-cols-2">
                         <div class="grid gap-2">
                             <Label for="branch_id">Branch</Label>
-                            <select id="branch_id" v-model="form.branch_id" class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-sm">
+                            <select
+                                id="branch_id"
+                                v-model="form.branch_id"
+                                class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-sm"
+                            >
                                 <option :value="null">Auto (my branch)</option>
                                 <option v-for="b in branches" :key="b.id" :value="b.id">{{ b.name }}</option>
                             </select>
                         </div>
                         <div class="grid gap-2">
                             <Label for="assigned_to">Assign To</Label>
-                            <select id="assigned_to" v-model="form.assigned_to" class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-sm">
+                            <select
+                                id="assigned_to"
+                                v-model="form.assigned_to"
+                                class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-sm"
+                            >
                                 <option :value="null">Unassigned</option>
                                 <option v-for="e in employees" :key="e.id" :value="e.id">{{ e.name }}</option>
                             </select>
                         </div>
                         <div class="grid gap-2">
                             <Label for="priority">Priority</Label>
-                            <select id="priority" v-model="form.priority" class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-sm">
-                                <option value="low">Low</option><option value="normal">Normal</option><option value="high">High</option><option value="hot">Hot</option>
+                            <select
+                                id="priority"
+                                v-model="form.priority"
+                                class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-sm"
+                            >
+                                <option value="low">Low</option>
+                                <option value="normal">Normal</option>
+                                <option value="high">High</option>
+                                <option value="hot">Hot</option>
                             </select>
                         </div>
                         <div class="grid gap-2">

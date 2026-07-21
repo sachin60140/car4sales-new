@@ -28,9 +28,15 @@ function money(v: string | number | null): string {
 }
 
 const transitionForm = useForm({
-    status: '', lender_id: null as number | null, lender_application_number: '',
-    sanction_amount: null as number | null, emi: null as number | null,
-    interest_rate: null as number | null, rejection_reason: '', queries: '', remarks: '',
+    status: '',
+    lender_id: null as number | null,
+    lender_application_number: '',
+    sanction_amount: null as number | null,
+    emi: null as number | null,
+    interest_rate: null as number | null,
+    rejection_reason: '',
+    queries: '',
+    remarks: '',
 });
 const needsSanction = computed(() => transitionForm.status === 'sanctioned');
 const needsReason = computed(() => transitionForm.status === 'rejected');
@@ -57,21 +63,46 @@ const canDisburse = computed(() => ['sanctioned', 'agreement_pending', 'disburse
                 <div>
                     <div class="flex items-center gap-3">
                         <h1 class="text-xl font-semibold">{{ application.application_number }}</h1>
-                        <span class="rounded-full bg-brand-yellow/20 px-2.5 py-0.5 text-xs font-medium capitalize text-brand-maroon dark:text-brand-yellow">{{ (application.status ?? '').replace(/_/g, ' ') }}</span>
+                        <span
+                            class="rounded-full bg-brand-yellow/20 px-2.5 py-0.5 text-xs font-medium capitalize text-brand-maroon dark:text-brand-yellow"
+                            >{{ (application.status ?? '').replace(/_/g, ' ') }}</span
+                        >
                     </div>
                     <p class="mt-1 text-sm text-muted-foreground">
                         {{ application.customer?.name }} · {{ application.customer?.mobile }} ·
-                        <Link v-if="application.booking" :href="`/admin/bookings/${application.booking.id}`" class="underline">{{ application.booking.booking_number }}</Link>
+                        <Link v-if="application.booking" :href="`/admin/bookings/${application.booking.id}`" class="underline">{{
+                            application.booking.booking_number
+                        }}</Link>
                     </p>
                 </div>
                 <Button variant="outline" as-child><Link href="/admin/finance">Back</Link></Button>
             </div>
 
             <div class="grid grid-cols-2 gap-3 md:grid-cols-4">
-                <Card><CardContent class="p-4"><p class="text-xs text-muted-foreground">Loan Amount</p><p class="text-lg font-bold">{{ money(application.loan_amount) }}</p></CardContent></Card>
-                <Card><CardContent class="p-4"><p class="text-xs text-muted-foreground">Sanction</p><p class="text-lg font-bold">{{ money(application.sanction_amount) }}</p></CardContent></Card>
-                <Card><CardContent class="p-4"><p class="text-xs text-muted-foreground">EMI</p><p class="text-lg font-bold">{{ money(application.emi) }}</p></CardContent></Card>
-                <Card><CardContent class="p-4"><p class="text-xs text-muted-foreground">Disbursed</p><p class="text-lg font-bold text-emerald-600">{{ money(application.disbursed_amount) }}</p></CardContent></Card>
+                <Card
+                    ><CardContent class="p-4"
+                        ><p class="text-xs text-muted-foreground">Loan Amount</p>
+                        <p class="text-lg font-bold">{{ money(application.loan_amount) }}</p></CardContent
+                    ></Card
+                >
+                <Card
+                    ><CardContent class="p-4"
+                        ><p class="text-xs text-muted-foreground">Sanction</p>
+                        <p class="text-lg font-bold">{{ money(application.sanction_amount) }}</p></CardContent
+                    ></Card
+                >
+                <Card
+                    ><CardContent class="p-4"
+                        ><p class="text-xs text-muted-foreground">EMI</p>
+                        <p class="text-lg font-bold">{{ money(application.emi) }}</p></CardContent
+                    ></Card
+                >
+                <Card
+                    ><CardContent class="p-4"
+                        ><p class="text-xs text-muted-foreground">Disbursed</p>
+                        <p class="text-lg font-bold text-emerald-600">{{ money(application.disbursed_amount) }}</p></CardContent
+                    ></Card
+                >
             </div>
 
             <div class="grid gap-4 lg:grid-cols-3">
@@ -80,9 +111,18 @@ const canDisburse = computed(() => ['sanctioned', 'agreement_pending', 'disburse
                         <CardHeader><CardTitle class="text-base">Status History</CardTitle></CardHeader>
                         <CardContent>
                             <ol class="space-y-2 text-sm">
-                                <li v-for="h in application.status_histories" :key="h.id" class="flex items-center justify-between border-b pb-2 last:border-0">
-                                    <span class="capitalize">{{ (h.to_status ?? '').replace(/_/g, ' ') }}<span v-if="h.remarks" class="text-muted-foreground"> — {{ h.remarks }}</span></span>
-                                    <span class="text-xs text-muted-foreground">{{ h.changer?.name ?? 'System' }} · {{ new Date(h.created_at).toLocaleDateString() }}</span>
+                                <li
+                                    v-for="h in application.status_histories"
+                                    :key="h.id"
+                                    class="flex items-center justify-between border-b pb-2 last:border-0"
+                                >
+                                    <span class="capitalize"
+                                        >{{ (h.to_status ?? '').replace(/_/g, ' ')
+                                        }}<span v-if="h.remarks" class="text-muted-foreground"> — {{ h.remarks }}</span></span
+                                    >
+                                    <span class="text-xs text-muted-foreground"
+                                        >{{ h.changer?.name ?? 'System' }} · {{ new Date(h.created_at).toLocaleDateString() }}</span
+                                    >
                                 </li>
                             </ol>
                         </CardContent>
@@ -93,7 +133,9 @@ const canDisburse = computed(() => ['sanctioned', 'agreement_pending', 'disburse
                         <CardContent>
                             <ul class="divide-y text-sm">
                                 <li v-for="d in application.disbursements" :key="d.id" class="flex items-center justify-between py-2">
-                                    <span class="font-mono text-xs">{{ d.disbursement_number }}<span v-if="d.utr" class="text-muted-foreground"> · UTR {{ d.utr }}</span></span>
+                                    <span class="font-mono text-xs"
+                                        >{{ d.disbursement_number }}<span v-if="d.utr" class="text-muted-foreground"> · UTR {{ d.utr }}</span></span
+                                    >
                                     <span class="font-medium">{{ money(d.amount) }}</span>
                                 </li>
                             </ul>
@@ -109,7 +151,10 @@ const canDisburse = computed(() => ['sanctioned', 'agreement_pending', 'disburse
                                 <option value="">Select status…</option>
                                 <option v-for="t in allowedTransitions" :key="t.value" :value="t.value">{{ t.label }}</option>
                             </select>
-                            <select v-model="transitionForm.lender_id" class="h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-sm">
+                            <select
+                                v-model="transitionForm.lender_id"
+                                class="h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-sm"
+                            >
                                 <option :value="null">Lender (optional)</option>
                                 <option v-for="l in lenders" :key="l.id" :value="l.id">{{ l.name }}</option>
                             </select>
@@ -126,9 +171,15 @@ const canDisburse = computed(() => ['sanctioned', 'agreement_pending', 'disburse
                     <Card v-if="can.disburse && canDisburse">
                         <CardHeader><CardTitle class="text-base">Record Disbursement</CardTitle></CardHeader>
                         <CardContent class="grid gap-2">
-                            <div class="grid gap-1"><Label class="text-xs">Amount</Label><Input v-model.number="disburseForm.amount" type="number" class="h-9" /></div>
-                            <div class="grid gap-1"><Label class="text-xs">UTR / Reference</Label><Input v-model="disburseForm.utr" class="h-9" /></div>
-                            <Button size="sm" :disabled="disburseForm.amount <= 0 || disburseForm.processing" @click="disburse">Disburse &amp; Credit Ledger</Button>
+                            <div class="grid gap-1">
+                                <Label class="text-xs">Amount</Label><Input v-model.number="disburseForm.amount" type="number" class="h-9" />
+                            </div>
+                            <div class="grid gap-1">
+                                <Label class="text-xs">UTR / Reference</Label><Input v-model="disburseForm.utr" class="h-9" />
+                            </div>
+                            <Button size="sm" :disabled="disburseForm.amount <= 0 || disburseForm.processing" @click="disburse"
+                                >Disburse &amp; Credit Ledger</Button
+                            >
                         </CardContent>
                     </Card>
 
@@ -137,8 +188,10 @@ const canDisburse = computed(() => ['sanctioned', 'agreement_pending', 'disburse
                         <CardContent class="grid grid-cols-2 gap-y-2 text-sm">
                             <span class="text-muted-foreground">Lender</span><span>{{ application.lender?.name ?? '—' }}</span>
                             <span class="text-muted-foreground">Lender App #</span><span>{{ application.lender_application_number ?? '—' }}</span>
-                            <span class="text-muted-foreground">Interest</span><span>{{ application.interest_rate ? application.interest_rate + '%' : '—' }}</span>
-                            <span class="text-muted-foreground">Tenure</span><span>{{ application.tenure_months ? application.tenure_months + ' mo' : '—' }}</span>
+                            <span class="text-muted-foreground">Interest</span
+                            ><span>{{ application.interest_rate ? application.interest_rate + '%' : '—' }}</span>
+                            <span class="text-muted-foreground">Tenure</span
+                            ><span>{{ application.tenure_months ? application.tenure_months + ' mo' : '—' }}</span>
                             <span class="text-muted-foreground">Employer</span><span>{{ application.employer ?? '—' }}</span>
                         </CardContent>
                     </Card>

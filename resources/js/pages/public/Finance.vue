@@ -39,13 +39,18 @@ function money(v: number): string {
 </script>
 
 <template>
-    <SeoHead title="Car Finance & EMI Calculator — Car4Sales" description="Calculate your car loan EMI and apply for finance. Quick approvals and attractive interest rates on pre-owned cars." />
+    <SeoHead
+        title="Car Finance & EMI Calculator — Car4Sales"
+        description="Calculate your car loan EMI and apply for finance. Quick approvals and attractive interest rates on pre-owned cars."
+    />
 
     <PublicLayout>
         <section class="bg-brand-maroon py-12 text-white">
             <div class="mx-auto max-w-4xl px-4 text-center">
                 <h1 class="text-3xl font-extrabold md:text-4xl">Finance Assistance</h1>
-                <p class="mx-auto mt-2 max-w-xl text-white/80">Drive home your dream car with easy EMIs. Use the calculator below and apply in minutes.</p>
+                <p class="mx-auto mt-2 max-w-xl text-white/80">
+                    Drive home your dream car with easy EMIs. Use the calculator below and apply in minutes.
+                </p>
             </div>
         </section>
 
@@ -55,20 +60,57 @@ function money(v: number): string {
                 <h2 class="mb-4 text-lg font-bold text-neutral-900">EMI Calculator</h2>
                 <div class="space-y-5">
                     <div>
-                        <div class="flex justify-between text-sm"><span class="text-neutral-600">Car Price</span><span class="font-semibold">{{ money(inputs.price) }}</span></div>
-                        <input v-model.number="inputs.price" type="range" min="100000" max="3000000" step="25000" class="mt-1 w-full accent-brand-maroon" />
+                        <div class="flex justify-between text-sm">
+                            <span class="text-neutral-600">Car Price</span><span class="font-semibold">{{ money(inputs.price) }}</span>
+                        </div>
+                        <input
+                            v-model.number="inputs.price"
+                            type="range"
+                            min="100000"
+                            max="3000000"
+                            step="25000"
+                            class="mt-1 w-full accent-brand-maroon"
+                        />
                     </div>
                     <div>
-                        <div class="flex justify-between text-sm"><span class="text-neutral-600">Down Payment ({{ inputs.down_payment_pct }}%)</span><span class="font-semibold">{{ money(result.down_payment) }}</span></div>
-                        <input v-model.number="inputs.down_payment_pct" type="range" min="0" max="60" step="1" class="mt-1 w-full accent-brand-maroon" />
+                        <div class="flex justify-between text-sm">
+                            <span class="text-neutral-600">Down Payment ({{ inputs.down_payment_pct }}%)</span
+                            ><span class="font-semibold">{{ money(result.down_payment) }}</span>
+                        </div>
+                        <input
+                            v-model.number="inputs.down_payment_pct"
+                            type="range"
+                            min="0"
+                            max="60"
+                            step="1"
+                            class="mt-1 w-full accent-brand-maroon"
+                        />
                     </div>
                     <div>
-                        <div class="flex justify-between text-sm"><span class="text-neutral-600">Tenure</span><span class="font-semibold">{{ inputs.tenure_months }} months</span></div>
-                        <input v-model.number="inputs.tenure_months" type="range" min="12" max="84" step="6" class="mt-1 w-full accent-brand-maroon" />
+                        <div class="flex justify-between text-sm">
+                            <span class="text-neutral-600">Tenure</span><span class="font-semibold">{{ inputs.tenure_months }} months</span>
+                        </div>
+                        <input
+                            v-model.number="inputs.tenure_months"
+                            type="range"
+                            min="12"
+                            max="84"
+                            step="6"
+                            class="mt-1 w-full accent-brand-maroon"
+                        />
                     </div>
                     <div>
-                        <div class="flex justify-between text-sm"><span class="text-neutral-600">Interest Rate</span><span class="font-semibold">{{ inputs.interest_rate }}%</span></div>
-                        <input v-model.number="inputs.interest_rate" type="range" min="7" max="20" step="0.25" class="mt-1 w-full accent-brand-maroon" />
+                        <div class="flex justify-between text-sm">
+                            <span class="text-neutral-600">Interest Rate</span><span class="font-semibold">{{ inputs.interest_rate }}%</span>
+                        </div>
+                        <input
+                            v-model.number="inputs.interest_rate"
+                            type="range"
+                            min="7"
+                            max="20"
+                            step="0.25"
+                            class="mt-1 w-full accent-brand-maroon"
+                        />
                     </div>
                 </div>
 
@@ -76,8 +118,14 @@ function money(v: number): string {
                     <p class="text-sm text-neutral-600">Your Monthly EMI</p>
                     <p class="text-3xl font-extrabold text-brand-maroon">{{ money(result.emi) }}</p>
                     <div class="mt-3 grid grid-cols-2 gap-2 text-sm text-neutral-600">
-                        <div><p class="font-semibold text-neutral-900">{{ money(result.loan_amount) }}</p><p>Loan amount</p></div>
-                        <div><p class="font-semibold text-neutral-900">{{ money(result.total_payable) }}</p><p>Total payable</p></div>
+                        <div>
+                            <p class="font-semibold text-neutral-900">{{ money(result.loan_amount) }}</p>
+                            <p>Loan amount</p>
+                        </div>
+                        <div>
+                            <p class="font-semibold text-neutral-900">{{ money(result.total_payable) }}</p>
+                            <p>Total payable</p>
+                        </div>
                     </div>
                 </div>
             </div>

@@ -61,7 +61,8 @@ const statusStyle: Record<string, string> = {
                 <div>
                     <p class="font-medium">Account {{ profile.status_label }}</p>
                     <p class="text-sm text-muted-foreground">
-                        Your vendor account is awaiting activation by our team. You'll be able to submit vehicles once it's approved — we'll notify you.
+                        Your vendor account is awaiting activation by our team. You'll be able to submit vehicles once it's approved — we'll notify
+                        you.
                     </p>
                 </div>
             </CardContent>
@@ -91,14 +92,19 @@ const statusStyle: Record<string, string> = {
                     </div>
                     <ul v-else class="divide-y">
                         <li v-for="s in recent" :key="s.id">
-                            <Link :href="`/vendor/submissions/${s.id}`" class="flex items-center justify-between gap-3 px-4 py-3 transition hover:bg-muted/40">
+                            <Link
+                                :href="`/vendor/submissions/${s.id}`"
+                                class="flex items-center justify-between gap-3 px-4 py-3 transition hover:bg-muted/40"
+                            >
                                 <div>
                                     <p class="font-medium">{{ s.title }}</p>
                                     <p class="text-xs text-muted-foreground">{{ s.submission_number }} · {{ s.created_at }}</p>
                                 </div>
                                 <div class="flex items-center gap-3">
                                     <span class="text-sm font-semibold">{{ money(s.expected_amount) }}</span>
-                                    <span class="rounded-full px-2 py-0.5 text-xs font-medium" :class="statusStyle[s.status]">{{ s.status_label }}</span>
+                                    <span class="rounded-full px-2 py-0.5 text-xs font-medium" :class="statusStyle[s.status]">{{
+                                        s.status_label
+                                    }}</span>
                                 </div>
                             </Link>
                         </li>

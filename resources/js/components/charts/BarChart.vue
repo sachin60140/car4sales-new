@@ -1,14 +1,6 @@
 <script setup lang="ts">
 import { useChartTheme } from '@/composables/useChartTheme';
-import {
-    BarElement,
-    CategoryScale,
-    Chart as ChartJS,
-    LinearScale,
-    Tooltip,
-    type ChartData,
-    type ChartOptions,
-} from 'chart.js';
+import { BarElement, CategoryScale, Chart as ChartJS, LinearScale, Tooltip, type ChartData, type ChartOptions } from 'chart.js';
 import { computed } from 'vue';
 import { Bar } from 'vue-chartjs';
 

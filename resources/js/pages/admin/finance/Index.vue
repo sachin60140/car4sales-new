@@ -90,8 +90,15 @@ const statusStyle: Record<string, string> = {
                         </tr>
                     </thead>
                     <tbody>
-                        <tr v-if="applications.data.length === 0"><td colspan="6" class="px-4 py-10 text-center text-muted-foreground">No finance applications.</td></tr>
-                        <tr v-for="f in applications.data" :key="f.id" class="cursor-pointer border-b last:border-0 hover:bg-muted/30" @click="router.get(`/admin/finance/${f.id}`)">
+                        <tr v-if="applications.data.length === 0">
+                            <td colspan="6" class="px-4 py-10 text-center text-muted-foreground">No finance applications.</td>
+                        </tr>
+                        <tr
+                            v-for="f in applications.data"
+                            :key="f.id"
+                            class="cursor-pointer border-b last:border-0 hover:bg-muted/30"
+                            @click="router.get(`/admin/finance/${f.id}`)"
+                        >
                             <td class="px-4 py-3 font-mono text-xs">{{ f.application_number }}</td>
                             <td class="px-4 py-3">
                                 <div class="font-medium">{{ f.customer?.name }}</div>
@@ -100,7 +107,13 @@ const statusStyle: Record<string, string> = {
                             <td class="px-4 py-3">{{ f.lender?.name ?? '—' }}</td>
                             <td class="px-4 py-3">{{ money(f.loan_amount) }}</td>
                             <td class="px-4 py-3">{{ money(f.sanction_amount) }}</td>
-                            <td class="px-4 py-3"><span class="inline-flex rounded-full px-2 py-0.5 text-xs font-medium" :class="statusStyle[f.status] ?? 'bg-muted text-muted-foreground'">{{ f.status_label }}</span></td>
+                            <td class="px-4 py-3">
+                                <span
+                                    class="inline-flex rounded-full px-2 py-0.5 text-xs font-medium"
+                                    :class="statusStyle[f.status] ?? 'bg-muted text-muted-foreground'"
+                                    >{{ f.status_label }}</span
+                                >
+                            </td>
                         </tr>
                     </tbody>
                 </table>

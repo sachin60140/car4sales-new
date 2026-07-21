@@ -123,11 +123,7 @@ function confirmDelete() {
                             <td class="px-4 py-3">{{ employee.department?.name ?? '—' }}</td>
                             <td class="px-4 py-3">
                                 <div class="flex max-w-56 flex-wrap gap-1">
-                                    <span
-                                        v-for="role in employee.roles"
-                                        :key="role.id"
-                                        class="inline-flex rounded-full bg-muted px-2 py-0.5 text-xs"
-                                    >
+                                    <span v-for="role in employee.roles" :key="role.id" class="inline-flex rounded-full bg-muted px-2 py-0.5 text-xs">
                                         {{ role.name }}
                                     </span>
                                 </div>
@@ -135,7 +131,11 @@ function confirmDelete() {
                             <td class="px-4 py-3">
                                 <span
                                     class="inline-flex rounded-full px-2 py-0.5 text-xs font-medium"
-                                    :class="employee.is_active ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400' : 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400'"
+                                    :class="
+                                        employee.is_active
+                                            ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400'
+                                            : 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400'
+                                    "
                                 >
                                     {{ employee.is_active ? 'Active' : 'Inactive' }}
                                 </span>

@@ -50,7 +50,12 @@ function deleteMedia(id: number) {
 }
 
 // Documents
-const docForm = useForm<{ type: string; file: File | null; number: string; valid_till: string }>({ type: 'rc', file: null, number: '', valid_till: '' });
+const docForm = useForm<{ type: string; file: File | null; number: string; valid_till: string }>({
+    type: 'rc',
+    file: null,
+    number: '',
+    valid_till: '',
+});
 function uploadDoc() {
     docForm.post(`/admin/inventory/${v.value.id}/documents`, { preserveScroll: true, forceFormData: true, onSuccess: () => docForm.reset() });
 }
@@ -125,11 +130,15 @@ function createJob() {
                         <span class="rounded-full bg-brand-yellow/20 px-2.5 py-0.5 text-xs font-medium text-brand-maroon dark:text-brand-yellow">
                             {{ statuses.find((s) => s.value === vehicle.status)?.label ?? vehicle.status }}
                         </span>
-                        <span v-if="vehicle.published_web" class="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400">Live on website</span>
+                        <span
+                            v-if="vehicle.published_web"
+                            class="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400"
+                            >Live on website</span
+                        >
                     </div>
                     <p class="mt-1 text-sm text-muted-foreground">
-                        {{ [vehicle.make, vehicle.model, vehicle.variant].filter(Boolean).join(' ') }} ·
-                        {{ vehicle.manufacturing_year ?? '' }} · {{ vehicle.registration_number ?? 'Unregistered' }} ·
+                        {{ [vehicle.make, vehicle.model, vehicle.variant].filter(Boolean).join(' ') }} · {{ vehicle.manufacturing_year ?? '' }} ·
+                        {{ vehicle.registration_number ?? 'Unregistered' }} ·
                         {{ vehicle.branch?.name ?? '' }}
                     </p>
                 </div>
@@ -138,10 +147,32 @@ function createJob() {
 
             <!-- Quick stats -->
             <div class="grid grid-cols-2 gap-3 md:grid-cols-4">
-                <Card><CardContent class="p-4"><p class="text-xs text-muted-foreground">Asking Price</p><p class="text-lg font-bold">{{ money(vehicle.asking_price) }}</p></CardContent></Card>
-                <Card v-if="can.viewCost"><CardContent class="p-4"><p class="text-xs text-muted-foreground">Landed Cost</p><p class="text-lg font-bold">{{ money(vehicle.landed_cost) }}</p></CardContent></Card>
-                <Card v-if="can.viewProfit && vehicle.asking_price"><CardContent class="p-4"><p class="text-xs text-muted-foreground">Est. Gross Margin</p><p class="text-lg font-bold">{{ money(Number(vehicle.asking_price) - Number(vehicle.landed_cost ?? 0)) }}</p></CardContent></Card>
-                <Card><CardContent class="p-4"><p class="text-xs text-muted-foreground">Odometer</p><p class="text-lg font-bold">{{ vehicle.odometer_km ? Number(vehicle.odometer_km).toLocaleString('en-IN') + ' km' : '—' }}</p></CardContent></Card>
+                <Card
+                    ><CardContent class="p-4"
+                        ><p class="text-xs text-muted-foreground">Asking Price</p>
+                        <p class="text-lg font-bold">{{ money(vehicle.asking_price) }}</p></CardContent
+                    ></Card
+                >
+                <Card v-if="can.viewCost"
+                    ><CardContent class="p-4"
+                        ><p class="text-xs text-muted-foreground">Landed Cost</p>
+                        <p class="text-lg font-bold">{{ money(vehicle.landed_cost) }}</p></CardContent
+                    ></Card
+                >
+                <Card v-if="can.viewProfit && vehicle.asking_price"
+                    ><CardContent class="p-4"
+                        ><p class="text-xs text-muted-foreground">Est. Gross Margin</p>
+                        <p class="text-lg font-bold">{{ money(Number(vehicle.asking_price) - Number(vehicle.landed_cost ?? 0)) }}</p></CardContent
+                    ></Card
+                >
+                <Card
+                    ><CardContent class="p-4"
+                        ><p class="text-xs text-muted-foreground">Odometer</p>
+                        <p class="text-lg font-bold">
+                            {{ vehicle.odometer_km ? Number(vehicle.odometer_km).toLocaleString('en-IN') + ' km' : '—' }}
+                        </p></CardContent
+                    ></Card
+                >
             </div>
 
             <!-- Tabs -->
@@ -164,7 +195,8 @@ function createJob() {
                     <CardContent class="grid grid-cols-2 gap-y-2 text-sm">
                         <span class="text-muted-foreground">Chassis No.</span><span>{{ vehicle.chassis_number ?? '—' }}</span>
                         <span class="text-muted-foreground">Engine No.</span><span>{{ vehicle.engine_number ?? '—' }}</span>
-                        <span class="text-muted-foreground">Fuel / Transmission</span><span>{{ vehicle.fuel_type ?? '—' }} / {{ vehicle.transmission ?? '—' }}</span>
+                        <span class="text-muted-foreground">Fuel / Transmission</span
+                        ><span>{{ vehicle.fuel_type ?? '—' }} / {{ vehicle.transmission ?? '—' }}</span>
                         <span class="text-muted-foreground">Colour</span><span>{{ vehicle.color ?? '—' }}</span>
                         <span class="text-muted-foreground">Ownership</span><span>{{ vehicle.ownership_serial ?? '—' }}</span>
                         <span class="text-muted-foreground">Inspection Grade</span><span>{{ vehicle.inspection_grade ?? '—' }}</span>
@@ -175,9 +207,18 @@ function createJob() {
                     <CardHeader><CardTitle>Status History</CardTitle></CardHeader>
                     <CardContent>
                         <ol class="space-y-2 text-sm">
-                            <li v-for="h in vehicle.status_histories" :key="h.id" class="flex items-center justify-between border-b pb-2 last:border-0">
-                                <span>{{ (h.to_status ?? '').replace(/_/g, ' ') }}<span v-if="h.remarks" class="text-muted-foreground"> — {{ h.remarks }}</span></span>
-                                <span class="text-xs text-muted-foreground">{{ h.changer?.name ?? 'System' }} · {{ new Date(h.created_at).toLocaleDateString() }}</span>
+                            <li
+                                v-for="h in vehicle.status_histories"
+                                :key="h.id"
+                                class="flex items-center justify-between border-b pb-2 last:border-0"
+                            >
+                                <span
+                                    >{{ (h.to_status ?? '').replace(/_/g, ' ')
+                                    }}<span v-if="h.remarks" class="text-muted-foreground"> — {{ h.remarks }}</span></span
+                                >
+                                <span class="text-xs text-muted-foreground"
+                                    >{{ h.changer?.name ?? 'System' }} · {{ new Date(h.created_at).toLocaleDateString() }}</span
+                                >
                             </li>
                         </ol>
                     </CardContent>
@@ -189,7 +230,12 @@ function createJob() {
                 <CardHeader><CardTitle>Photos &amp; Videos</CardTitle></CardHeader>
                 <CardContent class="grid gap-4">
                     <div v-if="can.update" class="flex flex-wrap items-end gap-2">
-                        <input type="file" accept=".jpg,.jpeg,.png,.mp4,.mov" class="text-sm" @input="mediaForm.file = ($event.target as HTMLInputElement).files?.[0] ?? null" />
+                        <input
+                            type="file"
+                            accept=".jpg,.jpeg,.png,.mp4,.mov"
+                            class="text-sm"
+                            @input="mediaForm.file = ($event.target as HTMLInputElement).files?.[0] ?? null"
+                        />
                         <Input v-model="mediaForm.category" placeholder="Category" class="h-9 w-40" />
                         <label class="flex items-center gap-2 text-sm"><input type="checkbox" v-model="mediaForm.is_public" /> Public</label>
                         <Button size="sm" :disabled="!mediaForm.file || mediaForm.processing" @click="uploadMedia">Upload</Button>
@@ -197,11 +243,19 @@ function createJob() {
                     <p v-if="!vehicle.media?.length" class="py-4 text-center text-sm text-muted-foreground">No media uploaded.</p>
                     <div v-else class="grid grid-cols-2 gap-3 sm:grid-cols-4">
                         <div v-for="m in vehicle.media" :key="m.id" class="group relative overflow-hidden rounded-lg border">
-                            <img :src="`/admin/files/${encodeURIComponent(m.thumbnail_path ?? m.file_path)}`" :alt="m.category ?? 'Vehicle'" class="aspect-video w-full object-cover" />
+                            <img
+                                :src="`/admin/files/${encodeURIComponent(m.thumbnail_path ?? m.file_path)}`"
+                                :alt="m.category ?? 'Vehicle'"
+                                class="aspect-video w-full object-cover"
+                            />
                             <div class="flex items-center justify-between px-2 py-1 text-xs">
                                 <span class="capitalize">{{ m.category ?? m.type }}</span>
                                 <span class="flex items-center gap-1">
-                                    <span v-if="m.is_public" class="rounded bg-emerald-100 px-1 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400">Public</span>
+                                    <span
+                                        v-if="m.is_public"
+                                        class="rounded bg-emerald-100 px-1 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400"
+                                        >Public</span
+                                    >
                                     <button v-if="can.update" class="text-brand-red" @click="deleteMedia(m.id)">✕</button>
                                 </span>
                             </div>
@@ -216,20 +270,41 @@ function createJob() {
                 <CardContent class="grid gap-4">
                     <div v-if="can.update" class="flex flex-wrap items-end gap-2">
                         <select v-model="docForm.type" class="h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-sm">
-                            <option value="rc">RC</option><option value="insurance">Insurance</option><option value="puc">PUC</option>
-                            <option value="tax">Tax</option><option value="fitness">Fitness</option><option value="noc">NOC</option><option value="invoice">Invoice</option><option value="other">Other</option>
+                            <option value="rc">RC</option>
+                            <option value="insurance">Insurance</option>
+                            <option value="puc">PUC</option>
+                            <option value="tax">Tax</option>
+                            <option value="fitness">Fitness</option>
+                            <option value="noc">NOC</option>
+                            <option value="invoice">Invoice</option>
+                            <option value="other">Other</option>
                         </select>
                         <Input v-model="docForm.number" placeholder="Number" class="h-9 w-40" />
                         <Input v-model="docForm.valid_till" type="date" class="h-9" />
-                        <input type="file" accept=".jpg,.jpeg,.png,.pdf" class="text-sm" @input="docForm.file = ($event.target as HTMLInputElement).files?.[0] ?? null" />
+                        <input
+                            type="file"
+                            accept=".jpg,.jpeg,.png,.pdf"
+                            class="text-sm"
+                            @input="docForm.file = ($event.target as HTMLInputElement).files?.[0] ?? null"
+                        />
                         <Button size="sm" :disabled="!docForm.file || docForm.processing" @click="uploadDoc">Upload</Button>
                     </div>
                     <ul v-if="vehicle.documents?.length" class="divide-y text-sm">
                         <li v-for="d in vehicle.documents" :key="d.id" class="flex items-center justify-between gap-3 py-2">
-                            <span class="capitalize">{{ d.type.replace(/_/g, ' ') }} <span v-if="d.number" class="text-muted-foreground">· {{ d.number }}</span></span>
+                            <span class="capitalize"
+                                >{{ d.type.replace(/_/g, ' ') }} <span v-if="d.number" class="text-muted-foreground">· {{ d.number }}</span></span
+                            >
                             <span class="flex items-center gap-3">
-                                <span class="text-xs capitalize" :class="d.status === 'verified' ? 'text-emerald-600' : 'text-muted-foreground'">{{ d.valid_till ? 'valid till ' + d.valid_till : (d.status || '').replace(/_/g, ' ') }}</span>
-                                <a v-if="d.file_path" :href="`/admin/files/${encodeURIComponent(d.file_path)}`" target="_blank" class="text-xs font-medium underline">View</a>
+                                <span class="text-xs capitalize" :class="d.status === 'verified' ? 'text-emerald-600' : 'text-muted-foreground'">{{
+                                    d.valid_till ? 'valid till ' + d.valid_till : (d.status || '').replace(/_/g, ' ')
+                                }}</span>
+                                <a
+                                    v-if="d.file_path"
+                                    :href="`/admin/files/${encodeURIComponent(d.file_path)}`"
+                                    target="_blank"
+                                    class="text-xs font-medium underline"
+                                    >View</a
+                                >
                             </span>
                         </li>
                     </ul>
@@ -257,20 +332,39 @@ function createJob() {
                     <table class="w-full text-sm">
                         <thead>
                             <tr class="border-b text-left text-muted-foreground">
-                                <th class="py-2 pr-3 font-medium">Expense #</th><th class="py-2 pr-3 font-medium">Category</th>
-                                <th class="py-2 pr-3 font-medium">Amount</th><th class="py-2 pr-3 font-medium">Status</th><th class="py-2 font-medium text-right">Action</th>
+                                <th class="py-2 pr-3 font-medium">Expense #</th>
+                                <th class="py-2 pr-3 font-medium">Category</th>
+                                <th class="py-2 pr-3 font-medium">Amount</th>
+                                <th class="py-2 pr-3 font-medium">Status</th>
+                                <th class="py-2 text-right font-medium">Action</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr v-if="!vehicle.expenses?.length"><td colspan="5" class="py-4 text-center text-muted-foreground">No expenses.</td></tr>
+                            <tr v-if="!vehicle.expenses?.length">
+                                <td colspan="5" class="py-4 text-center text-muted-foreground">No expenses.</td>
+                            </tr>
                             <tr v-for="e in vehicle.expenses" :key="e.id" class="border-b last:border-0">
                                 <td class="py-2 pr-3 font-mono text-xs">{{ e.expense_number }}</td>
                                 <td class="py-2 pr-3 capitalize">{{ e.category }}</td>
                                 <td class="py-2 pr-3">{{ money(e.amount) }}</td>
-                                <td class="py-2 pr-3"><span class="rounded-full bg-muted px-2 py-0.5 text-xs capitalize">{{ e.status }}</span></td>
+                                <td class="py-2 pr-3">
+                                    <span class="rounded-full bg-muted px-2 py-0.5 text-xs capitalize">{{ e.status }}</span>
+                                </td>
                                 <td class="py-2 text-right">
-                                    <Button v-if="can.approveExpenses && e.status === 'pending'" size="sm" variant="outline" @click="approveExpense(e.id)">Approve</Button>
-                                    <Button v-else-if="can.reverseExpenses && e.status === 'approved'" size="sm" variant="ghost" @click="reverseExpense(e.id)">Reverse</Button>
+                                    <Button
+                                        v-if="can.approveExpenses && e.status === 'pending'"
+                                        size="sm"
+                                        variant="outline"
+                                        @click="approveExpense(e.id)"
+                                        >Approve</Button
+                                    >
+                                    <Button
+                                        v-else-if="can.reverseExpenses && e.status === 'approved'"
+                                        size="sm"
+                                        variant="ghost"
+                                        @click="reverseExpense(e.id)"
+                                        >Reverse</Button
+                                    >
                                 </td>
                             </tr>
                         </tbody>
@@ -284,7 +378,8 @@ function createJob() {
                 <CardContent class="grid gap-4">
                     <div v-if="can.update" class="flex flex-wrap items-end gap-2">
                         <select v-model="priceForm.price_type" class="h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-sm">
-                            <option value="asking">Asking Price</option><option value="minimum">Minimum Selling Price</option>
+                            <option value="asking">Asking Price</option>
+                            <option value="minimum">Minimum Selling Price</option>
                         </select>
                         <Input v-model.number="priceForm.new_price" type="number" min="0" placeholder="New price" class="h-9 w-36" />
                         <Input v-model="priceForm.reason" placeholder="Reason" class="h-9" />
@@ -292,8 +387,12 @@ function createJob() {
                     </div>
                     <ul v-if="vehicle.price_history?.length" class="divide-y text-sm">
                         <li v-for="p in vehicle.price_history" :key="p.id" class="flex items-center justify-between py-2">
-                            <span class="capitalize">{{ p.price_type }}: {{ money(p.old_price) }} → <strong>{{ money(p.new_price) }}</strong></span>
-                            <span class="text-xs text-muted-foreground">{{ p.changer?.name }} · {{ new Date(p.created_at).toLocaleDateString() }}</span>
+                            <span class="capitalize"
+                                >{{ p.price_type }}: {{ money(p.old_price) }} → <strong>{{ money(p.new_price) }}</strong></span
+                            >
+                            <span class="text-xs text-muted-foreground"
+                                >{{ p.changer?.name }} · {{ new Date(p.created_at).toLocaleDateString() }}</span
+                            >
                         </li>
                     </ul>
                     <p v-else class="text-sm text-muted-foreground">No price changes yet.</p>
@@ -316,7 +415,9 @@ function createJob() {
                     <div v-if="can.transfer" class="grid gap-2 rounded-lg border p-3">
                         <p class="text-sm font-medium">Record Movement</p>
                         <select v-model="moveForm.type" class="h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-sm">
-                            <option v-for="t in movementTypes.filter((m) => m.value !== 'branch_transfer')" :key="t.value" :value="t.value">{{ t.label }}</option>
+                            <option v-for="t in movementTypes.filter((m) => m.value !== 'branch_transfer')" :key="t.value" :value="t.value">
+                                {{ t.label }}
+                            </option>
                         </select>
                         <Input v-model="moveForm.reference" placeholder="Reference (agent, workshop…)" class="h-9" />
                         <Button size="sm" :disabled="moveForm.processing" @click="recordMove">Record</Button>
@@ -332,7 +433,9 @@ function createJob() {
                                     </span>
                                     <span v-if="mv.reference" class="text-muted-foreground">· {{ mv.reference }}</span>
                                 </span>
-                                <span class="text-xs text-muted-foreground">{{ mv.mover?.name }} · {{ mv.moved_at ? new Date(mv.moved_at).toLocaleDateString() : '' }}</span>
+                                <span class="text-xs text-muted-foreground"
+                                    >{{ mv.mover?.name }} · {{ mv.moved_at ? new Date(mv.moved_at).toLocaleDateString() : '' }}</span
+                                >
                             </li>
                         </ul>
                     </div>
@@ -347,18 +450,26 @@ function createJob() {
                         <p class="text-sm font-medium">New Job Card</p>
                         <div class="flex flex-wrap gap-2">
                             <select v-model="jobForm.type" class="h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-sm">
-                                <option value="internal">Internal</option><option value="external">External</option>
+                                <option value="internal">Internal</option>
+                                <option value="external">External</option>
                             </select>
                             <select v-model="jobForm.vendor_id" class="h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-sm">
                                 <option :value="null">No vendor</option>
-                                <option v-for="ven in vendors.filter((x) => x.type === 'workshop' || x.type === 'parts')" :key="ven.id" :value="ven.id">{{ ven.name }}</option>
+                                <option
+                                    v-for="ven in vendors.filter((x) => x.type === 'workshop' || x.type === 'parts')"
+                                    :key="ven.id"
+                                    :value="ven.id"
+                                >
+                                    {{ ven.name }}
+                                </option>
                             </select>
                             <Input v-model="jobForm.description" placeholder="Description" class="h-9 flex-1" />
                         </div>
                         <div v-for="(item, i) in jobForm.items" :key="i" class="flex flex-wrap items-center gap-2">
                             <Input v-model="item.description" placeholder="Work item" class="h-9 flex-1" />
                             <select v-model="item.work_type" class="h-9 rounded-md border border-input bg-transparent px-2 text-sm shadow-sm">
-                                <option value="labour">Labour</option><option value="part">Part</option>
+                                <option value="labour">Labour</option>
+                                <option value="part">Part</option>
                             </select>
                             <Input v-model.number="item.estimate" type="number" min="0" placeholder="Est." class="h-9 w-28" />
                             <button v-if="jobForm.items.length > 1" class="text-brand-red" @click="removeJobItem(i)">✕</button>
@@ -389,8 +500,18 @@ function createJob() {
                         Publishing requires the vehicle to be Ready for Sale, with an asking price and at least one photo.
                     </p>
                     <div class="flex items-center gap-4 text-sm">
-                        <span>Website: <strong :class="vehicle.published_web ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground'">{{ vehicle.published_web ? 'Live' : 'Not published' }}</strong></span>
-                        <span>Mobile app: <strong :class="vehicle.published_mobile ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground'">{{ vehicle.published_mobile ? 'Live' : 'Not published' }}</strong></span>
+                        <span
+                            >Website:
+                            <strong :class="vehicle.published_web ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground'">{{
+                                vehicle.published_web ? 'Live' : 'Not published'
+                            }}</strong></span
+                        >
+                        <span
+                            >Mobile app:
+                            <strong :class="vehicle.published_mobile ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground'">{{
+                                vehicle.published_mobile ? 'Live' : 'Not published'
+                            }}</strong></span
+                        >
                     </div>
                     <div v-if="can.publish" class="flex gap-2">
                         <Button v-if="!vehicle.published_web" :disabled="publishForm.processing" @click="publish">Publish</Button>

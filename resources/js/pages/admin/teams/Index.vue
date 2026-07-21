@@ -110,9 +110,7 @@ function confirmDelete() {
                     <h1 class="text-xl font-semibold">Teams</h1>
                     <p class="text-sm text-muted-foreground">Branch and department level working teams.</p>
                 </div>
-                <Button v-if="can.create" @click="openCreate">
-                    <Plus class="mr-1 size-4" /> New Team
-                </Button>
+                <Button v-if="can.create" @click="openCreate"> <Plus class="mr-1 size-4" /> New Team </Button>
             </div>
 
             <div class="relative w-full max-w-sm">
@@ -148,7 +146,11 @@ function confirmDelete() {
                             <td class="px-4 py-3">
                                 <span
                                     class="inline-flex rounded-full px-2 py-0.5 text-xs font-medium"
-                                    :class="team.is_active ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400' : 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400'"
+                                    :class="
+                                        team.is_active
+                                            ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400'
+                                            : 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400'
+                                    "
                                 >
                                     {{ team.is_active ? 'Active' : 'Inactive' }}
                                 </span>

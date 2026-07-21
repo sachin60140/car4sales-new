@@ -16,13 +16,7 @@ defineProps<Props>();
     <!-- Car4Sales emblem: side-profile car with speed swoosh. Uses currentColor. -->
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" :class="className" v-bind="$attrs">
         <!-- speed swoosh -->
-        <path
-            d="M4 22c14-9 30-11 45-6"
-            stroke="currentColor"
-            stroke-width="3.2"
-            stroke-linecap="round"
-            opacity="0.55"
-        />
+        <path d="M4 22c14-9 30-11 45-6" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" opacity="0.55" />
         <!-- car body -->
         <path
             fill="currentColor"

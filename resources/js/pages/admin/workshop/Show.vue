@@ -69,7 +69,10 @@ const itemLabel = (id: number) => (j.value.items ?? []).find((x: any) => x.id ==
                 <div>
                     <div class="flex items-center gap-3">
                         <h1 class="text-xl font-semibold">{{ job.job_number }}</h1>
-                        <span class="rounded-full px-2.5 py-0.5 text-xs font-medium capitalize" :class="statusStyle[job.status] ?? 'bg-muted text-muted-foreground'">
+                        <span
+                            class="rounded-full px-2.5 py-0.5 text-xs font-medium capitalize"
+                            :class="statusStyle[job.status] ?? 'bg-muted text-muted-foreground'"
+                        >
                             {{ (job.status ?? '').replace(/_/g, ' ') }}
                         </span>
                     </div>
@@ -82,10 +85,30 @@ const itemLabel = (id: number) => (j.value.items ?? []).find((x: any) => x.id ==
             </div>
 
             <div class="grid grid-cols-2 gap-3 md:grid-cols-4">
-                <Card><CardContent class="p-4"><p class="text-xs text-muted-foreground">Estimate</p><p class="text-lg font-bold">{{ money(job.estimate_total) }}</p></CardContent></Card>
-                <Card><CardContent class="p-4"><p class="text-xs text-muted-foreground">Approved</p><p class="text-lg font-bold">{{ money(job.approved_total) }}</p></CardContent></Card>
-                <Card><CardContent class="p-4"><p class="text-xs text-muted-foreground">Actual</p><p class="text-lg font-bold">{{ money(job.actual_total) }}</p></CardContent></Card>
-                <Card><CardContent class="p-4"><p class="text-xs text-muted-foreground">QC</p><p class="text-lg font-bold capitalize">{{ job.qc_status ?? '—' }}</p></CardContent></Card>
+                <Card
+                    ><CardContent class="p-4"
+                        ><p class="text-xs text-muted-foreground">Estimate</p>
+                        <p class="text-lg font-bold">{{ money(job.estimate_total) }}</p></CardContent
+                    ></Card
+                >
+                <Card
+                    ><CardContent class="p-4"
+                        ><p class="text-xs text-muted-foreground">Approved</p>
+                        <p class="text-lg font-bold">{{ money(job.approved_total) }}</p></CardContent
+                    ></Card
+                >
+                <Card
+                    ><CardContent class="p-4"
+                        ><p class="text-xs text-muted-foreground">Actual</p>
+                        <p class="text-lg font-bold">{{ money(job.actual_total) }}</p></CardContent
+                    ></Card
+                >
+                <Card
+                    ><CardContent class="p-4"
+                        ><p class="text-xs text-muted-foreground">QC</p>
+                        <p class="text-lg font-bold capitalize">{{ job.qc_status ?? '—' }}</p></CardContent
+                    ></Card
+                >
             </div>
 
             <Card>
@@ -94,13 +117,18 @@ const itemLabel = (id: number) => (j.value.items ?? []).find((x: any) => x.id ==
                     <table class="w-full text-sm">
                         <thead>
                             <tr class="border-b text-left text-muted-foreground">
-                                <th class="py-2 pr-3 font-medium">Item</th><th class="py-2 pr-3 font-medium">Type</th>
-                                <th class="py-2 pr-3 font-medium">Estimate</th><th class="py-2 pr-3 font-medium">Approved</th><th class="py-2 font-medium">Actual</th>
+                                <th class="py-2 pr-3 font-medium">Item</th>
+                                <th class="py-2 pr-3 font-medium">Type</th>
+                                <th class="py-2 pr-3 font-medium">Estimate</th>
+                                <th class="py-2 pr-3 font-medium">Approved</th>
+                                <th class="py-2 font-medium">Actual</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr v-for="item in job.items" :key="item.id" class="border-b last:border-0">
-                                <td class="py-2 pr-3">{{ item.description }}<span v-if="item.defect" class="text-muted-foreground"> — {{ item.defect }}</span></td>
+                                <td class="py-2 pr-3">
+                                    {{ item.description }}<span v-if="item.defect" class="text-muted-foreground"> — {{ item.defect }}</span>
+                                </td>
                                 <td class="py-2 pr-3 capitalize">{{ item.work_type }}</td>
                                 <td class="py-2 pr-3">{{ money(item.estimate) }}</td>
                                 <td class="py-2 pr-3">{{ money(item.approved_amount) }}</td>
@@ -142,11 +170,14 @@ const itemLabel = (id: number) => (j.value.items ?? []).find((x: any) => x.id ==
                         <div class="grid gap-1">
                             <Label class="text-xs">QC Result</Label>
                             <select v-model="completeForm.qc" class="h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-sm">
-                                <option value="passed">Passed</option><option value="failed">Failed (rework)</option>
+                                <option value="passed">Passed</option>
+                                <option value="failed">Failed (rework)</option>
                             </select>
                         </div>
                         <Button :disabled="completeForm.processing" @click="complete">Complete Job</Button>
-                        <p class="text-xs text-muted-foreground">On QC pass, the actual cost posts to the vehicle's landed cost and it returns to Ready for Sale.</p>
+                        <p class="text-xs text-muted-foreground">
+                            On QC pass, the actual cost posts to the vehicle's landed cost and it returns to Ready for Sale.
+                        </p>
                     </div>
                 </CardContent>
             </Card>

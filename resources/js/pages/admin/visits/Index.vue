@@ -68,7 +68,9 @@ function complete(id: number) {
                         </tr>
                     </thead>
                     <tbody>
-                        <tr v-if="visits.data.length === 0"><td colspan="6" class="px-4 py-10 text-center text-muted-foreground">No visits.</td></tr>
+                        <tr v-if="visits.data.length === 0">
+                            <td colspan="6" class="px-4 py-10 text-center text-muted-foreground">No visits.</td>
+                        </tr>
                         <tr v-for="v in visits.data" :key="v.id" class="border-b last:border-0 hover:bg-muted/30">
                             <td class="px-4 py-3 font-mono text-xs">{{ v.visit_number }}</td>
                             <td class="px-4 py-3">
@@ -77,9 +79,13 @@ function complete(id: number) {
                             </td>
                             <td class="px-4 py-3">{{ v.scheduled_at ? new Date(v.scheduled_at).toLocaleString() : '—' }}</td>
                             <td class="px-4 py-3">{{ v.attended_by?.name ?? '—' }}</td>
-                            <td class="px-4 py-3"><span class="inline-flex rounded-full bg-muted px-2 py-0.5 text-xs font-medium">{{ v.status_label }}</span></td>
+                            <td class="px-4 py-3">
+                                <span class="inline-flex rounded-full bg-muted px-2 py-0.5 text-xs font-medium">{{ v.status_label }}</span>
+                            </td>
                             <td class="px-4 py-3 text-right">
-                                <Button v-if="['scheduled','confirmed'].includes(v.status)" size="sm" variant="outline" @click="complete(v.id)">Complete</Button>
+                                <Button v-if="['scheduled', 'confirmed'].includes(v.status)" size="sm" variant="outline" @click="complete(v.id)"
+                                    >Complete</Button
+                                >
                             </td>
                         </tr>
                     </tbody>

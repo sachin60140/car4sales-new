@@ -114,14 +114,18 @@ function reset() {
                         </label>
 
                         <div class="grid grid-cols-2 gap-2">
-                            <label class="block"><span class="mb-1 block text-xs font-medium text-neutral-500">Fuel</span>
+                            <label class="block"
+                                ><span class="mb-1 block text-xs font-medium text-neutral-500">Fuel</span>
                                 <select v-model="filters.fuel_type" class="w-full rounded-lg border px-2 py-2">
-                                    <option value="">Any</option><option v-for="f in filterOptions.fuelTypes" :key="f" :value="f">{{ f }}</option>
+                                    <option value="">Any</option>
+                                    <option v-for="f in filterOptions.fuelTypes" :key="f" :value="f">{{ f }}</option>
                                 </select>
                             </label>
-                            <label class="block"><span class="mb-1 block text-xs font-medium text-neutral-500">Transmission</span>
+                            <label class="block"
+                                ><span class="mb-1 block text-xs font-medium text-neutral-500">Transmission</span>
                                 <select v-model="filters.transmission" class="w-full rounded-lg border px-2 py-2">
-                                    <option value="">Any</option><option v-for="t in filterOptions.transmissions" :key="t" :value="t">{{ t }}</option>
+                                    <option value="">Any</option>
+                                    <option v-for="t in filterOptions.transmissions" :key="t" :value="t">{{ t }}</option>
                                 </select>
                             </label>
                         </div>
@@ -129,22 +133,35 @@ function reset() {
                         <label class="block">
                             <span class="mb-1 block text-xs font-medium text-neutral-500">Body type</span>
                             <select v-model="filters.body_type" class="w-full rounded-lg border px-3 py-2">
-                                <option value="">Any</option><option v-for="b in filterOptions.bodyTypes" :key="b" :value="b">{{ b }}</option>
+                                <option value="">Any</option>
+                                <option v-for="b in filterOptions.bodyTypes" :key="b" :value="b">{{ b }}</option>
                             </select>
                         </label>
 
                         <div class="grid grid-cols-2 gap-2">
-                            <label class="block"><span class="mb-1 block text-xs font-medium text-neutral-500">Min price</span>
-                                <input v-model="filters.price_min" type="number" placeholder="₹" class="w-full rounded-lg border px-2 py-2" /></label>
-                            <label class="block"><span class="mb-1 block text-xs font-medium text-neutral-500">Max price</span>
-                                <input v-model="filters.price_max" type="number" placeholder="₹" class="w-full rounded-lg border px-2 py-2" /></label>
+                            <label class="block"
+                                ><span class="mb-1 block text-xs font-medium text-neutral-500">Min price</span>
+                                <input v-model="filters.price_min" type="number" placeholder="₹" class="w-full rounded-lg border px-2 py-2"
+                            /></label>
+                            <label class="block"
+                                ><span class="mb-1 block text-xs font-medium text-neutral-500">Max price</span>
+                                <input v-model="filters.price_max" type="number" placeholder="₹" class="w-full rounded-lg border px-2 py-2"
+                            /></label>
                         </div>
 
                         <div class="grid grid-cols-2 gap-2">
-                            <label class="block"><span class="mb-1 block text-xs font-medium text-neutral-500">Year from</span>
-                                <input v-model="filters.year_min" type="number" :placeholder="String(filterOptions.yearRange.min)" class="w-full rounded-lg border px-2 py-2" /></label>
-                            <label class="block"><span class="mb-1 block text-xs font-medium text-neutral-500">Max km</span>
-                                <input v-model="filters.km_max" type="number" placeholder="km" class="w-full rounded-lg border px-2 py-2" /></label>
+                            <label class="block"
+                                ><span class="mb-1 block text-xs font-medium text-neutral-500">Year from</span>
+                                <input
+                                    v-model="filters.year_min"
+                                    type="number"
+                                    :placeholder="String(filterOptions.yearRange.min)"
+                                    class="w-full rounded-lg border px-2 py-2"
+                            /></label>
+                            <label class="block"
+                                ><span class="mb-1 block text-xs font-medium text-neutral-500">Max km</span>
+                                <input v-model="filters.km_max" type="number" placeholder="km" class="w-full rounded-lg border px-2 py-2"
+                            /></label>
                         </div>
 
                         <label class="block">
@@ -159,7 +176,12 @@ function reset() {
                             <input v-model="filters.availability" type="checkbox" true-value="available" false-value="" /> Available only
                         </label>
 
-                        <button class="w-full rounded-lg bg-brand-maroon py-2 text-sm font-semibold text-white lg:hidden" @click="showFilters = false">Show {{ vehicles.total }} cars</button>
+                        <button
+                            class="w-full rounded-lg bg-brand-maroon py-2 text-sm font-semibold text-white lg:hidden"
+                            @click="showFilters = false"
+                        >
+                            Show {{ vehicles.total }} cars
+                        </button>
                     </div>
                 </aside>
 
@@ -167,8 +189,20 @@ function reset() {
                 <div class="flex-1">
                     <div class="mb-4 flex items-center justify-between rounded-lg border bg-white px-3 py-2 text-sm">
                         <div class="flex gap-1">
-                            <button class="rounded px-2 py-1" :class="view === 'grid' ? 'bg-brand-yellow/20 font-medium text-brand-maroon' : 'text-neutral-500'" @click="view = 'grid'">Grid</button>
-                            <button class="rounded px-2 py-1" :class="view === 'list' ? 'bg-brand-yellow/20 font-medium text-brand-maroon' : 'text-neutral-500'" @click="view = 'list'">List</button>
+                            <button
+                                class="rounded px-2 py-1"
+                                :class="view === 'grid' ? 'bg-brand-yellow/20 font-medium text-brand-maroon' : 'text-neutral-500'"
+                                @click="view = 'grid'"
+                            >
+                                Grid
+                            </button>
+                            <button
+                                class="rounded px-2 py-1"
+                                :class="view === 'list' ? 'bg-brand-yellow/20 font-medium text-brand-maroon' : 'text-neutral-500'"
+                                @click="view = 'list'"
+                            >
+                                List
+                            </button>
                         </div>
                         <select v-model="filters.sort" class="rounded-lg border px-2 py-1.5">
                             <option value="">Newest first</option>

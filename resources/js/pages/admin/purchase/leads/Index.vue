@@ -146,12 +146,17 @@ function formatMoney(value: string | null): string {
                             </td>
                             <td class="px-4 py-3">{{ formatMoney(lead.expected_price) }}</td>
                             <td class="px-4 py-3">
-                                <span class="inline-flex rounded-full px-2 py-0.5 text-xs font-medium capitalize" :class="priorityStyles[lead.priority]">
+                                <span
+                                    class="inline-flex rounded-full px-2 py-0.5 text-xs font-medium capitalize"
+                                    :class="priorityStyles[lead.priority]"
+                                >
                                     {{ lead.priority }}
                                 </span>
                             </td>
                             <td class="px-4 py-3">
-                                <span class="inline-flex rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-900/40 dark:text-blue-400">
+                                <span
+                                    class="inline-flex rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-900/40 dark:text-blue-400"
+                                >
                                     {{ statusLabel(lead.status) }}
                                 </span>
                             </td>

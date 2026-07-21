@@ -6,15 +6,25 @@ import { Mail, MapPin, Phone } from 'lucide-vue-next';
 
 defineProps<{
     branches: {
-        id: number; name: string; slug: string; city: string | null; state: string | null;
-        address: string | null; phone: string | null; email: string | null;
-        latitude: string | null; longitude: string | null;
+        id: number;
+        name: string;
+        slug: string;
+        city: string | null;
+        state: string | null;
+        address: string | null;
+        phone: string | null;
+        email: string | null;
+        latitude: string | null;
+        longitude: string | null;
     }[];
 }>();
 </script>
 
 <template>
-    <SeoHead title="Our Branches — Car4Sales" description="Visit a Car4Sales branch near you. Find addresses, phone numbers and directions to all our showrooms." />
+    <SeoHead
+        title="Our Branches — Car4Sales"
+        description="Visit a Car4Sales branch near you. Find addresses, phone numbers and directions to all our showrooms."
+    />
 
     <PublicLayout>
         <section class="bg-brand-maroon py-12 text-white">
@@ -28,18 +38,27 @@ defineProps<{
             <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 <div v-for="b in branches" :key="b.id" class="flex flex-col rounded-xl border bg-white p-5 shadow-sm">
                     <h2 class="text-lg font-bold text-neutral-900">{{ b.name }}</h2>
-                    <p class="mt-2 flex items-start gap-2 text-sm text-neutral-600"><MapPin class="mt-0.5 size-4 shrink-0 text-brand-orange" /> {{ b.address ?? [b.city, b.state].filter(Boolean).join(', ') }}</p>
-                    <p v-if="b.phone" class="mt-1 flex items-center gap-2 text-sm text-neutral-600"><Phone class="size-4 text-brand-orange" /> {{ b.phone }}</p>
-                    <p v-if="b.email" class="mt-1 flex items-center gap-2 text-sm text-neutral-600"><Mail class="size-4 text-brand-orange" /> {{ b.email }}</p>
+                    <p class="mt-2 flex items-start gap-2 text-sm text-neutral-600">
+                        <MapPin class="mt-0.5 size-4 shrink-0 text-brand-orange" /> {{ b.address ?? [b.city, b.state].filter(Boolean).join(', ') }}
+                    </p>
+                    <p v-if="b.phone" class="mt-1 flex items-center gap-2 text-sm text-neutral-600">
+                        <Phone class="size-4 text-brand-orange" /> {{ b.phone }}
+                    </p>
+                    <p v-if="b.email" class="mt-1 flex items-center gap-2 text-sm text-neutral-600">
+                        <Mail class="size-4 text-brand-orange" /> {{ b.email }}
+                    </p>
                     <div class="mt-4 flex gap-2">
-                        <Link :href="`/branches/${b.slug}`" class="rounded-lg bg-brand-yellow px-3 py-1.5 text-xs font-semibold text-brand-maroon">View Cars</Link>
+                        <Link :href="`/branches/${b.slug}`" class="rounded-lg bg-brand-yellow px-3 py-1.5 text-xs font-semibold text-brand-maroon"
+                            >View Cars</Link
+                        >
                         <a
                             v-if="b.latitude && b.longitude"
                             :href="`https://maps.google.com/?q=${b.latitude},${b.longitude}`"
                             target="_blank"
                             rel="noopener"
                             class="rounded-lg border px-3 py-1.5 text-xs font-semibold text-neutral-700"
-                        >Directions</a>
+                            >Directions</a
+                        >
                     </div>
                 </div>
             </div>

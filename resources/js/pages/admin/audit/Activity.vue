@@ -85,14 +85,16 @@ function formatDate(value: string): string {
                             <td class="whitespace-nowrap px-4 py-3">{{ formatDate(log.created_at) }}</td>
                             <td class="px-4 py-3 capitalize">{{ log.log_name ?? '—' }}</td>
                             <td class="px-4 py-3">
-                                <span class="inline-flex rounded-full bg-muted px-2 py-0.5 text-xs capitalize">{{ log.event ?? log.description }}</span>
+                                <span class="inline-flex rounded-full bg-muted px-2 py-0.5 text-xs capitalize">{{
+                                    log.event ?? log.description
+                                }}</span>
                             </td>
-                            <td class="px-4 py-3 font-mono text-xs">
-                                {{ log.subject_type?.split('\\').pop() }}#{{ log.subject_id }}
-                            </td>
+                            <td class="px-4 py-3 font-mono text-xs">{{ log.subject_type?.split('\\').pop() }}#{{ log.subject_id }}</td>
                             <td class="px-4 py-3">{{ log.causer?.name ?? 'System' }}</td>
                             <td class="max-w-md px-4 py-3">
-                                <pre class="max-h-24 overflow-auto whitespace-pre-wrap break-all rounded bg-muted/50 p-2 text-xs">{{ JSON.stringify(log.properties, null, 1) }}</pre>
+                                <pre class="max-h-24 overflow-auto whitespace-pre-wrap break-all rounded bg-muted/50 p-2 text-xs">{{
+                                    JSON.stringify(log.properties, null, 1)
+                                }}</pre>
                             </td>
                         </tr>
                     </tbody>

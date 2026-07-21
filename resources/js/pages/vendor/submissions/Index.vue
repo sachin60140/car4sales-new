@@ -89,12 +89,13 @@ function details(s: Row): string {
         </div>
 
         <div class="mt-4 overflow-hidden rounded-xl border border-sidebar-border/70">
-            <div v-if="submissions.data.length === 0" class="px-4 py-14 text-center text-sm text-muted-foreground">
-                No submissions found.
-            </div>
+            <div v-if="submissions.data.length === 0" class="px-4 py-14 text-center text-sm text-muted-foreground">No submissions found.</div>
             <ul v-else class="divide-y">
                 <li v-for="s in submissions.data" :key="s.id">
-                    <Link :href="`/vendor/submissions/${s.id}`" class="flex items-center justify-between gap-3 px-4 py-3 transition hover:bg-muted/40">
+                    <Link
+                        :href="`/vendor/submissions/${s.id}`"
+                        class="flex items-center justify-between gap-3 px-4 py-3 transition hover:bg-muted/40"
+                    >
                         <div class="min-w-0">
                             <p class="font-medium">{{ s.title }}</p>
                             <p v-if="details(s)" class="truncate text-xs text-muted-foreground">{{ details(s) }}</p>
@@ -102,7 +103,11 @@ function details(s: Row): string {
                         </div>
                         <div class="flex shrink-0 flex-col items-end gap-1">
                             <span class="text-sm font-semibold">{{ money(s.expected_amount) }}</span>
-                            <span class="rounded-full px-2 py-0.5 text-xs font-medium" :class="stageStyle[s.stage] ?? 'bg-muted text-muted-foreground'">{{ s.stage_label }}</span>
+                            <span
+                                class="rounded-full px-2 py-0.5 text-xs font-medium"
+                                :class="stageStyle[s.stage] ?? 'bg-muted text-muted-foreground'"
+                                >{{ s.stage_label }}</span
+                            >
                         </div>
                     </Link>
                 </li>

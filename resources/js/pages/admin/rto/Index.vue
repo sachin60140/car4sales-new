@@ -96,8 +96,15 @@ function statusStyle(s: string): string {
                         </tr>
                     </thead>
                     <tbody>
-                        <tr v-if="cases.data.length === 0"><td colspan="7" class="px-4 py-10 text-center text-muted-foreground">No RTO cases.</td></tr>
-                        <tr v-for="c in cases.data" :key="c.id" class="cursor-pointer border-b last:border-0 hover:bg-muted/30" @click="router.get(`/admin/rto-cases/${c.id}`)">
+                        <tr v-if="cases.data.length === 0">
+                            <td colspan="7" class="px-4 py-10 text-center text-muted-foreground">No RTO cases.</td>
+                        </tr>
+                        <tr
+                            v-for="c in cases.data"
+                            :key="c.id"
+                            class="cursor-pointer border-b last:border-0 hover:bg-muted/30"
+                            @click="router.get(`/admin/rto-cases/${c.id}`)"
+                        >
                             <td class="px-4 py-3 font-mono text-xs">{{ c.rto_number }}</td>
                             <td class="px-4 py-3">
                                 <div>{{ c.vehicle?.title }}</div>
@@ -108,7 +115,11 @@ function statusStyle(s: string): string {
                                 <div class="text-xs text-muted-foreground">{{ c.buyer?.mobile }}</div>
                             </td>
                             <td class="px-4 py-3">{{ c.assignee?.name ?? '—' }}</td>
-                            <td class="px-4 py-3"><span class="inline-flex rounded-full px-2 py-0.5 text-xs font-medium" :class="statusStyle(c.status)">{{ c.status_label }}</span></td>
+                            <td class="px-4 py-3">
+                                <span class="inline-flex rounded-full px-2 py-0.5 text-xs font-medium" :class="statusStyle(c.status)">{{
+                                    c.status_label
+                                }}</span>
+                            </td>
                             <td class="px-4 py-3">{{ money(c.hold_amount) }}</td>
                             <td class="px-4 py-3 text-xs text-muted-foreground">{{ c.expected_completion ?? '—' }}</td>
                         </tr>
