@@ -14,8 +14,12 @@ const props = defineProps<{
     branches: Pick<Branch, 'id' | 'name'>[];
     departments: Pick<Department, 'id' | 'name'>[];
     teams: Pick<Team, 'id' | 'name' | 'branch_id' | 'department_id'>[];
-    roles: { id: number; name: string }[];
+    roles: { id: number; name: string; permissions: string[] }[];
     managers: { id: number; name: string }[];
+    permissionRegistry: Record<string, string[]>;
+    globalPermissions: string[];
+    grantablePermissions: string[];
+    canManagePermissions: boolean;
     employee?: Employee;
 }>();
 
@@ -38,6 +42,7 @@ const form = useForm({
     is_active: props.employee?.is_active ?? true,
     force_password_change: props.employee?.force_password_change ?? false,
     roles: (props.employee?.roles ?? []).map((role) => role.name),
+    permissions: ((props.employee as { permissions?: { name: string }[] } | undefined)?.permissions ?? []).map((p) => p.name),
     profile: {
         designation: props.employee?.employee_profile?.designation ?? '',
         date_of_joining: props.employee?.employee_profile?.date_of_joining?.slice(0, 10) ?? '',
@@ -72,7 +77,34 @@ function toggleRole(name: string, checked: boolean) {
     }
 }
 
+// --- Custom (direct) permissions ---
+const grantable = new Set(props.grantablePermissions);
+const permName = (module: string, action: string) => `${module}.${action}`;
+
+// Permissions the employee already gets from their currently-selected roles.
+const rolePermissionSet = computed(() => {
+    const set = new Set<string>();
+    for (const role of props.roles) {
+        if (form.roles.includes(role.name)) role.permissions.forEach((p) => set.add(p));
+    }
+    return set;
+});
+const isCovered = (name: string) => rolePermissionSet.value.has(name);
+const isChecked = (name: string) => isCovered(name) || form.permissions.includes(name);
+const isDisabled = (name: string) => isCovered(name) || !grantable.has(name);
+function togglePermission(name: string, checked: boolean) {
+    if (isDisabled(name)) return;
+    if (checked && !form.permissions.includes(name)) {
+        form.permissions.push(name);
+    } else if (!checked) {
+        form.permissions = form.permissions.filter((p) => p !== name);
+    }
+}
+
 function submit() {
+    // Persist only the extra grants — anything already covered by a role is dropped.
+    form.permissions = form.permissions.filter((p) => !rolePermissionSet.value.has(p));
+
     if (editing.value) {
         form.put(`/admin/employees/${props.employee!.id}`);
     } else {
@@ -220,6 +252,64 @@ function submit() {
                             </label>
                         </div>
                         <InputError class="mt-2" :message="form.errors.roles" />
+                    </CardContent>
+                </Card>
+
+                <Card v-if="canManagePermissions" class="lg:col-span-2">
+                    <CardHeader>
+                        <CardTitle>Custom Permissions</CardTitle>
+                    </CardHeader>
+                    <CardContent class="grid gap-4">
+                        <p class="text-sm text-muted-foreground">
+                            Grant individual actions to this employee on top of their roles. Actions already covered by a
+                            role are shown ticked and locked <span class="text-xs">(· role)</span>. Options you cannot grant
+                            yourself appear disabled.
+                        </p>
+                        <InputError :message="form.errors.permissions" />
+
+                        <div v-for="(actions, module) in permissionRegistry" :key="module" class="border-b pb-3 last:border-0 last:pb-0">
+                            <p class="mb-2 text-sm font-semibold capitalize">{{ (module as string).replace(/-/g, ' ') }}</p>
+                            <div class="grid grid-cols-2 gap-2 pl-2 sm:grid-cols-4 lg:grid-cols-6">
+                                <label
+                                    v-for="action in actions"
+                                    :key="action"
+                                    class="flex items-center gap-2 text-sm"
+                                    :class="{ 'opacity-50': isDisabled(permName(module as string, action)) && !isCovered(permName(module as string, action)) }"
+                                >
+                                    <Checkbox
+                                        :model-value="isChecked(permName(module as string, action))"
+                                        :disabled="isDisabled(permName(module as string, action))"
+                                        @update:model-value="togglePermission(permName(module as string, action), $event === true)"
+                                    />
+                                    <span>
+                                        {{ action.replace(/-/g, ' ') }}
+                                        <span v-if="isCovered(permName(module as string, action))" class="text-[10px] text-muted-foreground">· role</span>
+                                    </span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div>
+                            <p class="mb-2 text-sm font-semibold">Global</p>
+                            <div class="grid grid-cols-2 gap-2 pl-2 sm:grid-cols-4">
+                                <label
+                                    v-for="permission in globalPermissions"
+                                    :key="permission"
+                                    class="flex items-center gap-2 text-sm"
+                                    :class="{ 'opacity-50': isDisabled(permission) && !isCovered(permission) }"
+                                >
+                                    <Checkbox
+                                        :model-value="isChecked(permission)"
+                                        :disabled="isDisabled(permission)"
+                                        @update:model-value="togglePermission(permission, $event === true)"
+                                    />
+                                    <span>
+                                        {{ permission.replace(/-/g, ' ') }}
+                                        <span v-if="isCovered(permission)" class="text-[10px] text-muted-foreground">· role</span>
+                                    </span>
+                                </label>
+                            </div>
+                        </div>
                     </CardContent>
                 </Card>
 

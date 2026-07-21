@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Domain\RolesPermissions\Support\PermissionRegistry;
 use App\Models\User;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -37,6 +38,10 @@ class EmployeeRequest extends FormRequest
             'force_password_change' => ['boolean'],
             'roles' => ['required', 'array', 'min:1'],
             'roles.*' => ['string', Rule::exists('roles', 'name')],
+
+            // Per-employee custom permissions (granted on top of roles).
+            'permissions' => ['array'],
+            'permissions.*' => ['string', Rule::in(PermissionRegistry::all())],
 
             'profile.designation' => ['nullable', 'string', 'max:255'],
             'profile.date_of_joining' => ['nullable', 'date'],

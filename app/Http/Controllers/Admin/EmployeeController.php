@@ -7,6 +7,7 @@ use App\Domain\Branches\Models\Branch;
 use App\Domain\Departments\Models\Department;
 use App\Domain\RolesPermissions\Models\Role;
 use App\Domain\RolesPermissions\Services\ScopeService;
+use App\Domain\RolesPermissions\Support\PermissionRegistry;
 use App\Domain\Teams\Models\Team;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\EmployeeRequest;
@@ -88,6 +89,7 @@ class EmployeeController extends Controller
             ]);
 
             $user->syncRoles($data['roles']);
+            $this->syncCustomPermissions($request->user(), $user, $data['permissions'] ?? null);
 
             $user->employeeProfile()->create([
                 ...($data['profile'] ?? []),
@@ -102,7 +104,7 @@ class EmployeeController extends Controller
     {
         $this->authorize('update', $employee);
 
-        $employee->load(['roles:id,name', 'employeeProfile']);
+        $employee->load(['roles:id,name', 'employeeProfile', 'permissions:id,name']);
 
         return Inertia::render('admin/employees/Form', [
             ...$this->formProps($request),
@@ -133,6 +135,7 @@ class EmployeeController extends Controller
 
             $employee->update($attributes);
             $employee->syncRoles($data['roles']);
+            $this->syncCustomPermissions($request->user(), $employee, $data['permissions'] ?? null);
 
             if (isset($data['profile'])) {
                 $employee->employeeProfile()->updateOrCreate(
@@ -167,15 +170,57 @@ class EmployeeController extends Controller
 
     private function formProps(Request $request): array
     {
+        $actor = $request->user();
+        $isSuperAdmin = $actor->hasRole('Super Admin');
+
         return [
             'branches' => Branch::query()->where('is_active', true)->orderBy('name')->get(['id', 'name']),
             'departments' => Department::query()->where('is_active', true)->orderBy('sort_order')->get(['id', 'name']),
             'teams' => Team::query()->where('is_active', true)->orderBy('name')->get(['id', 'name', 'branch_id', 'department_id']),
             'roles' => Role::query()
-                ->when(! $request->user()->hasRole('Super Admin'), fn ($q) => $q->where('name', '!=', 'Super Admin'))
+                ->when(! $isSuperAdmin, fn ($q) => $q->where('name', '!=', 'Super Admin'))
+                ->with('permissions:id,name')
                 ->orderBy('name')
-                ->get(['id', 'name']),
+                ->get(['id', 'name'])
+                ->map(fn (Role $role) => [
+                    'id' => $role->id,
+                    'name' => $role->name,
+                    'permissions' => $role->permissions->pluck('name')->values(),
+                ]),
             'managers' => User::query()->where('is_active', true)->orderBy('name')->get(['id', 'name']),
+            // Per-employee custom permission grants (on top of roles).
+            'permissionRegistry' => PermissionRegistry::modules(),
+            'globalPermissions' => PermissionRegistry::global(),
+            'grantablePermissions' => $isSuperAdmin
+                ? PermissionRegistry::all()
+                : $actor->getAllPermissions()->pluck('name')->values()->all(),
+            'canManagePermissions' => $this->canManagePermissions($actor),
         ];
+    }
+
+    /** Only Super Admins or role managers may set per-employee custom permissions. */
+    private function canManagePermissions(User $actor): bool
+    {
+        return $actor->hasRole('Super Admin') || $actor->can('roles.update');
+    }
+
+    /**
+     * Sync a user's direct permissions, guarding against privilege escalation:
+     * a non-Super-Admin may only grant permissions they themselves hold.
+     *
+     * @param  list<string>|null  $permissions
+     */
+    private function syncCustomPermissions(User $actor, User $employee, ?array $permissions): void
+    {
+        if (! $this->canManagePermissions($actor) || $permissions === null) {
+            return;
+        }
+
+        if (! $actor->hasRole('Super Admin')) {
+            $allowed = $actor->getAllPermissions()->pluck('name')->all();
+            $permissions = array_values(array_intersect($permissions, $allowed));
+        }
+
+        $employee->syncPermissions($permissions);
     }
 }

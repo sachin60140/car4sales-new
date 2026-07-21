@@ -108,3 +108,81 @@ it('does not allow deleting yourself', function () {
         ->delete("/admin/employees/{$admin->id}")
         ->assertForbidden();
 });
+
+/** Seed a real permission + flush the Spatie cache so can() reflects it. */
+function ensurePermission(string $name): void
+{
+    \Spatie\Permission\Models\Permission::findOrCreate($name, 'web');
+    app(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
+}
+
+it('lets a super admin grant and revoke a custom permission on an employee', function () {
+    ensurePermission('bookings.approve');
+    $admin = superAdmin();
+
+    $this->actingAs($admin)->post('/admin/employees', employeePayload());
+    $employee = User::query()->where('email', 'ravi@example.com')->first();
+
+    // Grant it as a direct permission.
+    $this->actingAs($admin)->put("/admin/employees/{$employee->id}", employeePayload([
+        'branch_id' => $employee->branch_id, 'department_id' => $employee->department_id,
+        'password' => '', 'permissions' => ['bookings.approve'],
+    ]))->assertRedirect();
+
+    expect($employee->fresh()->can('bookings.approve'))->toBeTrue()
+        ->and($employee->fresh()->getDirectPermissions()->pluck('name'))->toContain('bookings.approve');
+
+    // Revoke it (empty permissions).
+    $this->actingAs($admin)->put("/admin/employees/{$employee->id}", employeePayload([
+        'branch_id' => $employee->branch_id, 'department_id' => $employee->department_id,
+        'password' => '', 'permissions' => [],
+    ]))->assertRedirect();
+
+    expect($employee->fresh()->getDirectPermissions())->toBeEmpty();
+});
+
+it('prevents a role manager from granting a permission they do not hold', function () {
+    ensurePermission('bookings.approve');
+    $manager = userWithPermissions(['employees.view', 'employees.create', 'employees.update', 'roles.update']);
+
+    $this->actingAs($manager)->post('/admin/employees', employeePayload());
+    $employee = User::query()->where('email', 'ravi@example.com')->first();
+
+    $this->actingAs($manager)->put("/admin/employees/{$employee->id}", employeePayload([
+        'branch_id' => $employee->branch_id, 'department_id' => $employee->department_id,
+        'password' => '', 'permissions' => ['bookings.approve'],
+    ]))->assertRedirect();
+
+    expect($employee->fresh()->getDirectPermissions()->pluck('name'))->not->toContain('bookings.approve');
+});
+
+it('lets a role manager grant a permission they do hold', function () {
+    ensurePermission('bookings.approve');
+    $manager = userWithPermissions(['employees.view', 'employees.create', 'employees.update', 'roles.update', 'bookings.approve']);
+
+    $this->actingAs($manager)->post('/admin/employees', employeePayload());
+    $employee = User::query()->where('email', 'ravi@example.com')->first();
+
+    $this->actingAs($manager)->put("/admin/employees/{$employee->id}", employeePayload([
+        'branch_id' => $employee->branch_id, 'department_id' => $employee->department_id,
+        'password' => '', 'permissions' => ['bookings.approve'],
+    ]))->assertRedirect();
+
+    expect($employee->fresh()->can('bookings.approve'))->toBeTrue();
+});
+
+it('ignores custom permissions from a manager without role-management rights', function () {
+    ensurePermission('bookings.approve');
+    // Holds the permission, can edit employees, but cannot manage roles.
+    $manager = userWithPermissions(['employees.view', 'employees.create', 'employees.update', 'bookings.approve']);
+
+    $this->actingAs($manager)->post('/admin/employees', employeePayload());
+    $employee = User::query()->where('email', 'ravi@example.com')->first();
+
+    $this->actingAs($manager)->put("/admin/employees/{$employee->id}", employeePayload([
+        'branch_id' => $employee->branch_id, 'department_id' => $employee->department_id,
+        'password' => '', 'permissions' => ['bookings.approve'],
+    ]))->assertRedirect();
+
+    expect($employee->fresh()->getDirectPermissions())->toBeEmpty();
+});
