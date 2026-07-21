@@ -11,6 +11,8 @@ import { Head, Link, useForm } from '@inertiajs/vue3';
 const props = defineProps<{
     branches: { id: number; name: string }[];
     statuses: { value: string; label: string }[];
+    employees: { id: number; name: string }[];
+    acquisitionSources: { value: string; label: string }[];
     canCost: boolean;
 }>();
 
@@ -41,6 +43,12 @@ const form = useForm({
     landed_cost: null as number | null,
     asking_price: null as number | null,
     refurb_required: false,
+    acquisition_source: '',
+    seller_name: '',
+    seller_contact: '',
+    purchased_by: null as number | null,
+    purchased_at: '',
+    purchase_reference: '',
 });
 
 const fuels = ['Petrol', 'Diesel', 'CNG', 'Electric', 'Hybrid'];
@@ -200,6 +208,48 @@ const inputClass = 'h-9 w-full rounded-md border border-input bg-transparent px-
                         <input v-model="form.refurb_required" type="checkbox" class="size-4 rounded border-input" />
                         Needs refurbishment
                     </label>
+                </CardContent>
+            </Card>
+
+            <Card>
+                <CardHeader><CardTitle>Source &amp; purchase</CardTitle></CardHeader>
+                <CardContent class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    <div class="grid gap-1.5">
+                        <Label for="source">Acquired from</Label>
+                        <select id="source" v-model="form.acquisition_source" :class="inputClass">
+                            <option value="">Select…</option>
+                            <option v-for="s in acquisitionSources" :key="s.value" :value="s.value">{{ s.label }}</option>
+                        </select>
+                        <InputError :message="form.errors.acquisition_source" />
+                    </div>
+                    <div class="grid gap-1.5">
+                        <Label for="seller_name">Seller / vendor name</Label>
+                        <Input id="seller_name" v-model="form.seller_name" placeholder="Person or dealer we bought from" />
+                        <InputError :message="form.errors.seller_name" />
+                    </div>
+                    <div class="grid gap-1.5">
+                        <Label for="seller_contact">Seller contact</Label>
+                        <Input id="seller_contact" v-model="form.seller_contact" placeholder="Phone or email" />
+                        <InputError :message="form.errors.seller_contact" />
+                    </div>
+                    <div class="grid gap-1.5">
+                        <Label for="purchased_by">Purchased by</Label>
+                        <select id="purchased_by" v-model="form.purchased_by" :class="inputClass">
+                            <option :value="null">Select employee…</option>
+                            <option v-for="e in employees" :key="e.id" :value="e.id">{{ e.name }}</option>
+                        </select>
+                        <InputError :message="form.errors.purchased_by" />
+                    </div>
+                    <div class="grid gap-1.5">
+                        <Label for="purchased_at">Purchase date</Label>
+                        <Input id="purchased_at" v-model="form.purchased_at" type="date" />
+                        <InputError :message="form.errors.purchased_at" />
+                    </div>
+                    <div class="grid gap-1.5">
+                        <Label for="purchase_reference">Purchase reference</Label>
+                        <Input id="purchase_reference" v-model="form.purchase_reference" placeholder="Bill / agreement no." />
+                        <InputError :message="form.errors.purchase_reference" />
+                    </div>
                 </CardContent>
             </Card>
 

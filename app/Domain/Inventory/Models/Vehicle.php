@@ -32,7 +32,8 @@ class Vehicle extends Model implements Transitionable
         'landed_cost', 'minimum_selling_price', 'asking_price', 'branch_id', 'parking_location',
         'inspection_grade', 'refurb_required', 'status', 'published_web', 'published_mobile',
         'slug', 'title', 'description', 'key_features', 'is_featured', 'reserved_booking_id',
-        'created_by',
+        'created_by', 'acquisition_source', 'seller_name', 'seller_contact', 'purchased_by',
+        'purchased_at', 'purchase_reference',
     ];
 
     protected function casts(): array
@@ -40,6 +41,7 @@ class Vehicle extends Model implements Transitionable
         return [
             'status' => VehicleStatus::class,
             'insurance_valid_till' => 'date',
+            'purchased_at' => 'date',
             'purchase_price' => 'decimal:2',
             'landed_cost' => 'decimal:2',
             'minimum_selling_price' => 'decimal:2',
@@ -65,6 +67,11 @@ class Vehicle extends Model implements Transitionable
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function purchaser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'purchased_by');
     }
 
     public function statusHistories(): HasMany

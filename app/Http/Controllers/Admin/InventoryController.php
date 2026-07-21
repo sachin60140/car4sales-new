@@ -11,14 +11,19 @@ use App\Domain\Inventory\Models\Vehicle;
 use App\Domain\RolesPermissions\Services\ScopeService;
 use App\Domain\Vendors\Models\Vendor;
 use App\Http\Controllers\Controller;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class InventoryController extends Controller
 {
+    /** How a vehicle was acquired into stock. */
+    private const ACQUISITION_SOURCES = ['individual', 'dealer', 'auction', 'trade_in', 'vendor', 'other'];
+
     public function __construct(private readonly ScopeService $scopes) {}
 
     public function index(Request $request): Response
@@ -85,6 +90,8 @@ class InventoryController extends Controller
                 fn (VehicleStatus $s) => ['value' => $s->value, 'label' => $s->label()],
                 [VehicleStatus::InStock, VehicleStatus::InwardPending, VehicleStatus::InspectionPending, VehicleStatus::UnderRefurbishment],
             ),
+            'employees' => User::query()->where('is_active', true)->orderBy('name')->get(['id', 'name']),
+            'acquisitionSources' => $this->acquisitionSourceOptions(),
             'canCost' => $request->user()->can('vehicles.view-purchase-cost'),
         ]);
     }
@@ -117,6 +124,12 @@ class InventoryController extends Controller
             'landed_cost' => ['nullable', 'numeric', 'min:0', 'max:99999999'],
             'asking_price' => ['nullable', 'numeric', 'min:0', 'max:99999999'],
             'refurb_required' => ['boolean'],
+            'acquisition_source' => ['nullable', Rule::in(self::ACQUISITION_SOURCES)],
+            'seller_name' => ['nullable', 'string', 'max:150'],
+            'seller_contact' => ['nullable', 'string', 'max:100'],
+            'purchased_by' => ['nullable', 'exists:users,id'],
+            'purchased_at' => ['nullable', 'date'],
+            'purchase_reference' => ['nullable', 'string', 'max:100'],
         ]);
 
         // Only cost-privileged users may set purchase figures.
@@ -140,6 +153,7 @@ class InventoryController extends Controller
 
         $vehicle->load([
             'branch:id,name',
+            'purchaser:id,name',
             'media.uploader:id,name',
             'documents',
             'movements.fromBranch:id,name', 'movements.toBranch:id,name', 'movements.mover:id,name',
@@ -161,6 +175,8 @@ class InventoryController extends Controller
             'vehicle' => $data,
             'branches' => Branch::query()->where('is_active', true)->orderBy('name')->get(['id', 'name']),
             'vendors' => Vendor::query()->where('is_active', true)->orderBy('name')->get(['id', 'name', 'type']),
+            'employees' => User::query()->where('is_active', true)->orderBy('name')->get(['id', 'name']),
+            'acquisitionSources' => $this->acquisitionSourceOptions(),
             'expenseCategories' => ExpenseCategory::options(),
             'movementTypes' => MovementType::options(),
             'statuses' => array_map(fn (VehicleStatus $s) => ['value' => $s->value, 'label' => $s->label()], VehicleStatus::cases()),
@@ -200,10 +216,25 @@ class InventoryController extends Controller
             'title' => ['nullable', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:5000'],
             'refurb_required' => ['boolean'],
+            'acquisition_source' => ['nullable', Rule::in(self::ACQUISITION_SOURCES)],
+            'seller_name' => ['nullable', 'string', 'max:150'],
+            'seller_contact' => ['nullable', 'string', 'max:100'],
+            'purchased_by' => ['nullable', 'exists:users,id'],
+            'purchased_at' => ['nullable', 'date'],
+            'purchase_reference' => ['nullable', 'string', 'max:100'],
         ]);
 
         $vehicle->update($data);
 
         return back()->with('success', 'Vehicle updated.');
+    }
+
+    /** @return array<int, array{value: string, label: string}> */
+    private function acquisitionSourceOptions(): array
+    {
+        return array_map(
+            fn (string $s) => ['value' => $s, 'label' => Str::headline($s)],
+            self::ACQUISITION_SOURCES,
+        );
     }
 }

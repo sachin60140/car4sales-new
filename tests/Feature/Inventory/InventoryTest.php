@@ -142,6 +142,53 @@ it('requires make and model when adding stock', function () {
         ->assertSessionHasErrors(['make', 'model']);
 });
 
+it('records acquisition and purchase details when adding stock', function () {
+    $user = userWithPermissions(['vehicles.view', 'vehicles.create'], scope: 'all');
+    $purchaser = userWithPermissions(['vehicles.view'], scope: 'all');
+
+    $this->actingAs($user)->post('/admin/inventory', [
+        'make' => 'Tata', 'model' => 'Nexon', 'status' => VehicleStatus::InStock->value,
+        'acquisition_source' => 'dealer', 'seller_name' => 'ABC Motors', 'seller_contact' => '9876500000',
+        'purchased_by' => $purchaser->id, 'purchased_at' => '2026-07-10', 'purchase_reference' => 'INV-778',
+    ])->assertRedirect();
+
+    $vehicle = Vehicle::query()->where('model', 'Nexon')->firstOrFail();
+    expect($vehicle->acquisition_source)->toBe('dealer')
+        ->and($vehicle->seller_name)->toBe('ABC Motors')
+        ->and($vehicle->purchased_by)->toBe($purchaser->id)
+        ->and($vehicle->purchased_at->toDateString())->toBe('2026-07-10')
+        ->and($vehicle->purchase_reference)->toBe('INV-778');
+});
+
+it('updates acquisition details without clearing other fields', function () {
+    $user = userWithPermissions(['vehicles.view', 'vehicles.update'], scope: 'all');
+    $vehicle = Vehicle::query()->create([
+        'stock_number' => 'STK-ACQ', 'make' => 'Honda', 'model' => 'City',
+        'registration_number' => 'MH02CC2222', 'status' => 'in_stock',
+    ]);
+
+    $this->actingAs($user)->patch("/admin/inventory/{$vehicle->id}", [
+        'acquisition_source' => 'individual', 'seller_name' => 'Ramesh',
+    ])->assertRedirect();
+
+    $vehicle->refresh();
+    expect($vehicle->acquisition_source)->toBe('individual')
+        ->and($vehicle->seller_name)->toBe('Ramesh')
+        // Untouched fields survive the partial update.
+        ->and($vehicle->registration_number)->toBe('MH02CC2222');
+});
+
+it('rejects an unknown acquisition source', function () {
+    $user = userWithPermissions(['vehicles.view', 'vehicles.create'], scope: 'all');
+
+    $this->actingAs($user)
+        ->post('/admin/inventory', [
+            'make' => 'X', 'model' => 'Y', 'status' => VehicleStatus::InStock->value,
+            'acquisition_source' => 'spaceship',
+        ])
+        ->assertSessionHasErrors('acquisition_source');
+});
+
 it('ignores purchase cost fields from users without the cost permission', function () {
     $user = userWithPermissions(['vehicles.view', 'vehicles.create'], scope: 'all');
 

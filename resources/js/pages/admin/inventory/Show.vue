@@ -11,6 +11,8 @@ const props = defineProps<{
     vehicle: Record<string, any>;
     branches: { id: number; name: string }[];
     vendors: { id: number; name: string; type: string }[];
+    employees: { id: number; name: string }[];
+    acquisitionSources: { value: string; label: string }[];
     expenseCategories: { value: string; label: string }[];
     movementTypes: { value: string; label: string }[];
     statuses: { value: string; label: string }[];
@@ -38,6 +40,25 @@ function money(x: unknown): string {
 }
 function post(url: string, data: Record<string, string | number | boolean | null> = {}, done?: () => void) {
     router.post(url, data, { preserveScroll: true, onSuccess: done });
+}
+
+// Source & purchase (acquisition)
+const editingSource = ref(false);
+const sourceForm = useForm({
+    acquisition_source: props.vehicle.acquisition_source ?? '',
+    seller_name: props.vehicle.seller_name ?? '',
+    seller_contact: props.vehicle.seller_contact ?? '',
+    purchased_by: props.vehicle.purchased_by ?? null,
+    purchased_at: props.vehicle.purchased_at ? String(props.vehicle.purchased_at).slice(0, 10) : '',
+    purchase_reference: props.vehicle.purchase_reference ?? '',
+});
+function saveSource() {
+    sourceForm.patch(`/admin/inventory/${v.value.id}`, { preserveScroll: true, onSuccess: () => (editingSource.value = false) });
+}
+const sourceLabel = computed(() => props.acquisitionSources.find((s) => s.value === v.value.acquisition_source)?.label ?? '—');
+function fmtDate(x: unknown): string {
+    if (!x) return '—';
+    return new Date(x as string).toLocaleDateString('en-IN');
 }
 
 // Media
@@ -221,6 +242,72 @@ function createJob() {
                                 >
                             </li>
                         </ol>
+                    </CardContent>
+                </Card>
+
+                <Card class="lg:col-span-2">
+                    <CardHeader class="flex flex-row items-center justify-between space-y-0">
+                        <CardTitle>Source &amp; Purchase</CardTitle>
+                        <Button v-if="can.update && !editingSource" size="sm" variant="outline" @click="editingSource = true">Edit</Button>
+                    </CardHeader>
+                    <CardContent>
+                        <!-- Read view -->
+                        <div v-if="!editingSource" class="grid gap-y-2 text-sm sm:grid-cols-2">
+                            <div class="grid grid-cols-2 gap-y-2 pr-6">
+                                <span class="text-muted-foreground">Acquired from</span><span>{{ sourceLabel }}</span>
+                                <span class="text-muted-foreground">Seller / vendor</span><span>{{ vehicle.seller_name ?? '—' }}</span>
+                                <span class="text-muted-foreground">Contact</span><span>{{ vehicle.seller_contact ?? '—' }}</span>
+                            </div>
+                            <div class="grid grid-cols-2 gap-y-2 pr-6">
+                                <span class="text-muted-foreground">Purchased by</span><span>{{ vehicle.purchaser?.name ?? '—' }}</span>
+                                <span class="text-muted-foreground">Purchase date</span><span>{{ fmtDate(vehicle.purchased_at) }}</span>
+                                <span class="text-muted-foreground">Reference</span><span>{{ vehicle.purchase_reference ?? '—' }}</span>
+                            </div>
+                        </div>
+
+                        <!-- Edit view -->
+                        <div v-else class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                            <label class="grid gap-1 text-sm">
+                                <span class="text-muted-foreground">Acquired from</span>
+                                <select
+                                    v-model="sourceForm.acquisition_source"
+                                    class="h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-sm"
+                                >
+                                    <option value="">Select…</option>
+                                    <option v-for="s in acquisitionSources" :key="s.value" :value="s.value">{{ s.label }}</option>
+                                </select>
+                            </label>
+                            <label class="grid gap-1 text-sm">
+                                <span class="text-muted-foreground">Seller / vendor name</span>
+                                <Input v-model="sourceForm.seller_name" class="h-9" />
+                            </label>
+                            <label class="grid gap-1 text-sm">
+                                <span class="text-muted-foreground">Seller contact</span>
+                                <Input v-model="sourceForm.seller_contact" class="h-9" />
+                            </label>
+                            <label class="grid gap-1 text-sm">
+                                <span class="text-muted-foreground">Purchased by</span>
+                                <select
+                                    v-model="sourceForm.purchased_by"
+                                    class="h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-sm"
+                                >
+                                    <option :value="null">Select employee…</option>
+                                    <option v-for="e in employees" :key="e.id" :value="e.id">{{ e.name }}</option>
+                                </select>
+                            </label>
+                            <label class="grid gap-1 text-sm">
+                                <span class="text-muted-foreground">Purchase date</span>
+                                <Input v-model="sourceForm.purchased_at" type="date" class="h-9" />
+                            </label>
+                            <label class="grid gap-1 text-sm">
+                                <span class="text-muted-foreground">Purchase reference</span>
+                                <Input v-model="sourceForm.purchase_reference" class="h-9" />
+                            </label>
+                            <div class="flex items-center gap-2 sm:col-span-2 lg:col-span-3">
+                                <Button size="sm" :disabled="sourceForm.processing" @click="saveSource">Save</Button>
+                                <Button size="sm" variant="ghost" @click="editingSource = false">Cancel</Button>
+                            </div>
+                        </div>
                     </CardContent>
                 </Card>
             </div>
