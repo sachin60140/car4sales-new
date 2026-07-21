@@ -2,7 +2,6 @@
 
 namespace App\Domain\Bookings\Support;
 
-use App\Domain\RolesPermissions\Models\RoleMeta;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 

@@ -2,6 +2,7 @@
 
 use App\Domain\Notifications\Enums\NotificationLevel;
 use App\Domain\Notifications\Jobs\DeliverNotification;
+use App\Domain\Notifications\Models\Notification;
 use App\Domain\Notifications\Services\NotificationService;
 use App\Domain\RolesPermissions\Models\Role;
 use App\Models\User;
@@ -55,7 +56,7 @@ it('is a no-op while muted', function () {
     NotificationService::unmute();
 
     expect($result)->toBeNull()
-        ->and(\App\Domain\Notifications\Models\Notification::count())->toBe(0);
+        ->and(Notification::count())->toBe(0);
 });
 
 it('resolves recipients by role and de-duplicates', function () {

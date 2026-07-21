@@ -2,10 +2,13 @@
 
 namespace App\Domain\SalesLeads\Models;
 
+use App\Domain\Bookings\Models\Booking;
 use App\Domain\Branches\Models\Branch;
 use App\Domain\Customers\Models\Customer;
 use App\Domain\Inventory\Models\Vehicle;
 use App\Domain\SalesLeads\Enums\SalesLeadStatus;
+use App\Domain\TestDrives\Models\TestDrive;
+use App\Domain\Visits\Models\CustomerVisit;
 use App\Models\User;
 use App\Support\Workflow\HasTransitions;
 use App\Support\Workflow\RecordsStatusHistory;
@@ -103,17 +106,17 @@ class SalesLead extends Model implements Transitionable
 
     public function visits(): HasMany
     {
-        return $this->hasMany(\App\Domain\Visits\Models\CustomerVisit::class)->latest();
+        return $this->hasMany(CustomerVisit::class)->latest();
     }
 
     public function testDrives(): HasMany
     {
-        return $this->hasMany(\App\Domain\TestDrives\Models\TestDrive::class)->latest();
+        return $this->hasMany(TestDrive::class)->latest();
     }
 
     public function bookings(): HasMany
     {
-        return $this->hasMany(\App\Domain\Bookings\Models\Booking::class)->latest();
+        return $this->hasMany(Booking::class)->latest();
     }
 
     public function getActivitylogOptions(): LogOptions

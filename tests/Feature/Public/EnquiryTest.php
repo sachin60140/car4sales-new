@@ -1,5 +1,6 @@
 <?php
 
+use App\Domain\Branches\Models\Branch;
 use App\Domain\Inventory\Enums\VehicleStatus;
 use App\Domain\Inventory\Models\Vehicle;
 use App\Domain\PublicWebsite\Models\OtpVerification;
@@ -11,7 +12,7 @@ it('creates a vehicle enquiry from the public form', function () {
     $vehicle = Vehicle::query()->create([
         'stock_number' => 'STK-E1', 'make' => 'Kia', 'model' => 'Seltos',
         'status' => VehicleStatus::Published->value, 'published_web' => true,
-        'asking_price' => 900000, 'branch_id' => \App\Domain\Branches\Models\Branch::factory()->create()->id,
+        'asking_price' => 900000, 'branch_id' => Branch::factory()->create()->id,
     ]);
 
     $this->post('/enquiries', [

@@ -71,7 +71,7 @@ class SitemapGenerator
 
     private function url(string $loc, string $lastmod, string $freq, string $priority): string
     {
-        return "  <url><loc>".e($loc)."</loc><lastmod>{$lastmod}</lastmod>"
+        return '  <url><loc>'.e($loc)."</loc><lastmod>{$lastmod}</lastmod>"
             ."<changefreq>{$freq}</changefreq><priority>{$priority}</priority></url>";
     }
 }

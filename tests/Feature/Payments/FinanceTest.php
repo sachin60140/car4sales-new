@@ -5,6 +5,7 @@ use App\Domain\Finance\Enums\FinanceStatus;
 use App\Domain\Finance\Models\FinanceApplication;
 use App\Domain\Payments\Services\InvoiceService;
 use App\Domain\Payments\Services\LedgerService;
+use App\Support\Workflow\InvalidTransitionException;
 
 it('creates one finance file per booking', function () {
     [$booking, $admin] = ledgerBooking(['payment_mode' => 'finance']);
@@ -43,7 +44,7 @@ it('blocks an illegal finance transition', function () {
 
     // documents_pending cannot jump straight to disbursed.
     expect(fn () => app(FinanceApplicationAction::class)->transition($app, FinanceStatus::Disbursed, [], $admin))
-        ->toThrow(App\Support\Workflow\InvalidTransitionException::class);
+        ->toThrow(InvalidTransitionException::class);
 });
 
 it('generates a single invoice with correct totals', function () {

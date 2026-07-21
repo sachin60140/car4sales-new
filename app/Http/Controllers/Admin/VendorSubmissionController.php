@@ -10,6 +10,7 @@ use App\Domain\VendorSubmissions\Models\VendorSubmission;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -166,7 +167,7 @@ class VendorSubmissionController extends Controller
                 'status' => $v['status'] ?? 'pending', 'number' => $v['number'] ?? null,
                 'valid_till' => $v['valid_till'] ?? null, 'remarks' => $v['remarks'] ?? null,
                 'verified_by' => $v['verified_by_name'] ?? null,
-                'verified_at' => isset($v['verified_at']) ? \Illuminate\Support\Carbon::parse($v['verified_at'])->toDayDateTimeString() : null,
+                'verified_at' => isset($v['verified_at']) ? Carbon::parse($v['verified_at'])->toDayDateTimeString() : null,
             ];
         }
 

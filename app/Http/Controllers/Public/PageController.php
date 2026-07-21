@@ -8,6 +8,7 @@ use App\Domain\PublicWebsite\Models\Faq;
 use App\Domain\PublicWebsite\Models\Page;
 use App\Domain\PublicWebsite\Models\Testimonial;
 use App\Domain\PublicWebsite\Services\FinanceEstimator;
+use App\Domain\PublicWebsite\Support\PublicVehiclePresenter;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -34,7 +35,7 @@ class PageController extends Controller
         ]);
     }
 
-    public function branchShow(string $slug, \App\Domain\PublicWebsite\Support\PublicVehiclePresenter $presenter): Response
+    public function branchShow(string $slug, PublicVehiclePresenter $presenter): Response
     {
         $branch = Branch::query()->where('slug', $slug)->where('is_active', true)->firstOrFail();
 

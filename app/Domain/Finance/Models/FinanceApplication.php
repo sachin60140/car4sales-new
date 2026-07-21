@@ -6,6 +6,7 @@ use App\Domain\Bookings\Models\Booking;
 use App\Domain\Branches\Models\Branch;
 use App\Domain\Customers\Models\Customer;
 use App\Domain\Finance\Enums\FinanceStatus;
+use App\Domain\Notifications\Services\NotificationDispatcher;
 use App\Models\User;
 use App\Support\Workflow\HasTransitions;
 use App\Support\Workflow\RecordsStatusHistory;
@@ -94,7 +95,7 @@ class FinanceApplication extends Model implements Transitionable
     public function onStatusChanged(HasTransitions $from, HasTransitions $to, ?User $user): void
     {
         if ($to instanceof FinanceStatus) {
-            app(\App\Domain\Notifications\Services\NotificationDispatcher::class)->financeStatusChanged($this, $to);
+            app(NotificationDispatcher::class)->financeStatusChanged($this, $to);
         }
     }
 }

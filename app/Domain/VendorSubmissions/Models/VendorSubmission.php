@@ -3,6 +3,7 @@
 namespace App\Domain\VendorSubmissions\Models;
 
 use App\Domain\Branches\Models\Branch;
+use App\Domain\Inventory\Models\Vehicle;
 use App\Domain\PurchaseLeads\Models\PurchaseLead;
 use App\Domain\VendorSubmissions\Enums\SettlementStatus;
 use App\Domain\VendorSubmissions\Enums\SubmissionStatus;
@@ -176,7 +177,7 @@ class VendorSubmission extends Model
 
     public function vehicle(): BelongsTo
     {
-        return $this->belongsTo(\App\Domain\Inventory\Models\Vehicle::class);
+        return $this->belongsTo(Vehicle::class);
     }
 
     public function possessedBy(): BelongsTo

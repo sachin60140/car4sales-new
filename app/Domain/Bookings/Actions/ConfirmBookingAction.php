@@ -8,6 +8,7 @@ use App\Domain\Bookings\Models\Booking;
 use App\Domain\Bookings\Support\DiscountAuthority;
 use App\Domain\Inventory\Enums\VehicleStatus;
 use App\Domain\Inventory\Models\Vehicle;
+use App\Domain\Payments\Services\LedgerService;
 use App\Domain\SalesLeads\Enums\SalesLeadStatus;
 use App\Models\User;
 use App\Support\Workflow\WorkflowService;
@@ -114,7 +115,7 @@ class ConfirmBookingAction
         $this->workflow->transition($booking, BookingStatus::Confirmed, $actor, 'Booking confirmed', force: true);
 
         // Open the customer ledger with the deal heads (selling price / discount).
-        app(\App\Domain\Payments\Services\LedgerService::class)->openForBooking($booking->fresh(), $actor);
+        app(LedgerService::class)->openForBooking($booking->fresh(), $actor);
 
         // Advance the sales lead.
         if ($booking->lead !== null && ! in_array($booking->lead->status, [SalesLeadStatus::Delivered], true)) {

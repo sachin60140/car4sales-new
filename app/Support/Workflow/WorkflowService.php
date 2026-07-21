@@ -18,7 +18,7 @@ class WorkflowService
     /**
      * Transition a workflow model to a new status.
      *
-     * @param  Model&\App\Support\Workflow\Transitionable  $model
+     * @param  Model&Transitionable  $model
      */
     public function transition(Model $model, HasTransitions $to, ?User $user = null, ?string $remarks = null, bool $force = false): Model
     {

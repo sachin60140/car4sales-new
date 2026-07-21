@@ -3,10 +3,12 @@
 namespace App\Domain\Bookings\Models;
 
 use App\Domain\Approvals\Models\ApprovalRequest;
+use App\Domain\Bookings\Actions\ConfirmBookingAction;
 use App\Domain\Bookings\Enums\BookingStatus;
 use App\Domain\Branches\Models\Branch;
 use App\Domain\Customers\Models\Customer;
 use App\Domain\Inventory\Models\Vehicle;
+use App\Domain\Notifications\Services\NotificationDispatcher;
 use App\Domain\SalesLeads\Models\SalesLead;
 use App\Models\User;
 use App\Support\Workflow\HasTransitions;
@@ -119,7 +121,7 @@ class Booking extends Model implements Transitionable
     public function onStatusChanged(HasTransitions $from, HasTransitions $to, ?User $user): void
     {
         if ($to === BookingStatus::Confirmed) {
-            app(\App\Domain\Notifications\Services\NotificationDispatcher::class)->bookingConfirmed($this);
+            app(NotificationDispatcher::class)->bookingConfirmed($this);
         }
     }
 
@@ -128,7 +130,7 @@ class Booking extends Model implements Transitionable
      */
     public function onApprovalDecided(ApprovalRequest $request, string $decision, User $approver): void
     {
-        app(\App\Domain\Bookings\Actions\ConfirmBookingAction::class)
+        app(ConfirmBookingAction::class)
             ->onDiscountDecision($this, $decision, $approver);
     }
 }

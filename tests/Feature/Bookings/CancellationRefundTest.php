@@ -7,6 +7,7 @@ use App\Domain\Bookings\Actions\CreateBookingAction;
 use App\Domain\Bookings\Actions\RefundAction;
 use App\Domain\Bookings\Enums\BookingStatus;
 use App\Domain\Inventory\Enums\VehicleStatus;
+use Database\Seeders\RolePermissionSeeder;
 
 function confirmedBooking(): array
 {
@@ -46,7 +47,7 @@ it('forfeits when there is no refund amount', function () {
 });
 
 it('requires refund approval before paying, then closes the booking', function () {
-    $this->seed(\Database\Seeders\RolePermissionSeeder::class); // roles + refund approval limits
+    $this->seed(RolePermissionSeeder::class); // roles + refund approval limits
     [$booking, , $admin] = confirmedBooking();
 
     $cancellation = app(CancelBookingAction::class)->request($booking, 'Changed mind', 20000, 5000, $admin);

@@ -6,13 +6,17 @@ use App\Domain\Bookings\Actions\CancelBookingAction;
 use App\Domain\Bookings\Actions\ConfirmBookingAction;
 use App\Domain\Bookings\Actions\CreateBookingAction;
 use App\Domain\Bookings\Actions\RefundAction;
-use App\Domain\Bookings\Models\BookingPayment;
-use App\Domain\Payments\Services\PaymentService;
 use App\Domain\Bookings\Enums\BookingStatus;
 use App\Domain\Bookings\Models\Booking;
 use App\Domain\Bookings\Models\BookingCancellation;
+use App\Domain\Bookings\Models\BookingPayment;
 use App\Domain\Bookings\Models\Refund;
+use App\Domain\Finance\Models\FinanceApplication;
 use App\Domain\Inventory\Models\Vehicle;
+use App\Domain\Payments\Models\CustomerLedger;
+use App\Domain\Payments\Models\Invoice;
+use App\Domain\Payments\Services\InvoiceService;
+use App\Domain\Payments\Services\PaymentService;
 use App\Domain\RolesPermissions\Services\ScopeService;
 use App\Domain\SalesLeads\Models\SalesLead;
 use App\Http\Controllers\Controller;
@@ -97,14 +101,14 @@ class BookingController extends Controller
             'approvalRequest.steps',
         ]);
 
-        $ledger = \App\Domain\Payments\Models\CustomerLedger::query()
+        $ledger = CustomerLedger::query()
             ->where('booking_id', $booking->id)
             ->with('entries.poster:id,name')->first();
 
-        $financeApplication = \App\Domain\Finance\Models\FinanceApplication::query()
+        $financeApplication = FinanceApplication::query()
             ->where('booking_id', $booking->id)->first(['id', 'application_number', 'status']);
 
-        $invoice = \App\Domain\Payments\Models\Invoice::query()
+        $invoice = Invoice::query()
             ->where('booking_id', $booking->id)->first(['id', 'invoice_number', 'total', 'generated_document_id']);
 
         return Inertia::render('admin/bookings/Show', [
@@ -142,7 +146,7 @@ class BookingController extends Controller
         ]);
     }
 
-    public function generateInvoice(Request $request, Booking $booking, \App\Domain\Payments\Services\InvoiceService $invoices): RedirectResponse
+    public function generateInvoice(Request $request, Booking $booking, InvoiceService $invoices): RedirectResponse
     {
         abort_unless($request->user()->can('bookings.print'), 403);
 

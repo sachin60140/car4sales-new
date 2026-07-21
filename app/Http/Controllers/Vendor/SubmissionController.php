@@ -10,9 +10,11 @@ use App\Domain\VendorSubmissions\Actions\VendorSubmissionAction;
 use App\Domain\VendorSubmissions\Enums\ChecklistResult;
 use App\Domain\VendorSubmissions\Enums\SubmissionStatus;
 use App\Domain\VendorSubmissions\Models\VendorSubmission;
+use App\Domain\VendorSubmissions\Models\VendorSubmissionMedia;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -118,11 +120,11 @@ class SubmissionController extends Controller
         return back()->with('success', $count.' '.($count === 1 ? 'image' : 'images').' uploaded.');
     }
 
-    public function deleteMedia(Request $request, \App\Domain\VendorSubmissions\Models\VendorSubmissionMedia $media): RedirectResponse
+    public function deleteMedia(Request $request, VendorSubmissionMedia $media): RedirectResponse
     {
         $this->authorize('update', $media->submission);
 
-        \Illuminate\Support\Facades\Storage::disk('private')->delete(array_filter([$media->file_path, $media->thumbnail_path]));
+        Storage::disk('private')->delete(array_filter([$media->file_path, $media->thumbnail_path]));
         $media->delete();
 
         return back()->with('success', 'Image removed.');
@@ -357,7 +359,7 @@ class SubmissionController extends Controller
         ];
     }
 
-    private function mediaRow(\App\Domain\VendorSubmissions\Models\VendorSubmissionMedia $m): array
+    private function mediaRow(VendorSubmissionMedia $m): array
     {
         return [
             'id' => $m->id,

@@ -4,11 +4,9 @@ use App\Domain\Bookings\Actions\ConfirmBookingAction;
 use App\Domain\Bookings\Actions\CreateBookingAction;
 use App\Domain\Inventory\Enums\VehicleStatus;
 use App\Domain\Inventory\Models\Vehicle;
-use App\Domain\Payments\Enums\LedgerHead;
 use App\Domain\Payments\Services\LedgerService;
 use App\Domain\Payments\Services\PaymentService;
 use App\Domain\SalesLeads\Actions\CreateSalesLeadAction;
-use App\Models\User;
 
 function ledgerBooking(array $bookingData = []): array
 {

@@ -9,6 +9,7 @@ use App\Domain\Deliveries\Enums\DeliveryStatus;
 use App\Domain\Deliveries\Models\Delivery;
 use App\Domain\Documents\Services\DocumentGenerator;
 use App\Domain\RolesPermissions\Services\ScopeService;
+use App\Domain\RTO\Models\RtoCase;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -111,7 +112,7 @@ class DeliveryController extends Controller
             'branch:id,name', 'approver:id,name', 'documents.uploader:id,name',
         ]);
 
-        $rtoCase = \App\Domain\RTO\Models\RtoCase::query()
+        $rtoCase = RtoCase::query()
             ->where('delivery_id', $delivery->id)
             ->first(['id', 'rto_number', 'status']);
 

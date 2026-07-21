@@ -4,6 +4,8 @@ use App\Domain\Branches\Models\Branch;
 use App\Domain\Departments\Models\Department;
 use App\Domain\RolesPermissions\Models\Role;
 use App\Models\User;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\PermissionRegistrar;
 
 function employeePayload(array $overrides = []): array
 {
@@ -112,8 +114,8 @@ it('does not allow deleting yourself', function () {
 /** Seed a real permission + flush the Spatie cache so can() reflects it. */
 function ensurePermission(string $name): void
 {
-    \Spatie\Permission\Models\Permission::findOrCreate($name, 'web');
-    app(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
+    Permission::findOrCreate($name, 'web');
+    app(PermissionRegistrar::class)->forgetCachedPermissions();
 }
 
 it('lets a super admin grant and revoke a custom permission on an employee', function () {

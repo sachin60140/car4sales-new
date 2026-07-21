@@ -8,6 +8,8 @@ use App\Domain\Departments\Models\Department;
 use App\Domain\Employees\Models\EmployeeProfile;
 use App\Domain\Employees\Models\UserDevice;
 use App\Domain\Teams\Models\Team;
+use App\Domain\VendorSubmissions\Models\VendorProfile;
+use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -22,7 +24,7 @@ use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
+    /** @use HasFactory<UserFactory> */
     use HasApiTokens, HasFactory, HasRoles, LogsActivity, Notifiable, SoftDeletes;
 
     protected $fillable = [
@@ -76,7 +78,7 @@ class User extends Authenticatable
 
     public function vendorProfile(): HasOne
     {
-        return $this->hasOne(\App\Domain\VendorSubmissions\Models\VendorProfile::class);
+        return $this->hasOne(VendorProfile::class);
     }
 
     /** True for external sourcing-vendor accounts (partner portal). */

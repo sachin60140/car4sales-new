@@ -1,5 +1,6 @@
 <?php
 
+use App\Domain\Approvals\Services\ApprovalEngine;
 use App\Domain\Bookings\Actions\ConfirmBookingAction;
 use App\Domain\Bookings\Actions\CreateBookingAction;
 use App\Domain\Bookings\Enums\BookingStatus;
@@ -8,7 +9,9 @@ use App\Domain\Inventory\Enums\VehicleStatus;
 use App\Domain\Inventory\Models\Vehicle;
 use App\Domain\SalesLeads\Actions\CreateSalesLeadAction;
 use App\Domain\SalesLeads\Enums\SalesLeadStatus;
+use App\Domain\SalesLeads\Models\SalesLead;
 use App\Models\User;
+use Database\Seeders\RolePermissionSeeder;
 
 function bookingVehicle(array $overrides = []): Vehicle
 {
@@ -21,7 +24,7 @@ function bookingVehicle(array $overrides = []): Vehicle
     ], $overrides));
 }
 
-function bookingLead(User $creator): \App\Domain\SalesLeads\Models\SalesLead
+function bookingLead(User $creator): SalesLead
 {
     return app(CreateSalesLeadAction::class)->execute(
         ['name' => 'Buyer', 'mobile' => '90000'.fake()->unique()->numerify('#####'), 'source' => 'walk_in'],
@@ -61,7 +64,7 @@ it('prevents double-booking the same vehicle', function () {
 });
 
 it('routes an excess discount through approval and reserves the vehicle', function () {
-    $this->seed(\Database\Seeders\RolePermissionSeeder::class); // roles + discount approval limits
+    $this->seed(RolePermissionSeeder::class); // roles + discount approval limits
     $admin = superAdmin();
     $exec = User::factory()->create();
     $exec->assignRole('Sales Executive');
@@ -78,7 +81,7 @@ it('routes an excess discount through approval and reserves the vehicle', functi
         ->and($vehicle->fresh()->status)->toBe(VehicleStatus::Reserved);
 
     // Approving the discount (single Sales Manager step) confirms the booking.
-    app(\App\Domain\Approvals\Services\ApprovalEngine::class)->approve($booking->fresh()->approvalRequest, $admin);
+    app(ApprovalEngine::class)->approve($booking->fresh()->approvalRequest, $admin);
 
     expect($booking->fresh()->status)->toBe(BookingStatus::Confirmed)
         ->and($vehicle->fresh()->status)->toBe(VehicleStatus::Booked)

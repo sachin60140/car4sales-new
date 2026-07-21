@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Domain\Branches\Models\Branch;
+use App\Domain\Inventory\Models\Vehicle;
 use App\Domain\RolesPermissions\Services\ScopeService;
 use App\Domain\SalesLeads\Actions\AssignLeadAction;
 use App\Domain\SalesLeads\Actions\CreateSalesLeadAction;
@@ -17,6 +18,7 @@ use App\Models\User;
 use App\Support\Workflow\WorkflowService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
@@ -157,7 +159,7 @@ class SalesLeadController extends Controller
             ),
             'telecallers' => $this->assignableUsers('Telecaller'),
             'salesExecutives' => $this->assignableUsers('Sales Executive'),
-            'availableVehicles' => \App\Domain\Inventory\Models\Vehicle::query()
+            'availableVehicles' => Vehicle::query()
                 ->whereIn('status', ['ready_for_sale', 'published', 'reserved'])
                 ->orderBy('stock_number')
                 ->limit(200)
@@ -230,7 +232,7 @@ class SalesLeadController extends Controller
         return back()->with('success', 'Lead reassigned.');
     }
 
-    /** @return \Illuminate\Support\Collection<int, array{id: int, name: string}> */
+    /** @return Collection<int, array{id: int, name: string}> */
     private function assignableUsers(string $role)
     {
         return User::query()->where('is_active', true)

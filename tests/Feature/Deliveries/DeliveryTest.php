@@ -6,6 +6,7 @@ use App\Domain\Bookings\Enums\BookingStatus;
 use App\Domain\Bookings\Models\Booking;
 use App\Domain\Deliveries\Actions\DeliveryAction;
 use App\Domain\Deliveries\Enums\DeliveryStatus;
+use App\Domain\Deliveries\Models\Delivery;
 use App\Domain\Inventory\Enums\VehicleStatus;
 use App\Domain\Inventory\Models\Vehicle;
 use App\Domain\Payments\Services\LedgerService;
@@ -14,7 +15,9 @@ use App\Domain\RTO\Enums\RtoStatus;
 use App\Domain\RTO\Models\RtoCase;
 use App\Domain\SalesLeads\Actions\CreateSalesLeadAction;
 use App\Domain\SalesLeads\Enums\SalesLeadStatus;
+use App\Domain\SalesLeads\Models\SalesLead;
 use App\Models\User;
+use Illuminate\Database\UniqueConstraintViolationException;
 
 function deliveryVehicle(array $overrides = []): Vehicle
 {
@@ -29,7 +32,7 @@ function deliveryVehicle(array $overrides = []): Vehicle
     ], $overrides));
 }
 
-function deliveryLead(User $creator): \App\Domain\SalesLeads\Models\SalesLead
+function deliveryLead(User $creator): SalesLead
 {
     return app(CreateSalesLeadAction::class)->execute(
         ['name' => 'Delivery Buyer', 'mobile' => '90001'.fake()->unique()->numerify('#####'), 'source' => 'walk_in'],
@@ -91,22 +94,22 @@ it('enforces one active delivery per booking at the database level', function ()
     $first = app(DeliveryAction::class)->create($booking, $admin);
 
     // A raw second active delivery for the same booking must violate the unique index.
-    expect(fn () => \App\Domain\Deliveries\Models\Delivery::query()->create([
+    expect(fn () => Delivery::query()->create([
         'delivery_number' => 'DLV-DUP-1',
         'booking_id' => $booking->id,
         'vehicle_id' => $booking->vehicle_id,
         'customer_id' => $booking->customer_id,
-        'status' => \App\Domain\Deliveries\Enums\DeliveryStatus::ApprovalPending->value,
-    ]))->toThrow(\Illuminate\Database\UniqueConstraintViolationException::class);
+        'status' => DeliveryStatus::ApprovalPending->value,
+    ]))->toThrow(UniqueConstraintViolationException::class);
 
     // Cancelling the first frees the slot for a fresh delivery.
-    $first->update(['status' => \App\Domain\Deliveries\Enums\DeliveryStatus::Cancelled->value]);
-    $second = \App\Domain\Deliveries\Models\Delivery::query()->create([
+    $first->update(['status' => DeliveryStatus::Cancelled->value]);
+    $second = Delivery::query()->create([
         'delivery_number' => 'DLV-DUP-2',
         'booking_id' => $booking->id,
         'vehicle_id' => $booking->vehicle_id,
         'customer_id' => $booking->customer_id,
-        'status' => \App\Domain\Deliveries\Enums\DeliveryStatus::ApprovalPending->value,
+        'status' => DeliveryStatus::ApprovalPending->value,
     ]);
     expect($second->exists)->toBeTrue();
 });

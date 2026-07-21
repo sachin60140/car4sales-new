@@ -11,9 +11,9 @@ use App\Domain\Finance\Enums\FinanceStatus;
 use App\Domain\Finance\Models\FinanceApplication;
 use App\Domain\Inventory\Enums\VehicleStatus;
 use App\Domain\Inventory\Models\Vehicle;
+use App\Domain\Notifications\Services\NotificationDispatcher;
 use App\Domain\Payments\Services\LedgerService;
 use App\Domain\RTO\Actions\CreateRtoCaseAction;
-use App\Domain\RTO\Models\RtoCase;
 use App\Domain\SalesLeads\Enums\SalesLeadStatus;
 use App\Models\User;
 use App\Support\Workflow\WorkflowService;
@@ -160,7 +160,7 @@ class DeliveryAction
                 $this->workflow->transition($booking, BookingStatus::ReadyForDelivery, $actor, 'Delivery approved', force: true);
             }
 
-            app(\App\Domain\Notifications\Services\NotificationDispatcher::class)->deliveryApproved($delivery->fresh());
+            app(NotificationDispatcher::class)->deliveryApproved($delivery->fresh());
 
             return $delivery->fresh();
         });
@@ -211,7 +211,7 @@ class DeliveryAction
             // Spawn the RTO ownership-transfer case.
             $this->createRtoCase->fromDelivery($delivery->fresh(), $actor);
 
-            app(\App\Domain\Notifications\Services\NotificationDispatcher::class)->deliveryCompleted($delivery->fresh());
+            app(NotificationDispatcher::class)->deliveryCompleted($delivery->fresh());
 
             return $delivery->fresh();
         });

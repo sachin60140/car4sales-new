@@ -64,7 +64,7 @@ class DocumentGenerator
     {
         try {
             $result = (new Builder(
-                writer: new PngWriter(),
+                writer: new PngWriter,
                 data: $payload,
                 size: 160,
                 margin: 4,

@@ -2,21 +2,53 @@
 
 namespace Database\Seeders;
 
+use App\Domain\Bookings\Actions\ConfirmBookingAction;
+use App\Domain\Bookings\Actions\CreateBookingAction;
+use App\Domain\Bookings\Models\Booking;
 use App\Domain\Branches\Models\Branch;
+use App\Domain\Customers\Models\Customer;
+use App\Domain\Deliveries\Actions\DeliveryAction;
+use App\Domain\Deliveries\Models\Delivery;
 use App\Domain\Departments\Models\Department;
+use App\Domain\Finance\Actions\FinanceApplicationAction;
+use App\Domain\Finance\Enums\FinanceStatus;
+use App\Domain\Finance\Models\FinanceApplication;
+use App\Domain\Finance\Models\Lender;
 use App\Domain\Inspections\Models\InspectionChecklistItem;
 use App\Domain\Inspections\Models\VehicleInspection;
 use App\Domain\Inventory\Enums\VehicleStatus;
 use App\Domain\Inventory\Models\Vehicle;
+use App\Domain\Inventory\Services\VehicleExpenseService;
+use App\Domain\Notifications\Models\Notification;
+use App\Domain\Notifications\Services\NotificationService;
+use App\Domain\Payments\Services\LedgerService;
+use App\Domain\Payments\Services\PaymentService;
 use App\Domain\PurchaseLeads\Enums\PurchaseLeadStatus;
 use App\Domain\PurchaseLeads\Models\PurchaseLead;
 use App\Domain\RolesPermissions\Models\Role;
+use App\Domain\RTO\Actions\RtoCaseAction;
+use App\Domain\RTO\Enums\RtoStatus;
+use App\Domain\RTO\Models\RtoCase;
+use App\Domain\SalesLeads\Models\LeadActivity;
+use App\Domain\SalesLeads\Models\LeadLostReason;
+use App\Domain\SalesLeads\Models\SalesLead;
 use App\Domain\Sellers\Models\Seller;
-use App\Domain\Vendors\Models\Vendor;
+use App\Domain\TestDrives\Actions\TestDriveAction;
+use App\Domain\TestDrives\Models\TestDrive;
 use App\Domain\VehicleVerification\Services\VerificationChecklist;
+use App\Domain\Vendors\Models\Vendor;
+use App\Domain\VendorSubmissions\Actions\VendorRegistrationAction;
+use App\Domain\VendorSubmissions\Actions\VendorSettlementAction;
+use App\Domain\VendorSubmissions\Actions\VendorSubmissionAction;
+use App\Domain\VendorSubmissions\Enums\SettlementStatus;
+use App\Domain\VendorSubmissions\Enums\VendorProfileStatus;
+use App\Domain\VendorSubmissions\Models\VendorSubmission;
+use App\Domain\Visits\Actions\ScheduleVisitAction;
+use App\Domain\Visits\Models\CustomerVisit;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 /**
@@ -35,14 +67,23 @@ use Illuminate\Support\Str;
 class DemoDataSeeder extends Seeder
 {
     public const USER_DOMAIN = '@demo.car4sales.test';
+
     public const LEAD_PREFIX = 'PL-DEMO-';
+
     public const STOCK_PREFIX = 'STK-DEMO-';
+
     public const INSPECTION_PREFIX = 'INS-DEMO-';
+
     public const SELLER_PREFIX = 'SELL-DEMO-';
+
     public const BRANCH_PREFIX = 'BR-DEMO-';
+
     public const EMP_PREFIX = 'EMP-DEMO-';
+
     public const VENDOR_PREFIX = 'VEN-DEMO-';
+
     public const CUSTOMER_PREFIX = 'CUST-DEMO-';
+
     public const SALES_LEAD_PREFIX = 'SL-DEMO-';
 
     private const MAKES = [
@@ -75,7 +116,7 @@ class DemoDataSeeder extends Seeder
 
         // Suppress event-driven notifications while generating demo records — the
         // only demo notifications are the curated set from seedNotifications().
-        \App\Domain\Notifications\Services\NotificationService::mute();
+        NotificationService::mute();
 
         try {
             $branches = $this->seedBranches();
@@ -91,7 +132,7 @@ class DemoDataSeeder extends Seeder
             [$deliveryCount, $rtoCount] = $this->seedDeliveries($employees);
             [$vendorPartnerCount, $vendorSubmissionCount] = $this->seedVendorPartners($branches);
         } finally {
-            \App\Domain\Notifications\Services\NotificationService::unmute();
+            NotificationService::unmute();
         }
 
         $notificationCount = $this->seedNotifications();
@@ -123,7 +164,7 @@ class DemoDataSeeder extends Seeder
     {
         // Purchase leads created when a demo vendor submission was approved. Read
         // them before the vendor users (and their cascading submissions) are gone.
-        $vendorLeadIds = \App\Domain\VendorSubmissions\Models\VendorSubmission::withTrashed()
+        $vendorLeadIds = VendorSubmission::withTrashed()
             ->whereHas('vendor', fn ($q) => $q->where('email', 'like', '%'.self::USER_DOMAIN))
             ->whereNotNull('purchase_lead_id')
             ->pluck('purchase_lead_id')
@@ -134,7 +175,7 @@ class DemoDataSeeder extends Seeder
 
         // Vehicles auto-stocked from a demo vendor submission use the real STK-
         // sequence (not the STK-DEMO- prefix), so remove them by their submission link.
-        $vendorVehicleIds = \App\Domain\VendorSubmissions\Models\VendorSubmission::withTrashed()
+        $vendorVehicleIds = VendorSubmission::withTrashed()
             ->whereHas('vendor', fn ($q) => $q->where('email', 'like', '%'.self::USER_DOMAIN))
             ->whereNotNull('vehicle_id')
             ->pluck('vehicle_id')
@@ -146,35 +187,35 @@ class DemoDataSeeder extends Seeder
         // Phase 9: demo notifications are tagged in their data payload. Demo-user
         // notifications also cascade when those users are deleted below, but the
         // admin's demo notifications must be cleared explicitly.
-        \App\Domain\Notifications\Models\Notification::query()
+        Notification::query()
             ->where('data->demo', true)->delete();
 
         // Phase 8: RTO cases + deliveries hold restrict FKs to demo vehicles, so
         // they must be removed before the vehicles (and bookings) below.
-        \App\Domain\RTO\Models\RtoCase::withTrashed()
+        RtoCase::withTrashed()
             ->whereHas('vehicle', fn ($q) => $q->where('stock_number', 'like', self::STOCK_PREFIX.'%'))
             ->get()->each(fn ($r) => $r->forceDelete());
-        \App\Domain\Deliveries\Models\Delivery::withTrashed()
+        Delivery::withTrashed()
             ->whereHas('vehicle', fn ($q) => $q->where('stock_number', 'like', self::STOCK_PREFIX.'%'))
             ->get()->each(fn ($d) => $d->forceDelete());
 
         // Bookings/visits/test-drives tied to demo customers or vehicles must go
         // first — bookings hold restrict FKs to customers and vehicles.
-        \App\Domain\Bookings\Models\Booking::withTrashed()
+        Booking::withTrashed()
             ->whereHas('customer', fn ($q) => $q->where('customer_code', 'like', self::CUSTOMER_PREFIX.'%'))
             ->get()->each(fn ($b) => $b->forceDelete());
-        \App\Domain\Visits\Models\CustomerVisit::query()
+        CustomerVisit::query()
             ->whereHas('customer', fn ($q) => $q->where('customer_code', 'like', self::CUSTOMER_PREFIX.'%'))->delete();
-        \App\Domain\TestDrives\Models\TestDrive::query()
+        TestDrive::query()
             ->whereHas('vehicle', fn ($q) => $q->where('stock_number', 'like', self::STOCK_PREFIX.'%'))->delete();
 
         VehicleInspection::withTrashed()->where('inspection_number', 'like', self::INSPECTION_PREFIX.'%')->get()
             ->each(fn (VehicleInspection $i) => $i->forceDelete());
 
-        \App\Domain\SalesLeads\Models\SalesLead::withTrashed()->where('lead_number', 'like', self::SALES_LEAD_PREFIX.'%')->get()
+        SalesLead::withTrashed()->where('lead_number', 'like', self::SALES_LEAD_PREFIX.'%')->get()
             ->each(fn ($l) => $l->forceDelete());
 
-        \App\Domain\Customers\Models\Customer::withTrashed()->where('customer_code', 'like', self::CUSTOMER_PREFIX.'%')->get()
+        Customer::withTrashed()->where('customer_code', 'like', self::CUSTOMER_PREFIX.'%')->get()
             ->each(fn ($c) => $c->forceDelete());
 
         PurchaseLead::withTrashed()->where('lead_number', 'like', self::LEAD_PREFIX.'%')->get()
@@ -222,7 +263,7 @@ class DemoDataSeeder extends Seeder
 
     /**
      * @param  array<int, Branch>  $branches
-     * @return array<string, array<int, User>>  role name => users
+     * @return array<string, array<int, User>> role name => users
      */
     private function seedEmployees(array $branches): array
     {
@@ -543,7 +584,7 @@ class DemoDataSeeder extends Seeder
             VehicleStatus::Booked, VehicleStatus::Delivered,
         ];
 
-        $expenseService = app(\App\Domain\Inventory\Services\VehicleExpenseService::class);
+        $expenseService = app(VehicleExpenseService::class);
         $admin = User::query()->where('email', 'admin@car4sales.test')->first();
 
         foreach ($statuses as $i => $status) {
@@ -617,9 +658,9 @@ class DemoDataSeeder extends Seeder
             'new', 'new', 'assigned', 'contacted', 'contacted', 'interested', 'interested',
             'follow_up', 'visit_scheduled', 'negotiation', 'booking', 'lost', 'wrong_number',
         ];
-        $vehicles = \App\Domain\Inventory\Models\Vehicle::query()
+        $vehicles = Vehicle::query()
             ->where('stock_number', 'like', self::STOCK_PREFIX.'%')->pluck('id')->all();
-        $lostReasons = \App\Domain\SalesLeads\Models\LeadLostReason::query()->pluck('id')->all();
+        $lostReasons = LeadLostReason::query()->pluck('id')->all();
 
         $count = 0;
         for ($daysAgo = 30; $daysAgo >= 0; $daysAgo--) {
@@ -635,7 +676,7 @@ class DemoDataSeeder extends Seeder
                 $isLost = in_array($status, ['lost', 'wrong_number'], true);
                 $isOpen = in_array($status, ['new', 'assigned', 'contacted', 'interested', 'follow_up', 'visit_scheduled', 'negotiation'], true);
 
-                $customer = \App\Domain\Customers\Models\Customer::query()->create([
+                $customer = Customer::query()->create([
                     'customer_code' => self::CUSTOMER_PREFIX.str_pad((string) (++$count), 5, '0', STR_PAD_LEFT),
                     'name' => $name,
                     'mobile' => $mobile,
@@ -645,7 +686,7 @@ class DemoDataSeeder extends Seeder
                     'meta' => ['demo' => true],
                 ]);
 
-                $lead = new \App\Domain\SalesLeads\Models\SalesLead([
+                $lead = new SalesLead([
                     'lead_number' => self::SALES_LEAD_PREFIX.str_pad((string) $count, 5, '0', STR_PAD_LEFT),
                     'customer_id' => $customer->id,
                     'name' => $name,
@@ -670,7 +711,7 @@ class DemoDataSeeder extends Seeder
                 $lead->forceFill(['created_at' => $createdAt, 'updated_at' => $createdAt])->save();
 
                 $lead->writeStatusHistory(null, 'new', null, 'Demo lead');
-                \App\Domain\SalesLeads\Models\LeadActivity::query()->create([
+                LeadActivity::query()->create([
                     'sales_lead_id' => $lead->id, 'user_id' => $telecaller?->id,
                     'type' => 'created', 'summary' => 'Lead created (demo)',
                 ]);
@@ -703,21 +744,21 @@ class DemoDataSeeder extends Seeder
         }
 
         $executives = $employees['Sales Executive'] ?? [];
-        $createBooking = app(\App\Domain\Bookings\Actions\CreateBookingAction::class);
-        $confirmBooking = app(\App\Domain\Bookings\Actions\ConfirmBookingAction::class);
-        $payments = app(\App\Domain\Payments\Services\PaymentService::class);
-        $finance = app(\App\Domain\Finance\Actions\FinanceApplicationAction::class);
-        $lenderIds = \App\Domain\Finance\Models\Lender::query()->pluck('id')->all();
-        $visitAction = app(\App\Domain\Visits\Actions\ScheduleVisitAction::class);
-        $tdAction = app(\App\Domain\TestDrives\Actions\TestDriveAction::class);
+        $createBooking = app(CreateBookingAction::class);
+        $confirmBooking = app(ConfirmBookingAction::class);
+        $payments = app(PaymentService::class);
+        $finance = app(FinanceApplicationAction::class);
+        $lenderIds = Lender::query()->pluck('id')->all();
+        $visitAction = app(ScheduleVisitAction::class);
+        $tdAction = app(TestDriveAction::class);
 
         // Schedule visits & test drives for a spread of demo leads.
-        $leads = \App\Domain\SalesLeads\Models\SalesLead::query()
+        $leads = SalesLead::query()
             ->where('lead_number', 'like', self::SALES_LEAD_PREFIX.'%')
             ->whereIn('status', ['interested', 'follow_up', 'visit_scheduled', 'negotiation', 'booking'])
             ->inRandomOrder()->limit(20)->get();
 
-        $vehicles = \App\Domain\Inventory\Models\Vehicle::query()
+        $vehicles = Vehicle::query()
             ->where('stock_number', 'like', self::STOCK_PREFIX.'%')
             ->whereIn('status', ['ready_for_sale', 'published'])
             ->get();
@@ -776,7 +817,7 @@ class DemoDataSeeder extends Seeder
      * the RTO case — then advances a couple of cases so the workbench has content.
      *
      * @param  array<string, array<int, User>>  $employees
-     * @return array{0: int, 1: int}  [deliveries, rto cases]
+     * @return array{0: int, 1: int} [deliveries, rto cases]
      */
     private function seedDeliveries(array $employees): array
     {
@@ -785,17 +826,17 @@ class DemoDataSeeder extends Seeder
             return [0, 0];
         }
 
-        $deliveryAction = app(\App\Domain\Deliveries\Actions\DeliveryAction::class);
-        $rtoAction = app(\App\Domain\RTO\Actions\RtoCaseAction::class);
-        $payments = app(\App\Domain\Payments\Services\PaymentService::class);
-        $financeAction = app(\App\Domain\Finance\Actions\FinanceApplicationAction::class);
-        $ledgerService = app(\App\Domain\Payments\Services\LedgerService::class);
+        $deliveryAction = app(DeliveryAction::class);
+        $rtoAction = app(RtoCaseAction::class);
+        $payments = app(PaymentService::class);
+        $financeAction = app(FinanceApplicationAction::class);
+        $ledgerService = app(LedgerService::class);
 
         $rtoExecutive = $employees['RTO Executive'][0] ?? null;
         $rtoAgent = Vendor::query()->where('code', 'like', self::VENDOR_PREFIX.'%')->where('type', 'rto_agent')->first();
 
         // Confirmed demo bookings still holding a vehicle and not yet delivered.
-        $bookings = \App\Domain\Bookings\Models\Booking::query()
+        $bookings = Booking::query()
             ->whereHas('customer', fn ($q) => $q->where('customer_code', 'like', self::CUSTOMER_PREFIX.'%'))
             ->whereIn('status', ['confirmed', 'payment_pending', 'finance_pending', 'ready_for_delivery'])
             ->with(['customer', 'vehicle'])
@@ -827,6 +868,7 @@ class DemoDataSeeder extends Seeder
             // Booking C stays in approval-pending to demonstrate that state.
             if ($i >= 2) {
                 $deliveryAction->refreshChecklist($delivery);
+
                 continue;
             }
 
@@ -851,7 +893,7 @@ class DemoDataSeeder extends Seeder
             ]);
 
             // The completion hook created the RTO case — enrich it.
-            $case = \App\Domain\RTO\Models\RtoCase::query()->where('delivery_id', $delivery->id)->first();
+            $case = RtoCase::query()->where('delivery_id', $delivery->id)->first();
             if ($case !== null) {
                 $rtoCases++;
                 $rtoAction->assign($case, $rtoExecutive?->id, $rtoAgent?->id, $admin);
@@ -860,9 +902,9 @@ class DemoDataSeeder extends Seeder
 
                 // Advance the first case a few steps down the transfer pipeline.
                 if ($i === 0) {
-                    $rtoAction->transition($case->fresh(), \App\Domain\RTO\Enums\RtoStatus::SellerDocumentsPending, $admin, 'Seller docs requested (demo)');
-                    $rtoAction->transition($case->fresh(), \App\Domain\RTO\Enums\RtoStatus::BuyerDocumentsPending, $admin, 'Buyer docs requested (demo)');
-                    $rtoAction->transition($case->fresh(), \App\Domain\RTO\Enums\RtoStatus::SignaturePending, $admin, 'Awaiting signatures (demo)');
+                    $rtoAction->transition($case->fresh(), RtoStatus::SellerDocumentsPending, $admin, 'Seller docs requested (demo)');
+                    $rtoAction->transition($case->fresh(), RtoStatus::BuyerDocumentsPending, $admin, 'Buyer docs requested (demo)');
+                    $rtoAction->transition($case->fresh(), RtoStatus::SignaturePending, $admin, 'Awaiting signatures (demo)');
                     $rtoAction->addHold($case->fresh(), 5000, 'RC pending — hold against agent (demo)', $admin);
                 }
             }
@@ -877,7 +919,7 @@ class DemoDataSeeder extends Seeder
      * approvals here — that would create a purchase lead outside the demo tags.
      *
      * @param  array<int, Branch>  $branches
-     * @return array{0: int, 1: int}  [partners, submissions]
+     * @return array{0: int, 1: int} [partners, submissions]
      */
     private function seedVendorPartners(array $branches): array
     {
@@ -886,15 +928,15 @@ class DemoDataSeeder extends Seeder
             return [0, 0];
         }
 
-        $registration = app(\App\Domain\VendorSubmissions\Actions\VendorRegistrationAction::class);
-        $submissions = app(\App\Domain\VendorSubmissions\Actions\VendorSubmissionAction::class);
+        $registration = app(VendorRegistrationAction::class);
+        $submissions = app(VendorSubmissionAction::class);
 
         // An activated partner with two submissions, plus one awaiting activation.
         $active = $registration->register([
             'name' => 'Deepak Sharma', 'email' => 'deepak.vendor'.self::USER_DOMAIN, 'password' => 'password',
             'phone' => '9876500011', 'company_name' => 'Deepak Auto Traders', 'city' => 'Lucknow',
         ]);
-        $registration->setStatus($active->vendorProfile, \App\Domain\VendorSubmissions\Enums\VendorProfileStatus::Active, $admin);
+        $registration->setStatus($active->vendorProfile, VendorProfileStatus::Active, $admin);
 
         $registration->register([
             'name' => 'Sunrise Motors', 'email' => 'sunrise.vendor'.self::USER_DOMAIN, 'password' => 'password',
@@ -956,7 +998,7 @@ class DemoDataSeeder extends Seeder
         }
 
         $s3->update([
-            'settlement_status' => \App\Domain\VendorSubmissions\Enums\SettlementStatus::Paid->value,
+            'settlement_status' => SettlementStatus::Paid->value,
             'owner_name' => 'Rakesh Kumar', 'owner_phone' => '9876540000', 'owner_email' => 'rakesh.owner@example.test',
             'owner_address' => '14 Civil Lines, Lucknow, UP 226001', 'owner_pan' => 'ABCDE1234F',
             'chassis_number' => 'MAT625016PWA12345', 'has_hypothecation' => false,
@@ -970,7 +1012,7 @@ class DemoDataSeeder extends Seeder
         $this->attachDemoMedia($s3, 'payment_proof', 1);
 
         // Confirm possession → auto stock entry (carries the owner documents onto the vehicle).
-        app(\App\Domain\VendorSubmissions\Actions\VendorSettlementAction::class)->confirmPossession($s3->fresh(), [
+        app(VendorSettlementAction::class)->confirmPossession($s3->fresh(), [
             'vehicle_received' => true, 'original_rc_received' => true, 'main_key' => true, 'spare_key' => true,
             'odometer_km' => 31000, 'fuel_level' => 'Half',
         ], $admin);
@@ -996,7 +1038,7 @@ class DemoDataSeeder extends Seeder
             $pending[$key] = ['status' => 'pending', 'number' => null, 'valid_till' => null, 'remarks' => null];
         }
         $s4->update([
-            'settlement_status' => \App\Domain\VendorSubmissions\Enums\SettlementStatus::KycSubmitted->value,
+            'settlement_status' => SettlementStatus::KycSubmitted->value,
             'owner_name' => 'Sunita Devi', 'owner_phone' => '9811122233', 'owner_email' => 'sunita.owner@example.test',
             'owner_address' => '22 Ashok Nagar, Kanpur, UP 208012', 'owner_pan' => 'PQRSX6789K',
             'chassis_number' => 'MRHGM1234L5678901', 'has_hypothecation' => false,
@@ -1013,10 +1055,10 @@ class DemoDataSeeder extends Seeder
      * placeholder on the private disk, so re-seeding never accumulates files
      * (the media rows cascade away with the submission on clear()).
      */
-    private function attachDemoMedia(\App\Domain\VendorSubmissions\Models\VendorSubmission $submission, string $type, int $count): void
+    private function attachDemoMedia(VendorSubmission $submission, string $type, int $count): void
     {
         $path = 'vendor-submissions/demo/placeholder.svg';
-        $disk = \Illuminate\Support\Facades\Storage::disk('private');
+        $disk = Storage::disk('private');
 
         if (! $disk->exists($path) && is_file(public_path('logo.svg'))) {
             $disk->put($path, (string) file_get_contents(public_path('logo.svg')));
@@ -1045,9 +1087,9 @@ class DemoDataSeeder extends Seeder
             return 0;
         }
 
-        $delivery = \App\Domain\Deliveries\Models\Delivery::query()->where('status', 'delivered')->latest()->first();
-        $rto = \App\Domain\RTO\Models\RtoCase::query()->latest()->first();
-        $booking = \App\Domain\Bookings\Models\Booking::query()
+        $delivery = Delivery::query()->where('status', 'delivered')->latest()->first();
+        $rto = RtoCase::query()->latest()->first();
+        $booking = Booking::query()
             ->whereHas('customer', fn ($q) => $q->where('customer_code', 'like', self::CUSTOMER_PREFIX.'%'))
             ->where('status', '!=', 'draft')->latest()->first();
 
@@ -1068,7 +1110,7 @@ class DemoDataSeeder extends Seeder
 
         $count = 0;
         foreach ($items as $item) {
-            $notification = \App\Domain\Notifications\Models\Notification::query()->create([
+            $notification = Notification::query()->create([
                 'user_id' => $admin->id,
                 'type' => $item['type'],
                 'level' => $item['level'],
@@ -1094,22 +1136,22 @@ class DemoDataSeeder extends Seeder
      * Walk a demo finance file to Disbursed so a finance-mode delivery can settle.
      */
     private function disburseDemoFinance(
-        \App\Domain\Bookings\Models\Booking $booking,
-        \App\Domain\Finance\Actions\FinanceApplicationAction $financeAction,
-        \App\Domain\Payments\Services\LedgerService $ledgerService,
+        Booking $booking,
+        FinanceApplicationAction $financeAction,
+        LedgerService $ledgerService,
         User $admin,
     ): void {
-        $app = \App\Domain\Finance\Models\FinanceApplication::query()->where('booking_id', $booking->id)->first();
+        $app = FinanceApplication::query()->where('booking_id', $booking->id)->first();
         if ($app === null) {
             return;
         }
 
         $chain = [
-            \App\Domain\Finance\Enums\FinanceStatus::FileReady,
-            \App\Domain\Finance\Enums\FinanceStatus::Submitted,
-            \App\Domain\Finance\Enums\FinanceStatus::LoggedIn,
-            \App\Domain\Finance\Enums\FinanceStatus::CreditPending,
-            \App\Domain\Finance\Enums\FinanceStatus::Sanctioned,
+            FinanceStatus::FileReady,
+            FinanceStatus::Submitted,
+            FinanceStatus::LoggedIn,
+            FinanceStatus::CreditPending,
+            FinanceStatus::Sanctioned,
         ];
         foreach ($chain as $status) {
             if ($app->status->canTransitionTo($status)) {
@@ -1120,9 +1162,9 @@ class DemoDataSeeder extends Seeder
         $ledger = $ledgerService->forBooking($booking->fresh());
         $outstanding = $ledger !== null ? max($ledger->outstanding(), 0.0) : 0.0;
         if ($outstanding > 0 && in_array($app->status, [
-            \App\Domain\Finance\Enums\FinanceStatus::Sanctioned,
-            \App\Domain\Finance\Enums\FinanceStatus::AgreementPending,
-            \App\Domain\Finance\Enums\FinanceStatus::DisbursementPending,
+            FinanceStatus::Sanctioned,
+            FinanceStatus::AgreementPending,
+            FinanceStatus::DisbursementPending,
         ], true)) {
             $financeAction->disburse($app, $outstanding, 'DEMO-UTR', $admin);
         }

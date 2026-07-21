@@ -6,6 +6,7 @@ use App\Domain\Administration\Services\NumberSequenceService;
 use App\Domain\Notifications\Enums\NotificationLevel;
 use App\Domain\Notifications\Services\NotificationService;
 use App\Domain\PurchaseLeads\Actions\CreatePurchaseLeadAction;
+use App\Domain\VendorSubmissions\Enums\SettlementStatus;
 use App\Domain\VendorSubmissions\Enums\SubmissionStatus;
 use App\Domain\VendorSubmissions\Models\VendorSubmission;
 use App\Models\User;
@@ -160,7 +161,7 @@ class VendorSubmissionAction
 
             $submission->update([
                 'status' => SubmissionStatus::Approved->value,
-                'settlement_status' => \App\Domain\VendorSubmissions\Enums\SettlementStatus::KycPending->value,
+                'settlement_status' => SettlementStatus::KycPending->value,
                 'reviewed_by' => $reviewer->id,
                 'reviewed_at' => now(),
                 'review_remarks' => $remarks,

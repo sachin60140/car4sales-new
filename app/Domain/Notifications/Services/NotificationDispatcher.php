@@ -13,6 +13,7 @@ use App\Domain\RTO\Enums\RtoStatus;
 use App\Domain\RTO\Models\RtoCase;
 use App\Domain\SalesLeads\Models\SalesLead;
 use App\Models\User;
+use Illuminate\Support\Collection;
 
 /**
  * Translates domain events into notifications with the right recipients. This is
@@ -170,8 +171,8 @@ class NotificationDispatcher
         ]);
     }
 
-    /** @return \Illuminate\Support\Collection<int, User> */
-    private function managers(?int $branchId, array $roles): \Illuminate\Support\Collection
+    /** @return Collection<int, User> */
+    private function managers(?int $branchId, array $roles): Collection
     {
         return $this->notifications->usersWithRole($roles, $branchId);
     }

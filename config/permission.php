@@ -1,7 +1,7 @@
 <?php
 
-use Spatie\Permission\DefaultTeamResolver;
 use App\Domain\RolesPermissions\Models\Role;
+use Spatie\Permission\DefaultTeamResolver;
 use Spatie\Permission\Models\Permission;
 
 return [

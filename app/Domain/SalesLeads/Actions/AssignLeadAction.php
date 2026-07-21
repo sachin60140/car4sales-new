@@ -2,6 +2,7 @@
 
 namespace App\Domain\SalesLeads\Actions;
 
+use App\Domain\Notifications\Services\NotificationDispatcher;
 use App\Domain\SalesLeads\Enums\SalesLeadStatus;
 use App\Domain\SalesLeads\Models\LeadActivity;
 use App\Domain\SalesLeads\Models\LeadAssignment;
@@ -60,7 +61,7 @@ class AssignLeadAction
             if ($toUserId !== null && $toUserId !== $actor->id) {
                 $assignee = User::query()->find($toUserId);
                 if ($assignee !== null) {
-                    app(\App\Domain\Notifications\Services\NotificationDispatcher::class)->leadAssigned($lead->fresh(), $assignee);
+                    app(NotificationDispatcher::class)->leadAssigned($lead->fresh(), $assignee);
                 }
             }
 

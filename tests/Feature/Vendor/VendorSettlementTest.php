@@ -1,5 +1,6 @@
 <?php
 
+use App\Domain\Inventory\Models\Vehicle;
 use App\Domain\VendorSubmissions\Actions\VendorRegistrationAction;
 use App\Domain\VendorSubmissions\Actions\VendorSettlementAction;
 use App\Domain\VendorSubmissions\Actions\VendorSubmissionAction;
@@ -7,11 +8,12 @@ use App\Domain\VendorSubmissions\Enums\SettlementStatus;
 use App\Domain\VendorSubmissions\Enums\VendorProfileStatus;
 use App\Domain\VendorSubmissions\Models\VendorSubmission;
 use App\Models\User;
+use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 
 beforeEach(function () {
-    $this->seed(\Database\Seeders\RolePermissionSeeder::class);
+    $this->seed(RolePermissionSeeder::class);
 });
 
 /** @return array{0: VendorSubmission, 1: User, 2: User} [submission (kyc_pending), vendor, admin] */
@@ -285,7 +287,7 @@ it('confirms possession after payment and creates stock', function () {
         ->and($vehicle->registration_number)->toBe('UP32 AA 0001')
         ->and((float) $vehicle->purchase_price)->toBe(590000.0)
         ->and($vehicle->odometer_km)->toBe(33000)
-        ->and(\App\Domain\Inventory\Models\Vehicle::whereKey($vehicle->id)->where('status', 'in_stock')->exists())->toBeTrue();
+        ->and(Vehicle::whereKey($vehicle->id)->where('status', 'in_stock')->exists())->toBeTrue();
 });
 
 it('carries the owner documents onto the stocked vehicle', function () {

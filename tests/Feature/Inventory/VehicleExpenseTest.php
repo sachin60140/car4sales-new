@@ -3,7 +3,6 @@
 use App\Domain\Inventory\Enums\VehicleStatus;
 use App\Domain\Inventory\Models\Vehicle;
 use App\Domain\Inventory\Services\VehicleExpenseService;
-use App\Models\User;
 
 function stockVehicle(array $overrides = []): Vehicle
 {

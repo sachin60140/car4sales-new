@@ -1,6 +1,5 @@
 <?php
 
-use App\Domain\Branches\Models\Branch;
 use App\Domain\Inventory\Enums\VehicleStatus;
 use App\Domain\Inventory\Models\Vehicle;
 

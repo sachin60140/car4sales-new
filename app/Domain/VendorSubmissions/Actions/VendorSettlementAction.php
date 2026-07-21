@@ -37,9 +37,9 @@ class VendorSettlementAction
      * chassis number, hypothecation status, and the KYC documents. RC & Aadhaar are
      * two-sided (`*_front`/`*_back`); NOC & Form 35 are required only under hypothecation.
      *
-     * @param  array<string, mixed>  $owner   owner_* fields + chassis_number + has_hypothecation
-     * @param  array<string, mixed>  $bank    the owner's account: bank_account_name, bank_account_number, bank_ifsc, bank_name
-     * @param  array<string, UploadedFile>  $files   files keyed by media type (rc_front, aadhaar_back, pan, …)
+     * @param  array<string, mixed>  $owner  owner_* fields + chassis_number + has_hypothecation
+     * @param  array<string, mixed>  $bank  the owner's account: bank_account_name, bank_account_number, bank_ifsc, bank_name
+     * @param  array<string, UploadedFile>  $files  files keyed by media type (rc_front, aadhaar_back, pan, …)
      * @param  array<int, UploadedFile>  $extraDocuments  optional additional docs
      */
     public function submitOwnerKyc(VendorSubmission $submission, array $owner, array $bank, array $files, User $vendor, array $extraDocuments = []): VendorSubmission

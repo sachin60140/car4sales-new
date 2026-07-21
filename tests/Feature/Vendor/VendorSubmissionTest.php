@@ -5,10 +5,14 @@ use App\Domain\VendorSubmissions\Actions\VendorRegistrationAction;
 use App\Domain\VendorSubmissions\Actions\VendorSubmissionAction;
 use App\Domain\VendorSubmissions\Enums\SubmissionStatus;
 use App\Domain\VendorSubmissions\Enums\VendorProfileStatus;
+use App\Domain\VendorSubmissions\Models\VendorSubmission;
 use App\Models\User;
+use Database\Seeders\RolePermissionSeeder;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 
 beforeEach(function () {
-    $this->seed(\Database\Seeders\RolePermissionSeeder::class);
+    $this->seed(RolePermissionSeeder::class);
 });
 
 function registerVendor(array $overrides = []): User
@@ -24,7 +28,7 @@ function activate(User $vendor): void
     app(VendorRegistrationAction::class)->setStatus($vendor->vendorProfile, VendorProfileStatus::Active, superAdmin());
 }
 
-function withPhoto(\App\Domain\VendorSubmissions\Models\VendorSubmission $submission, string $type = 'gallery'): void
+function withPhoto(VendorSubmission $submission, string $type = 'gallery'): void
 {
     $submission->media()->create(['type' => $type, 'file_path' => "demo/{$type}.jpg"]);
 }
@@ -146,7 +150,7 @@ it('requires a damage photo when a checklist item is failed', function () {
 });
 
 it('uploads multiple vehicle images in one request', function () {
-    \Illuminate\Support\Facades\Storage::fake('private');
+    Storage::fake('private');
     $vendor = registerVendor();
     activate($vendor);
     $submission = app(VendorSubmissionAction::class)->save(null, ['make' => 'A', 'model' => 'B', 'expected_amount' => 1], $vendor->fresh());
@@ -155,9 +159,9 @@ it('uploads multiple vehicle images in one request', function () {
         ->post("/vendor/submissions/{$submission->id}/media", [
             'type' => 'gallery',
             'files' => [
-                \Illuminate\Http\UploadedFile::fake()->image('a.jpg'),
-                \Illuminate\Http\UploadedFile::fake()->image('b.jpg'),
-                \Illuminate\Http\UploadedFile::fake()->image('c.jpg'),
+                UploadedFile::fake()->image('a.jpg'),
+                UploadedFile::fake()->image('b.jpg'),
+                UploadedFile::fake()->image('c.jpg'),
             ],
         ])
         ->assertRedirect();

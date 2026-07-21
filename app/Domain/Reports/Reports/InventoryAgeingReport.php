@@ -2,7 +2,6 @@
 
 namespace App\Domain\Reports\Reports;
 
-use App\Domain\Inventory\Enums\VehicleStatus;
 use App\Domain\Inventory\Models\Vehicle;
 use App\Domain\Reports\Support\ReportResult;
 use App\Models\User;

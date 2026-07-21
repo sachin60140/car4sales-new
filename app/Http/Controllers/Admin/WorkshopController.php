@@ -7,7 +7,6 @@ use App\Domain\Refurbishment\Actions\WorkshopJobAction;
 use App\Domain\Refurbishment\Enums\WorkshopJobStatus;
 use App\Domain\Refurbishment\Models\WorkshopJob;
 use App\Domain\RolesPermissions\Services\ScopeService;
-use App\Domain\Vendors\Models\Vendor;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;

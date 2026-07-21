@@ -7,6 +7,7 @@ use App\Domain\Branches\Models\Branch;
 use App\Domain\Customers\Models\Customer;
 use App\Domain\Deliveries\Models\Delivery;
 use App\Domain\Inventory\Models\Vehicle;
+use App\Domain\Notifications\Services\NotificationDispatcher;
 use App\Domain\RTO\Enums\RtoStatus;
 use App\Domain\Sellers\Models\Seller;
 use App\Domain\Vendors\Models\Vendor;
@@ -131,7 +132,7 @@ class RtoCase extends Model implements Transitionable
     public function onStatusChanged(HasTransitions $from, HasTransitions $to, ?User $user): void
     {
         if ($to instanceof RtoStatus) {
-            app(\App\Domain\Notifications\Services\NotificationDispatcher::class)->rtoStatusChanged($this, $to);
+            app(NotificationDispatcher::class)->rtoStatusChanged($this, $to);
         }
     }
 }

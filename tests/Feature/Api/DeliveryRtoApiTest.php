@@ -1,6 +1,5 @@
 <?php
 
-use App\Domain\Deliveries\Models\Delivery;
 use App\Domain\Inventory\Models\Vehicle;
 use App\Domain\RTO\Enums\RtoStatus;
 use App\Domain\RTO\Models\RtoCase;

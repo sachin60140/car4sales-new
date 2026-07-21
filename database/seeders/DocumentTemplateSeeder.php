@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Domain\Documents\Models\GeneratedDocument;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 

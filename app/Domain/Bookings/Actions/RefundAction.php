@@ -9,6 +9,8 @@ use App\Domain\Bookings\Models\Booking;
 use App\Domain\Bookings\Models\BookingCancellation;
 use App\Domain\Bookings\Models\BookingPayment;
 use App\Domain\Bookings\Models\Refund;
+use App\Domain\Payments\Enums\LedgerHead;
+use App\Domain\Payments\Services\LedgerService;
 use App\Models\User;
 use App\Support\Workflow\WorkflowService;
 use Illuminate\Support\Facades\DB;
@@ -92,10 +94,10 @@ class RefundAction
             ]);
 
             // Post the refund as a ledger debit (money returned to the customer).
-            $ledger = app(\App\Domain\Payments\Services\LedgerService::class)->forBooking($refund->booking);
+            $ledger = app(LedgerService::class)->forBooking($refund->booking);
             if ($ledger !== null) {
-                app(\App\Domain\Payments\Services\LedgerService::class)->post(
-                    $ledger, \App\Domain\Payments\Enums\LedgerHead::Refund, 'debit',
+                app(LedgerService::class)->post(
+                    $ledger, LedgerHead::Refund, 'debit',
                     (float) $refund->amount, $actor, $payment, 'Refund '.$refund->refund_number,
                 );
             }

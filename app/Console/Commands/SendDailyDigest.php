@@ -8,6 +8,7 @@ use App\Domain\Bookings\Models\Booking;
 use App\Domain\Deliveries\Models\Delivery;
 use App\Domain\Notifications\Enums\NotificationLevel;
 use App\Domain\Notifications\Services\NotificationService;
+use App\Domain\RolesPermissions\Models\Role;
 use App\Domain\RolesPermissions\Services\ScopeService;
 use App\Domain\RTO\Enums\RtoStatus;
 use App\Domain\RTO\Models\RtoCase;
@@ -32,7 +33,7 @@ class SendDailyDigest extends Command
         $date = $this->option('date') ? Carbon::parse($this->option('date')) : now();
         [$from, $to] = [$date->copy()->startOfDay(), $date->copy()->endOfDay()];
 
-        $roleNames = \App\Domain\RolesPermissions\Models\Role::query()
+        $roleNames = Role::query()
             ->whereIn('name', ['Director', 'Owner', 'Branch Manager', 'Sales Manager', 'Super Admin'])
             ->pluck('name')->all();
 

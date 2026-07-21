@@ -4,11 +4,13 @@ namespace App\Domain\Inventory\Models;
 
 use App\Domain\Branches\Models\Branch;
 use App\Domain\Inventory\Enums\VehicleStatus;
+use App\Domain\Refurbishment\Models\WorkshopJob;
 use App\Domain\VehiclePurchases\Models\VehiclePurchase;
 use App\Models\User;
 use App\Support\Workflow\HasTransitions;
 use App\Support\Workflow\RecordsStatusHistory;
 use App\Support\Workflow\Transitionable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -97,7 +99,7 @@ class Vehicle extends Model implements Transitionable
 
     public function workshopJobs(): HasMany
     {
-        return $this->hasMany(\App\Domain\Refurbishment\Models\WorkshopJob::class)->latest();
+        return $this->hasMany(WorkshopJob::class)->latest();
     }
 
     /** Days the vehicle has been in stock (ageing). */
@@ -107,7 +109,7 @@ class Vehicle extends Model implements Transitionable
     }
 
     /** Vehicles that may appear on the public website. */
-    public function scopePublished(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder
+    public function scopePublished(Builder $query): Builder
     {
         return $query->where('published_web', true)
             ->whereIn('status', [

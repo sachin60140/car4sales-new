@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Domain\Notifications\Models\Notification;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -67,14 +68,14 @@ class HandleInertiaRequests extends Middleware
             return ['unread' => 0, 'recent' => []];
         }
 
-        $recent = \App\Domain\Notifications\Models\Notification::query()
+        $recent = Notification::query()
             ->where('user_id', $user->id)
             ->latest()
             ->limit(8)
             ->get(['id', 'type', 'level', 'title', 'body', 'action_url', 'read_at', 'created_at']);
 
         return [
-            'unread' => \App\Domain\Notifications\Models\Notification::query()
+            'unread' => Notification::query()
                 ->where('user_id', $user->id)->whereNull('read_at')->count(),
             'recent' => $recent->map(fn ($n) => [
                 'id' => $n->id,

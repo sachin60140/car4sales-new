@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Domain\Approvals\Models\ApprovalRequest;
 use App\Domain\Branches\Models\Branch;
 use App\Domain\PurchaseLeads\Actions\CreatePurchaseLeadAction;
 use App\Domain\PurchaseLeads\Enums\PurchaseLeadStatus;
@@ -103,7 +104,7 @@ class PurchaseLeadController extends Controller
         // The purchase-approval request is attached to the lead itself (the
         // VehiclePurchase only exists once approved), so surface the latest one
         // directly — the Approval tab decides on this, not lead.purchase.
-        $approvalRequest = \App\Domain\Approvals\Models\ApprovalRequest::query()
+        $approvalRequest = ApprovalRequest::query()
             ->where('module', 'purchase-approval')
             ->where('subject_type', $purchaseLead->getMorphClass())
             ->where('subject_id', $purchaseLead->id)

@@ -5,6 +5,7 @@ namespace App\Domain\Approvals\Services;
 use App\Domain\Administration\Services\NumberSequenceService;
 use App\Domain\Approvals\Enums\ApprovalStatus;
 use App\Domain\Approvals\Models\ApprovalRequest;
+use App\Domain\Notifications\Services\NotificationDispatcher;
 use App\Domain\RolesPermissions\Models\Role;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
@@ -32,7 +33,7 @@ class ApprovalEngine
      * Open an approval request for a subject with a role-based escalation chain.
      *
      * @param  array<int, string>  $roleChain  ordered role names
-     * @param  array<int, string>  $reasons    risk flags forcing/annotating the approval
+     * @param  array<int, string>  $reasons  risk flags forcing/annotating the approval
      */
     public function open(
         Model $subject,
@@ -76,7 +77,7 @@ class ApprovalEngine
                 ]);
             }
 
-            app(\App\Domain\Notifications\Services\NotificationDispatcher::class)->approvalRequested($request);
+            app(NotificationDispatcher::class)->approvalRequested($request);
 
             return $request->load('steps');
         });
@@ -206,7 +207,7 @@ class ApprovalEngine
 
     private function notifySubject(ApprovalRequest $request, string $decision, User $approver): void
     {
-        app(\App\Domain\Notifications\Services\NotificationDispatcher::class)->approvalDecided($request, $decision);
+        app(NotificationDispatcher::class)->approvalDecided($request, $decision);
 
         $subject = $request->subject;
 

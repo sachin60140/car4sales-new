@@ -7,7 +7,6 @@ use App\Domain\Branches\Models\Branch;
 use App\Domain\Inventory\Models\Vehicle;
 use App\Domain\PurchaseLeads\Models\PurchaseLead;
 use App\Domain\Sellers\Models\Seller;
-use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;

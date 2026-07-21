@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Domain\Branches\Models\Branch;
 use App\Domain\Reports\Contracts\ReportDefinition;
 use App\Domain\Reports\Support\ReportRegistry;
+use App\Domain\Reports\Support\ReportResult;
 use App\Http\Controllers\Controller;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
@@ -109,7 +110,7 @@ class ReportController extends Controller
         ];
     }
 
-    private function streamCsv(\App\Domain\Reports\Support\ReportResult $result, string $filename): StreamedResponse
+    private function streamCsv(ReportResult $result, string $filename): StreamedResponse
     {
         $headers = [
             'Content-Type' => 'text/csv',

@@ -5,6 +5,7 @@ namespace App\Domain\Reports\Reports;
 use App\Domain\Bookings\Models\BookingPayment;
 use App\Domain\Reports\Support\ReportResult;
 use App\Models\User;
+use Illuminate\Support\Carbon;
 
 class CollectionsReport extends AbstractReport
 {
@@ -62,7 +63,7 @@ class CollectionsReport extends AbstractReport
         $values = [];
         foreach ($byDay as $date => $agg) {
             $rows[] = ['date' => $date, 'count' => $agg['count'], 'amount' => $agg['amount']];
-            $labels[] = \Illuminate\Support\Carbon::parse($date)->format('d M');
+            $labels[] = Carbon::parse($date)->format('d M');
             $values[] = $agg['amount'];
         }
 

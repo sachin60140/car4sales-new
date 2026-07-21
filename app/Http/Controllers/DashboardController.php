@@ -20,6 +20,7 @@ use App\Domain\RTO\Enums\RtoStatus;
 use App\Domain\RTO\Models\RtoCase;
 use App\Domain\Teams\Models\Team;
 use App\Models\User;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -28,7 +29,7 @@ class DashboardController extends Controller
 {
     public function __construct(private readonly ScopeService $scopes) {}
 
-    public function __invoke(Request $request): Response|\Illuminate\Http\RedirectResponse
+    public function __invoke(Request $request): Response|RedirectResponse
     {
         $user = $request->user();
 
