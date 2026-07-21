@@ -9,6 +9,7 @@ import { computed } from 'vue';
 const props = defineProps<{
     customer: Record<string, any>;
     canViewKyc: boolean;
+    can: { update: boolean };
 }>();
 
 const c = computed(() => props.customer);
@@ -31,7 +32,12 @@ const breadcrumbs: BreadcrumbItem[] = [
                         {{ customer.customer_code }} · {{ customer.mobile }}<span v-if="customer.city"> · {{ customer.city }}</span>
                     </p>
                 </div>
-                <Button variant="outline" as-child><Link href="/admin/customers">Back</Link></Button>
+                <div class="flex items-center gap-2">
+                    <Button v-if="can.update" as-child>
+                        <Link :href="`/admin/customers/${customer.id}/edit`">Edit</Link>
+                    </Button>
+                    <Button variant="outline" as-child><Link href="/admin/customers">Back</Link></Button>
+                </div>
             </div>
 
             <div class="grid gap-4 lg:grid-cols-3">
