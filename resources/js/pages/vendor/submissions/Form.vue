@@ -37,6 +37,7 @@ const form = useForm<{
     color: string;
     odometer_km: number | null;
     ownership_serial: number | null;
+    keys_available: string;
     expected_amount: number | null;
     overall_remark: string;
     branch_id: number | string;
@@ -53,6 +54,7 @@ const form = useForm<{
     color: props.submission?.color ?? '',
     odometer_km: props.submission?.odometer_km ?? null,
     ownership_serial: props.submission?.ownership_serial ?? null,
+    keys_available: props.submission?.keys_available ?? '',
     expected_amount: props.submission?.expected_amount ?? null,
     overall_remark: props.submission?.overall_remark ?? '',
     branch_id: props.submission?.branch_id ?? '',
@@ -177,6 +179,15 @@ const resultStyle: Record<string, string> = {
             <Card>
                 <CardHeader><CardTitle class="text-base">Condition Report</CardTitle></CardHeader>
                 <CardContent class="space-y-2">
+                    <div class="grid gap-1.5 sm:max-w-xs">
+                        <Label>Keys Available</Label>
+                        <select v-model="form.keys_available" class="h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-sm">
+                            <option value="">—</option>
+                            <option value="both">Both keys</option>
+                            <option value="one">Only one key</option>
+                            <option value="none">No keys</option>
+                        </select>
+                    </div>
                     <div class="hidden grid-cols-12 gap-2 px-1 text-xs font-medium uppercase text-muted-foreground sm:grid">
                         <span class="col-span-4">Item</span>
                         <span class="col-span-3">Result</span>

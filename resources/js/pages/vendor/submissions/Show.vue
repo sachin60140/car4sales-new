@@ -8,9 +8,11 @@ import { Head, Link, useForm } from '@inertiajs/vue3';
 import { Download, FileCheck2, Upload } from 'lucide-vue-next';
 import { computed } from 'vue';
 
+interface Doc { key: string; label: string; group: string; sides: number }
+
 const props = defineProps<{
     submission: Record<string, any>;
-    docTypes: { type: string; label: string }[];
+    docCatalog: Doc[];
 }>();
 const s = computed(() => props.submission);
 
@@ -22,16 +24,24 @@ function money(v: string | number | null): string {
 // --- Settlement (post-approval) ---
 const settlement = computed<string>(() => s.value.settlement_status);
 
-// Owner KYC: owner + bank details + required documents.
+// Media types a document maps to (front/back for two-sided docs).
+function mediaTypes(d: Doc): string[] {
+    return d.sides === 2 ? [`${d.key}_front`, `${d.key}_back`] : [d.key];
+}
+const allTypes = props.docCatalog.flatMap(mediaTypes);
+
+// Owner KYC: owner + vehicle-identity + bank details + catalog documents.
 const kycForm = useForm<{
     owner_name: string; owner_phone: string; owner_email: string; owner_address: string; owner_pan: string;
+    chassis_number: string; has_hypothecation: boolean;
     bank_account_name: string; bank_account_number: string; bank_ifsc: string; bank_name: string;
     documents: Record<string, File | null>;
     extra_documents: File[];
 }>({
     owner_name: '', owner_phone: '', owner_email: '', owner_address: '', owner_pan: '',
+    chassis_number: '', has_hypothecation: false,
     bank_account_name: '', bank_account_number: '', bank_ifsc: '', bank_name: '',
-    documents: Object.fromEntries(props.docTypes.map((d) => [d.type, null])),
+    documents: Object.fromEntries(allTypes.map((t) => [t, null])),
     extra_documents: [],
 });
 function onDoc(type: string, e: Event) {
@@ -40,19 +50,33 @@ function onDoc(type: string, e: Event) {
 function onExtra(e: Event) {
     kycForm.extra_documents = Array.from((e.target as HTMLInputElement).files ?? []);
 }
+function isRequired(d: Doc): boolean {
+    return d.group === 'required' || (d.group === 'conditional' && kycForm.has_hypothecation);
+}
+const requiredDocs = computed<Doc[]>(() => props.docCatalog.filter(isRequired));
+const optionalDocs = computed<Doc[]>(() => props.docCatalog.filter((d) => !isRequired(d)));
+const sideLabel = (d: Doc, i: number) => (d.sides === 2 ? (i === 0 ? 'Front' : 'Back') : '');
 const kycComplete = computed(
     () =>
         !!kycForm.owner_name &&
         !!kycForm.owner_phone &&
         !!kycForm.owner_address &&
+        !!kycForm.chassis_number &&
         !!kycForm.bank_account_name &&
         !!kycForm.bank_account_number &&
         !!kycForm.bank_ifsc &&
-        props.docTypes.every((d) => kycForm.documents[d.type]),
+        requiredDocs.value.every((d) => mediaTypes(d).every((t) => kycForm.documents[t])),
 );
 function submitKyc() {
     kycForm.post(`/vendor/submissions/${s.value.id}/owner-kyc`, { preserveScroll: true, forceFormData: true });
 }
+
+const docStatusStyle: Record<string, string> = {
+    pending: 'bg-brand-orange/15 text-brand-orange',
+    verified: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400',
+    rejected: 'bg-brand-red/15 text-brand-red',
+    not_applicable: 'bg-muted text-muted-foreground',
+};
 
 // Request payment (bank already on file from KYC).
 const reqForm = useForm({});
@@ -124,17 +148,22 @@ const resultStyle: Record<string, string> = {
                         <p class="text-muted-foreground">{{ s.kyc_remarks }}</p>
                     </div>
                     <p class="mb-3 text-sm text-muted-foreground">
-                        Provide the vehicle owner's details, your payout bank account, and upload the required documents.
-                        Once verified, your agreement (with Form 29 &amp; 30) will be available and you can request payment.
+                        Provide the vehicle owner's details, chassis number, payout bank account, and upload the required
+                        documents. Once each document is verified, your agreement (with Form 29 &amp; 30) will be available.
                     </p>
 
-                    <p class="mb-2 text-xs font-semibold uppercase text-muted-foreground">Owner (Seller) details</p>
+                    <p class="mb-2 text-xs font-semibold uppercase text-muted-foreground">Owner (Seller) &amp; vehicle</p>
                     <div class="grid gap-3 sm:grid-cols-2">
                         <div class="grid gap-1.5"><Label class="text-xs">Owner Name *</Label><Input v-model="kycForm.owner_name" class="h-9" /></div>
                         <div class="grid gap-1.5"><Label class="text-xs">Owner Phone *</Label><Input v-model="kycForm.owner_phone" class="h-9" /></div>
                         <div class="grid gap-1.5"><Label class="text-xs">Owner Email</Label><Input v-model="kycForm.owner_email" type="email" class="h-9" /></div>
                         <div class="grid gap-1.5"><Label class="text-xs">Owner PAN</Label><Input v-model="kycForm.owner_pan" class="h-9" /></div>
                         <div class="grid gap-1.5 sm:col-span-2"><Label class="text-xs">Owner Address *</Label><Input v-model="kycForm.owner_address" class="h-9" /></div>
+                        <div class="grid gap-1.5"><Label class="text-xs">Chassis Number *</Label><Input v-model="kycForm.chassis_number" class="h-9" /></div>
+                        <label class="flex items-center gap-2 self-end text-sm">
+                            <input v-model="kycForm.has_hypothecation" type="checkbox" class="size-4" />
+                            Under hypothecation (bank loan)
+                        </label>
                     </div>
 
                     <p class="mb-1 mt-4 text-xs font-semibold uppercase text-muted-foreground">Owner's bank account (payout)</p>
@@ -148,13 +177,27 @@ const resultStyle: Record<string, string> = {
 
                     <p class="mb-2 mt-4 text-xs font-semibold uppercase text-muted-foreground">Required documents</p>
                     <div class="grid gap-3 sm:grid-cols-2">
-                        <div v-for="d in docTypes" :key="d.type" class="grid gap-1.5">
-                            <Label class="text-xs">{{ d.label }} *</Label>
-                            <input type="file" accept="image/*" class="text-sm" @change="onDoc(d.type, $event)" />
-                            <p v-if="(kycForm.errors as any)[`documents.${d.type}`]" class="text-xs text-brand-red">{{ (kycForm.errors as any)[`documents.${d.type}`] }}</p>
+                        <div v-for="d in requiredDocs" :key="d.key" class="grid gap-2 rounded-lg border border-sidebar-border/60 p-2.5">
+                            <Label class="text-xs font-medium">{{ d.label }} <span class="text-brand-red">*</span></Label>
+                            <div v-for="(t, i) in mediaTypes(d)" :key="t" class="grid gap-1">
+                                <span v-if="d.sides === 2" class="text-[11px] font-medium text-muted-foreground">{{ sideLabel(d, i) }}</span>
+                                <input type="file" accept="image/*" class="text-sm" @change="onDoc(t, $event)" />
+                                <p v-if="(kycForm.errors as any)[`documents.${t}`]" class="text-xs text-brand-red">{{ (kycForm.errors as any)[`documents.${t}`] }}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <p class="mb-2 mt-4 text-xs font-semibold uppercase text-muted-foreground">Optional documents</p>
+                    <div class="grid gap-3 sm:grid-cols-2">
+                        <div v-for="d in optionalDocs" :key="d.key" class="grid gap-2 rounded-lg border border-sidebar-border/60 p-2.5">
+                            <Label class="text-xs">{{ d.label }}</Label>
+                            <div v-for="(t, i) in mediaTypes(d)" :key="t" class="grid gap-1">
+                                <span v-if="d.sides === 2" class="text-[11px] font-medium text-muted-foreground">{{ sideLabel(d, i) }}</span>
+                                <input type="file" accept="image/*" class="text-sm" @change="onDoc(t, $event)" />
+                            </div>
                         </div>
                         <div class="grid gap-1.5 sm:col-span-2">
-                            <Label class="text-xs">Other documents (optional)</Label>
+                            <Label class="text-xs">Other documents</Label>
                             <input type="file" accept="image/*" multiple class="text-sm" @change="onExtra" />
                         </div>
                     </div>
@@ -174,10 +217,11 @@ const resultStyle: Record<string, string> = {
                     </div>
                     <div class="grid gap-4 sm:grid-cols-2">
                         <div class="rounded-lg border border-sidebar-border/60 p-3 text-sm">
-                            <p class="mb-1 text-xs font-medium uppercase text-muted-foreground">Owner</p>
+                            <p class="mb-1 text-xs font-medium uppercase text-muted-foreground">Owner &amp; vehicle</p>
                             <p>{{ s.owner_name }}</p>
                             <p class="text-muted-foreground">{{ s.owner_phone }}<span v-if="s.owner_email"> · {{ s.owner_email }}</span></p>
                             <p class="text-muted-foreground">{{ s.owner_address }}</p>
+                            <p v-if="s.chassis_number" class="text-muted-foreground">Chassis {{ s.chassis_number }}<span v-if="s.has_hypothecation"> · under hypothecation</span></p>
                         </div>
                         <div class="rounded-lg border border-sidebar-border/60 p-3 text-sm">
                             <p class="mb-1 text-xs font-medium uppercase text-muted-foreground">Owner's bank account</p>
@@ -185,10 +229,14 @@ const resultStyle: Record<string, string> = {
                             <p class="text-muted-foreground">A/c {{ s.bank_account_number }} · {{ s.bank_ifsc }}<span v-if="s.bank_name"> · {{ s.bank_name }}</span></p>
                         </div>
                     </div>
-                    <div class="mt-3 flex flex-wrap gap-2">
-                        <template v-for="d in docTypes" :key="d.type">
-                            <a v-if="s.documents?.[d.type]" :href="s.documents[d.type].url" target="_blank" class="rounded-md border px-2 py-1 text-xs underline">{{ d.label }}</a>
-                        </template>
+                    <div v-if="s.documents?.rows?.length" class="mt-3 space-y-1">
+                        <div v-for="r in s.documents.rows" :key="r.key" class="flex items-center justify-between gap-2 rounded-md border border-sidebar-border/60 px-2.5 py-1.5 text-xs">
+                            <span class="flex flex-wrap items-center gap-x-2 gap-y-1">
+                                <span class="font-medium">{{ r.label }}</span>
+                                <a v-for="(f, i) in r.files" :key="i" :href="f.url" target="_blank" class="underline text-muted-foreground">{{ f.side || 'View' }}</a>
+                            </span>
+                            <span class="rounded-full px-2 py-0.5 font-medium capitalize" :class="docStatusStyle[r.status] ?? 'bg-muted text-muted-foreground'">{{ (r.status || 'pending').replace('_', ' ') }}</span>
+                        </div>
                     </div>
                 </template>
 

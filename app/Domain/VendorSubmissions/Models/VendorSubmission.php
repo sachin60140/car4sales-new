@@ -20,10 +20,11 @@ class VendorSubmission extends Model
 
     protected $fillable = [
         'submission_number', 'vendor_user_id', 'make', 'model', 'variant', 'manufacturing_year',
-        'registration_number', 'registration_state', 'fuel_type', 'transmission', 'color',
-        'odometer_km', 'ownership_serial', 'expected_amount', 'overall_rating', 'overall_remark',
+        'registration_number', 'registration_state', 'chassis_number', 'fuel_type', 'transmission', 'color',
+        'odometer_km', 'ownership_serial', 'keys_available', 'expected_amount', 'overall_rating', 'overall_remark',
         'status', 'reviewed_by', 'reviewed_at', 'review_remarks', 'purchase_lead_id', 'branch_id',
         'settlement_status', 'owner_name', 'owner_phone', 'owner_email', 'owner_address', 'owner_pan',
+        'has_hypothecation', 'document_verifications',
         'kyc_submitted_at', 'kyc_approved_at', 'kyc_approved_by', 'kyc_remarks',
         'bank_account_name', 'bank_account_number', 'bank_ifsc', 'bank_name',
         'payment_requested_at', 'payment_amount', 'payment_mode', 'payment_reference',
@@ -31,16 +32,61 @@ class VendorSubmission extends Model
         'vehicle_id', 'possession', 'possession_confirmed_at', 'possessed_by',
     ];
 
-    /** Owner-KYC documents the vendor must upload before the agreement is issued. */
-    public const REQUIRED_KYC_DOCS = [
-        'rc' => 'Registration Certificate (RC)',
-        'pan' => 'Owner PAN card',
-        'aadhaar' => 'Owner Aadhaar',
-        'noc' => 'NOC',
-        'key_image' => 'Key photo',
-        'owner_photo' => 'Owner with vehicle',
-        'cancelled_cheque' => 'Cancelled cheque',
-    ];
+    /**
+     * The owner-KYC document catalog. Each entry: label, group (required | conditional
+     * | optional) and sides (1, or 2 → front/back media types `<key>_front`/`<key>_back`).
+     * Conditional docs (NOC, Form 35) are only required when the vehicle carries a loan.
+     *
+     * @return array<string, array{label: string, group: string, sides: int}>
+     */
+    public static function documentCatalog(bool $hasHypothecation = false): array
+    {
+        $catalog = [
+            'rc' => ['label' => 'Registration Certificate (RC)', 'group' => 'required', 'sides' => 2],
+            'aadhaar' => ['label' => 'Owner Aadhaar', 'group' => 'required', 'sides' => 2],
+            'pan' => ['label' => 'Owner PAN card', 'group' => 'required', 'sides' => 1],
+            'chassis_photo' => ['label' => 'Chassis number plate', 'group' => 'required', 'sides' => 1],
+            'owner_photo' => ['label' => 'Owner with vehicle', 'group' => 'required', 'sides' => 1],
+            'cancelled_cheque' => ['label' => 'Cancelled cheque', 'group' => 'required', 'sides' => 1],
+            'noc' => ['label' => 'Bank NOC', 'group' => $hasHypothecation ? 'conditional' : 'optional', 'sides' => 1],
+            'form_35' => ['label' => 'Form 35', 'group' => $hasHypothecation ? 'conditional' : 'optional', 'sides' => 1],
+            'insurance' => ['label' => 'Insurance', 'group' => 'optional', 'sides' => 1],
+            'puc' => ['label' => 'PUC', 'group' => 'optional', 'sides' => 1],
+            'tax' => ['label' => 'Road tax', 'group' => 'optional', 'sides' => 1],
+            'fitness' => ['label' => 'Fitness', 'group' => 'optional', 'sides' => 1],
+            'permit' => ['label' => 'Permit', 'group' => 'optional', 'sides' => 1],
+            'service_history' => ['label' => 'Service history', 'group' => 'optional', 'sides' => 1],
+            'purchase_invoice' => ['label' => 'Purchase invoice', 'group' => 'optional', 'sides' => 1],
+        ];
+
+        return $catalog;
+    }
+
+    /** Document keys that must be uploaded + verified before the agreement is issued. */
+    public static function requiredDocKeys(bool $hasHypothecation = false): array
+    {
+        return array_keys(array_filter(
+            self::documentCatalog($hasHypothecation),
+            fn ($d) => in_array($d['group'], ['required', 'conditional'], true),
+        ));
+    }
+
+    /** Media type keys a document maps to (front/back for two-sided docs). */
+    public static function docMediaTypes(string $key, int $sides): array
+    {
+        return $sides === 2 ? ["{$key}_front", "{$key}_back"] : [$key];
+    }
+
+    /** All owner-KYC document media types (single + front/back), for the media relation. */
+    public static function allDocMediaTypes(): array
+    {
+        $types = [];
+        foreach (self::documentCatalog(true) as $key => $d) {
+            $types = [...$types, ...self::docMediaTypes($key, $d['sides'])];
+        }
+
+        return [...$types, 'other_doc'];
+    }
 
     protected function casts(): array
     {
@@ -57,6 +103,8 @@ class VendorSubmission extends Model
             'paid_at' => 'datetime',
             'possession' => 'array',
             'possession_confirmed_at' => 'datetime',
+            'has_hypothecation' => 'boolean',
+            'document_verifications' => 'array',
         ];
     }
 
@@ -110,10 +158,10 @@ class VendorSubmission extends Model
         return $this->media()->where('type', 'payment_proof');
     }
 
-    /** All owner-KYC document media (RC, PAN, Aadhaar, NOC, key/owner photos, cheque, extras). */
+    /** All owner-KYC document media (front/back RC & Aadhaar, PAN, chassis, cheque, extras…). */
     public function documentMedia(): HasMany
     {
-        return $this->media()->whereIn('type', [...array_keys(self::REQUIRED_KYC_DOCS), 'other_doc']);
+        return $this->media()->whereIn('type', self::allDocMediaTypes());
     }
 
     public function paidBy(): BelongsTo

@@ -25,7 +25,7 @@ class VendorSubmissionAction
      */
     private const EDITABLE = [
         'make', 'model', 'variant', 'manufacturing_year', 'registration_number', 'registration_state',
-        'fuel_type', 'transmission', 'color', 'odometer_km', 'ownership_serial',
+        'fuel_type', 'transmission', 'color', 'odometer_km', 'ownership_serial', 'keys_available',
         'expected_amount', 'overall_remark', 'branch_id',
     ];
 

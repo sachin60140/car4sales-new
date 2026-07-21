@@ -99,7 +99,10 @@ class VendorSubmissionController extends Controller
                     'address' => $vendorSubmission->owner_address,
                     'pan' => $vendorSubmission->owner_pan,
                 ] : null,
-                'documents' => $this->documentRows($vendorSubmission),
+                'chassis_number' => $vendorSubmission->chassis_number,
+                'has_hypothecation' => $vendorSubmission->has_hypothecation,
+                'keys_available' => $vendorSubmission->keys_available,
+                'verification' => $this->verificationRows($vendorSubmission),
                 'kyc_remarks' => $vendorSubmission->kyc_remarks,
                 'kyc_approved_by' => $vendorSubmission->kycApprovedBy?->name,
                 'kyc_approved_at' => $vendorSubmission->kyc_approved_at?->toDateString(),
@@ -124,15 +127,81 @@ class VendorSubmissionController extends Controller
                     'stock_number' => $vendorSubmission->vehicle->stock_number,
                 ] : null,
             ],
-            'docLabels' => VendorSubmission::REQUIRED_KYC_DOCS,
+            'docStatuses' => ['pending', 'verified', 'rejected', 'not_applicable'],
             'can' => [
                 'review' => $vendorSubmission->status === SubmissionStatus::PendingReview,
-                'approveKyc' => $vendorSubmission->settlement_status === SettlementStatus::KycSubmitted,
+                'verifyDocs' => $vendorSubmission->settlement_status === SettlementStatus::KycSubmitted,
+                'issueAgreement' => $vendorSubmission->settlement_status === SettlementStatus::KycSubmitted
+                    && $this->allRequiredVerified($vendorSubmission),
                 'recordPayment' => $vendorSubmission->settlement_status === SettlementStatus::PaymentRequested,
                 'confirmPossession' => $vendorSubmission->settlement_status === SettlementStatus::Paid
                     && $request->user()->can('possessions.create'),
             ],
         ]);
+    }
+
+    /** One verification row per catalog document (required/conditional always shown). */
+    private function verificationRows(VendorSubmission $s): array
+    {
+        $verifs = $s->document_verifications ?? [];
+        $rows = [];
+
+        foreach (VendorSubmission::documentCatalog((bool) $s->has_hypothecation) as $key => $def) {
+            $files = [];
+            foreach (VendorSubmission::docMediaTypes($key, $def['sides']) as $i => $type) {
+                if ($m = $s->media->firstWhere('type', $type)) {
+                    $files[] = ['side' => $def['sides'] === 2 ? ($i === 0 ? 'Front' : 'Back') : null, 'url' => route('submission-media.view', $m)];
+                }
+            }
+            if ($def['group'] === 'optional' && $files === []) {
+                continue;
+            }
+            $v = $verifs[$key] ?? [];
+            $rows[] = [
+                'key' => $key, 'label' => $def['label'], 'group' => $def['group'], 'files' => $files,
+                'status' => $v['status'] ?? 'pending', 'number' => $v['number'] ?? null,
+                'valid_till' => $v['valid_till'] ?? null, 'remarks' => $v['remarks'] ?? null,
+            ];
+        }
+
+        return [
+            'rows' => $rows,
+            'extras' => $s->media->where('type', 'other_doc')->values()->map(fn ($m) => ['url' => route('submission-media.view', $m)])->all(),
+        ];
+    }
+
+    private function allRequiredVerified(VendorSubmission $s): bool
+    {
+        $verifs = $s->document_verifications ?? [];
+
+        foreach (VendorSubmission::requiredDocKeys((bool) $s->has_hypothecation) as $key) {
+            if (($verifs[$key]['status'] ?? null) !== 'verified') {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    public function verifyDocument(Request $request, VendorSubmission $vendorSubmission, VendorSettlementAction $action): RedirectResponse
+    {
+        $this->authorize('review', $vendorSubmission);
+
+        $data = $request->validate([
+            'type' => ['required', 'string', 'max:40'],
+            'status' => ['required', 'in:pending,verified,rejected,not_applicable'],
+            'number' => ['nullable', 'string', 'max:100'],
+            'valid_till' => ['nullable', 'date'],
+            'remarks' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        try {
+            $action->verifyDocument($vendorSubmission, $data['type'], $data, $request->user());
+        } catch (\RuntimeException $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        return back()->with('success', 'Document verification updated.');
     }
 
     public function confirmPossession(Request $request, VendorSubmission $vendorSubmission, VendorSettlementAction $action): RedirectResponse

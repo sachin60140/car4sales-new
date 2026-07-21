@@ -44,6 +44,7 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::get('vendor-submissions/{vendorSubmission}', [\App\Http\Controllers\Admin\VendorSubmissionController::class, 'show'])->name('vendor-submissions.show');
     Route::post('vendor-submissions/{vendorSubmission}/approve', [\App\Http\Controllers\Admin\VendorSubmissionController::class, 'approve'])->name('vendor-submissions.approve');
     Route::post('vendor-submissions/{vendorSubmission}/reject', [\App\Http\Controllers\Admin\VendorSubmissionController::class, 'reject'])->name('vendor-submissions.reject');
+    Route::post('vendor-submissions/{vendorSubmission}/verify-document', [\App\Http\Controllers\Admin\VendorSubmissionController::class, 'verifyDocument'])->name('vendor-submissions.verify-document');
     Route::post('vendor-submissions/{vendorSubmission}/approve-kyc', [\App\Http\Controllers\Admin\VendorSubmissionController::class, 'approveKyc'])->name('vendor-submissions.approve-kyc');
     Route::post('vendor-submissions/{vendorSubmission}/reject-kyc', [\App\Http\Controllers\Admin\VendorSubmissionController::class, 'rejectKyc'])->name('vendor-submissions.reject-kyc');
     Route::post('vendor-submissions/{vendorSubmission}/record-payment', [\App\Http\Controllers\Admin\VendorSubmissionController::class, 'recordPayment'])->name('vendor-submissions.record-payment');

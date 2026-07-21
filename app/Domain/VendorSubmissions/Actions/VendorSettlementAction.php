@@ -34,21 +34,22 @@ class VendorSettlementAction
 
     /**
      * Vendor submits the vehicle owner's details, the owner's payout bank account,
-     * and the required KYC documents (RC, PAN, Aadhaar, NOC, key/owner photos, cheque, …).
+     * chassis number, hypothecation status, and the KYC documents. RC & Aadhaar are
+     * two-sided (`*_front`/`*_back`); NOC & Form 35 are required only under hypothecation.
      *
-     * @param  array<string, mixed>  $owner   owner_name, owner_phone, owner_email, owner_address, owner_pan
+     * @param  array<string, mixed>  $owner   owner_* fields + chassis_number + has_hypothecation
      * @param  array<string, mixed>  $bank    the owner's account: bank_account_name, bank_account_number, bank_ifsc, bank_name
-     * @param  array<string, UploadedFile>  $documents  single files keyed by type
+     * @param  array<string, UploadedFile>  $files   files keyed by media type (rc_front, aadhaar_back, pan, …)
      * @param  array<int, UploadedFile>  $extraDocuments  optional additional docs
      */
-    public function submitOwnerKyc(VendorSubmission $submission, array $owner, array $bank, array $documents, User $vendor, array $extraDocuments = []): VendorSubmission
+    public function submitOwnerKyc(VendorSubmission $submission, array $owner, array $bank, array $files, User $vendor, array $extraDocuments = []): VendorSubmission
     {
         if ($submission->settlement_status !== SettlementStatus::KycPending) {
             throw new RuntimeException('Owner details can only be submitted after the vehicle is approved.');
         }
 
-        return DB::transaction(function () use ($submission, $owner, $bank, $documents, $vendor, $extraDocuments) {
-            foreach ($documents as $type => $file) {
+        return DB::transaction(function () use ($submission, $owner, $bank, $files, $vendor, $extraDocuments) {
+            foreach ($files as $type => $file) {
                 if ($file instanceof UploadedFile) {
                     $this->storeDoc($submission, $type, $file, $vendor, replace: true);
                 }
@@ -59,6 +60,19 @@ class VendorSettlementAction
                 }
             }
 
+            $hasHypothecation = (bool) ($owner['has_hypothecation'] ?? false);
+
+            // Seed a pending verification for every catalog document that now has media
+            // (based on what is actually stored, so a partial re-submit keeps prior docs).
+            $submission->load('media');
+            $verifications = [];
+            foreach (VendorSubmission::documentCatalog($hasHypothecation) as $key => $def) {
+                $types = VendorSubmission::docMediaTypes($key, $def['sides']);
+                if ($submission->media->whereIn('type', $types)->isNotEmpty()) {
+                    $verifications[$key] = ['status' => 'pending', 'number' => null, 'valid_till' => null, 'remarks' => null];
+                }
+            }
+
             $submission->update([
                 'settlement_status' => SettlementStatus::KycSubmitted->value,
                 'owner_name' => $owner['owner_name'],
@@ -66,10 +80,13 @@ class VendorSettlementAction
                 'owner_email' => $owner['owner_email'] ?? null,
                 'owner_address' => $owner['owner_address'] ?? null,
                 'owner_pan' => $owner['owner_pan'] ?? null,
+                'chassis_number' => $owner['chassis_number'] ?? null,
+                'has_hypothecation' => $hasHypothecation,
                 'bank_account_name' => $bank['bank_account_name'],
                 'bank_account_number' => $bank['bank_account_number'],
                 'bank_ifsc' => $bank['bank_ifsc'],
                 'bank_name' => $bank['bank_name'] ?? null,
+                'document_verifications' => $verifications,
                 'kyc_submitted_at' => now(),
                 'kyc_remarks' => null,
             ]);
@@ -86,14 +103,46 @@ class VendorSettlementAction
         });
     }
 
+    /** Staff set the verification status of one document (pending/verified/rejected/…). */
+    public function verifyDocument(VendorSubmission $submission, string $type, array $data, User $actor): VendorSubmission
+    {
+        if ($submission->settlement_status !== SettlementStatus::KycSubmitted) {
+            throw new RuntimeException('Documents can only be verified while they are under review.');
+        }
+
+        $verifications = $submission->document_verifications ?? [];
+        $verifications[$type] = [
+            'status' => $data['status'],
+            'number' => $data['number'] ?? null,
+            'valid_till' => $data['valid_till'] ?? null,
+            'remarks' => $data['remarks'] ?? null,
+        ];
+
+        $submission->update(['document_verifications' => $verifications]);
+
+        return $submission->fresh();
+    }
+
     /**
-     * Staff verify the owner documents — the agreement (with the real owner name +
-     * registration number) becomes available and payment can be requested.
+     * Staff issue the agreement once every required document is verified — the
+     * (dynamic) agreement becomes available and the vendor can request payment.
      */
     public function approveOwnerKyc(VendorSubmission $submission, User $actor, ?string $remarks = null): VendorSubmission
     {
         if ($submission->settlement_status !== SettlementStatus::KycSubmitted) {
             throw new RuntimeException('Only submitted owner documents can be approved.');
+        }
+
+        $catalog = VendorSubmission::documentCatalog($submission->has_hypothecation);
+        $verifs = $submission->document_verifications ?? [];
+        $missing = array_filter(
+            VendorSubmission::requiredDocKeys($submission->has_hypothecation),
+            fn ($key) => ($verifs[$key]['status'] ?? null) !== 'verified',
+        );
+
+        if ($missing !== []) {
+            $labels = array_map(fn ($key) => $catalog[$key]['label'] ?? $key, $missing);
+            throw new RuntimeException('Verify all required documents first — pending: '.implode(', ', $labels).'.');
         }
 
         $submission->update([

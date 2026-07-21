@@ -5,13 +5,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import AppLayout from '@/layouts/AppLayout.vue';
 import type { BreadcrumbItem } from '@/types';
-import { Head, Link, useForm } from '@inertiajs/vue3';
-import { computed } from 'vue';
+import { Head, Link, router, useForm } from '@inertiajs/vue3';
+import { computed, ref, watch } from 'vue';
 
 const props = defineProps<{
     submission: Record<string, any>;
-    docLabels: Record<string, string>;
-    can: { review: boolean; approveKyc: boolean; recordPayment: boolean; confirmPossession: boolean };
+    docStatuses: string[];
+    can: { review: boolean; verifyDocs: boolean; issueAgreement: boolean; recordPayment: boolean; confirmPossession: boolean };
 }>();
 
 const s = computed(() => props.submission);
@@ -53,20 +53,40 @@ function recordPayment() {
 }
 const paymentModes = ['neft', 'rtgs', 'upi', 'cheque', 'cash'];
 
-// --- Owner KYC review ---
+// --- Owner-document verification (per-document table) ---
+const rows = ref<any[]>([]);
+watch(
+    () => s.value.verification?.rows,
+    (r) => { rows.value = (r ?? []).map((x: any) => ({ ...x })); },
+    { immediate: true, deep: true },
+);
+const verificationExtras = computed<any[]>(() => s.value.verification?.extras ?? []);
+const savingRow = ref<string | null>(null);
+function saveRow(row: any) {
+    savingRow.value = row.key;
+    router.post(
+        `/admin/vendor-submissions/${s.value.id}/verify-document`,
+        { type: row.key, status: row.status, number: row.number, valid_till: row.valid_till, remarks: row.remarks },
+        { preserveScroll: true, onFinish: () => (savingRow.value = null) },
+    );
+}
+const docStatusStyle: Record<string, string> = {
+    pending: 'text-brand-orange',
+    verified: 'text-emerald-600',
+    rejected: 'text-brand-red',
+    not_applicable: 'text-muted-foreground',
+};
+
+// Issue agreement / send back.
 const kycApproveForm = useForm({ remarks: '' });
 const kycRejectForm = useForm({ remarks: '' });
-function approveKyc() {
+function issueAgreement() {
     kycApproveForm.post(`/admin/vendor-submissions/${s.value.id}/approve-kyc`, { preserveScroll: true });
 }
-function rejectKyc() {
+function sendBack() {
     if (!kycRejectForm.remarks) return;
     kycRejectForm.post(`/admin/vendor-submissions/${s.value.id}/reject-kyc`, { preserveScroll: true });
 }
-const docEntries = computed<{ type: string; label: string; doc: any }[]>(() =>
-    Object.entries(props.docLabels).map(([type, label]) => ({ type, label, doc: s.value.documents?.[type] ?? null })),
-);
-const extraDocs = computed<any[]>(() => s.value.documents?.extra ?? []);
 
 // --- Confirm possession → create stock ---
 const possessionChecks = [
@@ -222,13 +242,18 @@ const resultStyle: Record<string, string> = { pass: 'text-emerald-600', fail: 't
 
                             <p v-if="settlement === 'kyc_pending'" class="text-xs text-muted-foreground">Waiting for the vendor to submit owner details &amp; documents.</p>
 
-                            <!-- Owner (seller) details -->
+                            <!-- Owner (seller) + vehicle identity -->
                             <div v-if="s.owner" class="rounded-lg border border-sidebar-border/60 p-2">
                                 <p class="text-xs font-medium uppercase text-muted-foreground">Owner (Seller)</p>
                                 <p>{{ s.owner.name }}</p>
                                 <p class="text-muted-foreground">{{ s.owner.phone }}<span v-if="s.owner.email"> · {{ s.owner.email }}</span></p>
                                 <p class="text-muted-foreground">{{ s.owner.address }}</p>
                                 <p v-if="s.owner.pan" class="text-muted-foreground">PAN {{ s.owner.pan }}</p>
+                                <p class="mt-1 border-t pt-1 text-muted-foreground">
+                                    <span v-if="s.chassis_number">Chassis {{ s.chassis_number }} · </span>
+                                    <span v-if="s.keys_available">Keys: {{ s.keys_available }} · </span>
+                                    <span :class="s.has_hypothecation ? 'text-brand-orange' : ''">{{ s.has_hypothecation ? 'Under hypothecation' : 'No hypothecation' }}</span>
+                                </p>
                             </div>
 
                             <!-- Owner payout bank -->
@@ -238,23 +263,50 @@ const resultStyle: Record<string, string> = { pass: 'text-emerald-600', fail: 't
                                 <p class="text-muted-foreground">A/c {{ s.bank.account_number }} · {{ s.bank.ifsc }}<span v-if="s.bank.bank_name"> · {{ s.bank.bank_name }}</span></p>
                             </div>
 
-                            <!-- KYC documents -->
-                            <div v-if="s.owner" class="rounded-lg border border-sidebar-border/60 p-2">
-                                <p class="mb-1 text-xs font-medium uppercase text-muted-foreground">Documents</p>
-                                <div class="flex flex-wrap gap-1.5">
-                                    <a v-for="e in docEntries" :key="e.type" v-show="e.doc" :href="e.doc?.url" target="_blank" class="rounded-md border px-2 py-0.5 text-xs underline">{{ e.label }}</a>
-                                    <a v-for="(x, i) in extraDocs" :key="'x' + i" :href="x.url" target="_blank" class="rounded-md border px-2 py-0.5 text-xs underline">Other {{ i + 1 }}</a>
+                            <!-- Document verification table -->
+                            <div v-if="rows.length" class="rounded-lg border border-sidebar-border/60">
+                                <div class="border-b px-2 py-1.5 text-xs font-medium uppercase text-muted-foreground">Document verification</div>
+                                <div class="divide-y">
+                                    <div v-for="row in rows" :key="row.key" class="grid gap-2 p-2 sm:grid-cols-12 sm:items-start">
+                                        <div class="sm:col-span-4">
+                                            <p class="text-sm font-medium">{{ row.label }} <span v-if="row.group !== 'optional'" class="text-brand-red">*</span></p>
+                                            <div class="mt-0.5 flex flex-wrap gap-2">
+                                                <a v-for="(f, i) in row.files" :key="i" :href="f.url" target="_blank" class="text-xs underline text-muted-foreground">{{ f.side || 'View' }}</a>
+                                                <span v-if="!row.files.length" class="text-xs text-brand-red">Not uploaded</span>
+                                            </div>
+                                        </div>
+                                        <div class="sm:col-span-8">
+                                            <div v-if="can.verifyDocs" class="grid gap-1.5 sm:grid-cols-3">
+                                                <select v-model="row.status" class="h-8 rounded-md border border-input bg-transparent px-2 text-xs shadow-sm">
+                                                    <option v-for="st in docStatuses" :key="st" :value="st">{{ st.replace('_', ' ') }}</option>
+                                                </select>
+                                                <Input v-model="row.number" placeholder="Number" class="h-8 text-xs" />
+                                                <Input v-model="row.valid_till" type="date" class="h-8 text-xs" />
+                                                <Input v-model="row.remarks" placeholder="Remarks" class="h-8 text-xs sm:col-span-2" />
+                                                <Button size="sm" variant="outline" class="h-8" :disabled="savingRow === row.key" @click="saveRow(row)">Save</Button>
+                                            </div>
+                                            <div v-else class="text-xs">
+                                                <span class="font-medium capitalize" :class="docStatusStyle[row.status]">{{ (row.status || 'pending').replace('_', ' ') }}</span>
+                                                <span v-if="row.number" class="text-muted-foreground"> · {{ row.number }}</span>
+                                                <span v-if="row.remarks" class="text-muted-foreground"> · {{ row.remarks }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div v-if="verificationExtras.length" class="flex flex-wrap gap-1.5 border-t px-2 py-1.5">
+                                    <span class="text-xs text-muted-foreground">Other:</span>
+                                    <a v-for="(x, i) in verificationExtras" :key="i" :href="x.url" target="_blank" class="text-xs underline">Doc {{ i + 1 }}</a>
                                 </div>
                             </div>
 
-                            <!-- KYC review actions -->
-                            <div v-if="can.approveKyc" class="grid gap-2 border-t pt-3">
-                                <Label class="text-xs">Verify owner documents</Label>
+                            <!-- Issue agreement / send back -->
+                            <div v-if="can.verifyDocs" class="grid gap-2 border-t pt-3">
                                 <Input v-model="kycApproveForm.remarks" placeholder="Note (optional)" class="h-9" />
-                                <Button size="sm" :disabled="kycApproveForm.processing" @click="approveKyc">Approve documents → issue agreement</Button>
+                                <Button size="sm" :disabled="!can.issueAgreement || kycApproveForm.processing" @click="issueAgreement">Issue Agreement</Button>
+                                <p v-if="!can.issueAgreement" class="text-xs text-muted-foreground">Mark every required document “verified” to issue the agreement.</p>
                                 <div class="border-t pt-2">
                                     <Input v-model="kycRejectForm.remarks" placeholder="Reason to send back" class="h-9" />
-                                    <Button size="sm" variant="destructive" class="mt-2" :disabled="!kycRejectForm.remarks || kycRejectForm.processing" @click="rejectKyc">Send back</Button>
+                                    <Button size="sm" variant="destructive" class="mt-2" :disabled="!kycRejectForm.remarks || kycRejectForm.processing" @click="sendBack">Send back to vendor</Button>
                                 </div>
                             </div>
                             <p v-else-if="s.kyc_remarks && settlement === 'kyc_pending'" class="rounded-lg border border-brand-red/40 bg-brand-red/5 p-2 text-xs text-brand-red">Sent back: {{ s.kyc_remarks }}</p>

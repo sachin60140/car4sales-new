@@ -33,20 +33,36 @@ function approvedSubmission(): array
     return [$submission, $vendor->fresh(), $admin];
 }
 
-function submitKyc(VendorSubmission $submission, User $vendor): VendorSubmission
+function submitKyc(VendorSubmission $submission, User $vendor, bool $hasHypothecation = false): VendorSubmission
 {
     Storage::fake('private');
 
-    $documents = collect(array_keys(VendorSubmission::REQUIRED_KYC_DOCS))
-        ->mapWithKeys(fn ($type) => [$type => UploadedFile::fake()->image("{$type}.jpg")])
-        ->all();
+    // A fake file for every media type of every required/conditional catalog doc.
+    $files = [];
+    foreach (VendorSubmission::documentCatalog($hasHypothecation) as $key => $def) {
+        if (! in_array($def['group'], ['required', 'conditional'], true)) {
+            continue;
+        }
+        foreach (VendorSubmission::docMediaTypes($key, $def['sides']) as $type) {
+            $files[$type] = UploadedFile::fake()->image("{$type}.jpg");
+        }
+    }
 
     return app(VendorSettlementAction::class)->submitOwnerKyc($submission->fresh(), [
         'owner_name' => 'Rakesh Kumar', 'owner_phone' => '9876540000', 'owner_address' => '14 Civil Lines, Lucknow',
+        'chassis_number' => 'MAT625016PWA12345', 'has_hypothecation' => $hasHypothecation,
     ], [
         'bank_account_name' => 'Rakesh Kumar', 'bank_account_number' => '1234567890',
         'bank_ifsc' => 'HDFC0001234', 'bank_name' => 'HDFC Bank',
-    ], $documents, $vendor);
+    ], $files, $vendor);
+}
+
+function verifyAllDocs(VendorSubmission $submission, User $admin): void
+{
+    $action = app(VendorSettlementAction::class);
+    foreach (VendorSubmission::requiredDocKeys($submission->has_hypothecation) as $key) {
+        $action->verifyDocument($submission->fresh(), $key, ['status' => 'verified'], $admin);
+    }
 }
 
 /** @return array{0: VendorSubmission, 1: User, 2: User} [submission (agreement_ready), vendor, admin] */
@@ -54,6 +70,7 @@ function verifiedSubmission(): array
 {
     [$submission, $vendor, $admin] = approvedSubmission();
     submitKyc($submission, $vendor);
+    verifyAllDocs($submission->fresh(), $admin);
     $submission = app(VendorSettlementAction::class)->approveOwnerKyc($submission->fresh(), $admin);
 
     return [$submission, $vendor, $admin];
@@ -86,8 +103,22 @@ it('lets the vendor submit owner details, bank and documents', function () {
 
     expect($result->settlement_status)->toBe(SettlementStatus::KycSubmitted)
         ->and($result->owner_name)->toBe('Rakesh Kumar')
+        ->and($result->chassis_number)->toBe('MAT625016PWA12345')
         ->and($result->bank_account_number)->toBe('1234567890')
-        ->and($result->documentMedia()->count())->toBe(count(VendorSubmission::REQUIRED_KYC_DOCS));
+        // 8 media rows: RC front/back, Aadhaar front/back, PAN, chassis, owner photo, cheque.
+        ->and($result->documentMedia()->count())->toBe(8)
+        ->and($result->media()->whereIn('type', ['rc_front', 'rc_back', 'aadhaar_front', 'aadhaar_back'])->count())->toBe(4);
+});
+
+it('records keys availability on the submission', function () {
+    $vendor = app(VendorRegistrationAction::class)->register([
+        'name' => 'V', 'email' => 'keys@vs.test', 'password' => 'Password1', 'phone' => '9800000003',
+    ]);
+    $submission = app(VendorSubmissionAction::class)->save(null, [
+        'make' => 'A', 'model' => 'B', 'registration_number' => 'X', 'expected_amount' => 1, 'keys_available' => 'both',
+    ], $vendor->fresh());
+
+    expect($submission->keys_available)->toBe('both');
 });
 
 it('blocks owner-KYC before approval', function () {
@@ -101,14 +132,35 @@ it('blocks owner-KYC before approval', function () {
         ->toThrow(RuntimeException::class, 'approved');
 });
 
-it('lets staff verify the documents → agreement ready', function () {
+it('verifies each document and blocks issuing the agreement until all required are verified', function () {
     [$submission, $vendor, $admin] = approvedSubmission();
     submitKyc($submission, $vendor);
+    $action = app(VendorSettlementAction::class);
 
-    $result = app(VendorSettlementAction::class)->approveOwnerKyc($submission->fresh(), $admin);
+    // Verify one document, but not all — issuing must still be blocked.
+    $action->verifyDocument($submission->fresh(), 'rc', ['status' => 'verified'], $admin);
+    expect(fn () => $action->approveOwnerKyc($submission->fresh(), $admin))
+        ->toThrow(RuntimeException::class, 'Verify all required');
+
+    verifyAllDocs($submission->fresh(), $admin);
+    $result = $action->approveOwnerKyc($submission->fresh(), $admin);
 
     expect($result->settlement_status)->toBe(SettlementStatus::AgreementReady)
         ->and($result->kyc_approved_by)->toBe($admin->id);
+});
+
+it('requires NOC & Form 35 as required documents only under hypothecation', function () {
+    expect(VendorSubmission::requiredDocKeys(false))->not->toContain('noc')->not->toContain('form_35')
+        ->and(VendorSubmission::requiredDocKeys(true))->toContain('noc')->toContain('form_35');
+
+    // A hypothecation submission that supplies NOC & Form 35 verifies through to agreement.
+    [$submission, $vendor, $admin] = approvedSubmission();
+    submitKyc($submission, $vendor, hasHypothecation: true);
+    verifyAllDocs($submission->fresh(), $admin);
+    $result = app(VendorSettlementAction::class)->approveOwnerKyc($submission->fresh(), $admin);
+
+    expect($submission->fresh()->has_hypothecation)->toBeTrue()
+        ->and($result->settlement_status)->toBe(SettlementStatus::AgreementReady);
 });
 
 it('lets staff send documents back to the vendor', function () {
@@ -127,8 +179,10 @@ it('only serves the agreement once documents are verified', function () {
     // Before verification — not available.
     $this->actingAs($vendor)->get("/submission-agreement/{$submission->id}")->assertNotFound();
 
+    $admin = superAdmin();
     submitKyc($submission, $vendor);
-    app(VendorSettlementAction::class)->approveOwnerKyc($submission->fresh(), superAdmin());
+    verifyAllDocs($submission->fresh(), $admin);
+    app(VendorSettlementAction::class)->approveOwnerKyc($submission->fresh(), $admin);
 
     $this->actingAs($vendor)
         ->get("/submission-agreement/{$submission->id}")

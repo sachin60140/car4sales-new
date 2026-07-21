@@ -899,10 +899,10 @@ class DemoDataSeeder extends Seeder
         ], $active->fresh());
 
         // A fully-settled example: approved (→ purchase lead), owner documents
-        // verified, and paid.
+        // uploaded + verified, paid.
         $s3 = $submissions->save(null, [
             'make' => 'Tata', 'model' => 'Nexon', 'variant' => 'XZ', 'manufacturing_year' => 2021,
-            'registration_number' => 'UP32 GH 1092',
+            'registration_number' => 'UP32 GH 1092', 'keys_available' => 'both',
             'fuel_type' => 'Petrol', 'transmission' => 'Manual', 'color' => 'Blue', 'odometer_km' => 31000,
             'ownership_serial' => 1, 'expected_amount' => 720000, 'branch_id' => $branches[0]->id ?? null,
             'items' => $items(),
@@ -911,19 +911,29 @@ class DemoDataSeeder extends Seeder
         $this->attachDemoMedia($s3, 'damage', 1);
         $submissions->submit($s3->fresh(), $active->fresh());
         $submissions->approve($s3->fresh(), $admin);
+
+        // Owner documents (no hypothecation → NOC/Form 35 not required), all verified.
+        $docTypes = ['rc_front', 'rc_back', 'aadhaar_front', 'aadhaar_back', 'pan', 'chassis_photo', 'owner_photo', 'cancelled_cheque'];
+        foreach ($docTypes as $docType) {
+            $this->attachDemoMedia($s3, $docType, 1);
+        }
+        $verifications = [];
+        foreach (['rc', 'aadhaar', 'pan', 'chassis_photo', 'owner_photo', 'cancelled_cheque'] as $key) {
+            $verifications[$key] = ['status' => 'verified', 'number' => null, 'valid_till' => null, 'remarks' => null];
+        }
+
         $s3->update([
             'settlement_status' => \App\Domain\VendorSubmissions\Enums\SettlementStatus::Paid->value,
             'owner_name' => 'Rakesh Kumar', 'owner_phone' => '9876540000', 'owner_email' => 'rakesh.owner@example.test',
             'owner_address' => '14 Civil Lines, Lucknow, UP 226001', 'owner_pan' => 'ABCDE1234F',
+            'chassis_number' => 'MAT625016PWA12345', 'has_hypothecation' => false,
+            'document_verifications' => $verifications,
             'kyc_submitted_at' => now()->subDays(3), 'kyc_approved_at' => now()->subDays(2), 'kyc_approved_by' => $admin->id,
             'bank_account_name' => 'Rakesh Kumar', 'bank_account_number' => '50100123456',
             'bank_ifsc' => 'HDFC0000123', 'bank_name' => 'HDFC Bank', 'payment_requested_at' => now()->subDays(2),
             'payment_amount' => 710000, 'payment_mode' => 'neft', 'payment_reference' => 'UTRDEMO0001',
             'payment_date' => now()->subDay()->toDateString(), 'paid_by' => $admin->id, 'paid_at' => now()->subDay(),
         ]);
-        foreach (['rc', 'pan', 'aadhaar', 'noc', 'key_image', 'owner_photo', 'cancelled_cheque'] as $docType) {
-            $this->attachDemoMedia($s3, $docType, 1);
-        }
         $this->attachDemoMedia($s3, 'payment_proof', 1);
 
         return [2, 3];

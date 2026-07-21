@@ -60,7 +60,11 @@ class SubmissionController extends Controller
 
         return Inertia::render('vendor/submissions/Show', [
             'submission' => $this->detail($submission),
-            'docTypes' => collect(VendorSubmission::REQUIRED_KYC_DOCS)->map(fn ($label, $type) => ['type' => $type, 'label' => $label])->values(),
+            // Full catalog (with conditional docs surfaced) — the form marks NOC/Form 35
+            // required only when the vendor ticks hypothecation.
+            'docCatalog' => collect(VendorSubmission::documentCatalog(true))
+                ->map(fn ($d, $key) => ['key' => $key, 'label' => $d['label'], 'group' => $d['group'], 'sides' => $d['sides']])
+                ->values(),
         ]);
     }
 
@@ -154,23 +158,39 @@ class SubmissionController extends Controller
     {
         abort_unless($submission->vendor_user_id === $request->user()->id, 403);
 
-        $docRules = ['required', 'image', 'max:5120'];
-        $data = $request->validate([
+        $hasHypothecation = $request->boolean('has_hypothecation');
+        $existing = $submission->media()->pluck('type')->all();
+
+        $rules = [
             'owner_name' => ['required', 'string', 'max:255'],
             'owner_phone' => ['required', 'string', 'max:20'],
             'owner_email' => ['nullable', 'email', 'max:255'],
             'owner_address' => ['required', 'string', 'max:500'],
             'owner_pan' => ['nullable', 'string', 'max:15'],
+            'chassis_number' => ['required', 'string', 'max:40'],
+            'has_hypothecation' => ['boolean'],
             'bank_account_name' => ['required', 'string', 'max:255'],
             'bank_account_number' => ['required', 'string', 'max:30'],
             'bank_ifsc' => ['required', 'string', 'max:15'],
             'bank_name' => ['nullable', 'string', 'max:255'],
-            ...array_fill_keys(array_map(fn ($t) => "documents.$t", array_keys(VendorSubmission::REQUIRED_KYC_DOCS)), $docRules),
             'extra_documents' => ['nullable', 'array', 'max:10'],
             'extra_documents.*' => ['image', 'max:5120'],
-        ]);
+        ];
 
-        $owner = $request->only(['owner_name', 'owner_phone', 'owner_email', 'owner_address', 'owner_pan']);
+        // Build per-document file rules from the catalog: required/conditional docs must
+        // be present (or already uploaded on a re-submit); optional docs may be attached.
+        foreach (VendorSubmission::documentCatalog($hasHypothecation) as $key => $def) {
+            $mustHave = in_array($def['group'], ['required', 'conditional'], true);
+            foreach (VendorSubmission::docMediaTypes($key, $def['sides']) as $type) {
+                $rule = ($mustHave && ! in_array($type, $existing, true)) ? 'required' : 'nullable';
+                $rules["documents.$type"] = [$rule, 'image', 'max:5120'];
+            }
+        }
+
+        $request->validate($rules);
+
+        $owner = $request->only(['owner_name', 'owner_phone', 'owner_email', 'owner_address', 'owner_pan', 'chassis_number']);
+        $owner['has_hypothecation'] = $hasHypothecation;
         $bank = $request->only(['bank_account_name', 'bank_account_number', 'bank_ifsc', 'bank_name']);
 
         try {
@@ -228,6 +248,7 @@ class SubmissionController extends Controller
             'color' => ['nullable', 'string', 'max:40'],
             'odometer_km' => ['nullable', 'integer', 'min:0'],
             'ownership_serial' => ['nullable', 'integer', 'min:1', 'max:10'],
+            'keys_available' => ['nullable', 'in:both,one,none'],
             'expected_amount' => ['required', 'numeric', 'min:0'],
             'overall_remark' => ['nullable', 'string', 'max:1000'],
             'branch_id' => ['nullable', 'integer', 'exists:branches,id'],
@@ -278,10 +299,10 @@ class SubmissionController extends Controller
         return [
             ...$s->only([
                 'id', 'submission_number', 'make', 'model', 'variant', 'manufacturing_year',
-                'registration_number', 'registration_state', 'fuel_type', 'transmission', 'color',
-                'odometer_km', 'ownership_serial', 'expected_amount', 'overall_rating', 'overall_remark',
+                'registration_number', 'registration_state', 'chassis_number', 'fuel_type', 'transmission', 'color',
+                'odometer_km', 'ownership_serial', 'keys_available', 'expected_amount', 'overall_rating', 'overall_remark',
                 'branch_id', 'review_remarks', 'owner_name', 'owner_phone', 'owner_email', 'owner_address',
-                'owner_pan', 'kyc_remarks', 'bank_account_name', 'bank_account_number', 'bank_ifsc',
+                'owner_pan', 'has_hypothecation', 'kyc_remarks', 'bank_account_name', 'bank_account_number', 'bank_ifsc',
                 'bank_name', 'payment_amount', 'payment_mode', 'payment_reference',
             ]),
             'status' => $s->status->value,
@@ -308,17 +329,32 @@ class SubmissionController extends Controller
         ];
     }
 
-    /** Owner-KYC documents grouped by type (+ extras), for review/read-back. */
+    /** Uploaded owner-KYC documents (with verification status) for read-back. */
     private function documentRows(VendorSubmission $s): array
     {
-        $docs = [];
-        foreach (array_keys(VendorSubmission::REQUIRED_KYC_DOCS) as $type) {
-            $m = $s->media->firstWhere('type', $type);
-            $docs[$type] = $m ? $this->mediaRow($m) : null;
-        }
-        $docs['extra'] = $s->media->where('type', 'other_doc')->values()->map(fn ($m) => $this->mediaRow($m));
+        $verifs = $s->document_verifications ?? [];
+        $rows = [];
 
-        return $docs;
+        foreach (VendorSubmission::documentCatalog((bool) $s->has_hypothecation) as $key => $def) {
+            $files = [];
+            foreach (VendorSubmission::docMediaTypes($key, $def['sides']) as $i => $type) {
+                if ($m = $s->media->firstWhere('type', $type)) {
+                    $files[] = ['side' => $def['sides'] === 2 ? ($i === 0 ? 'Front' : 'Back') : null, 'url' => route('submission-media.view', $m)];
+                }
+            }
+            if ($files === []) {
+                continue;
+            }
+            $rows[] = [
+                'key' => $key, 'label' => $def['label'], 'files' => $files,
+                'status' => $verifs[$key]['status'] ?? 'pending', 'remarks' => $verifs[$key]['remarks'] ?? null,
+            ];
+        }
+
+        return [
+            'rows' => $rows,
+            'extras' => $s->media->where('type', 'other_doc')->values()->map(fn ($m) => $this->mediaRow($m))->all(),
+        ];
     }
 
     private function mediaRow(\App\Domain\VendorSubmissions\Models\VendorSubmissionMedia $m): array
