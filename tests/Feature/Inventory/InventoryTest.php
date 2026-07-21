@@ -81,12 +81,14 @@ it('adds a stock vehicle from the admin form', function () {
     $branch = Branch::factory()->create();
     $user = userWithPermissions(['vehicles.view', 'vehicles.create', 'vehicles.view-purchase-cost'], scope: 'all');
 
+    // Mirror the real form payload: blank money fields arrive as explicit nulls.
     $response = $this->actingAs($user)->post('/admin/inventory', [
         'make' => 'Hyundai', 'model' => 'Creta', 'variant' => 'SX',
         'registration_number' => 'MH12XY9999', 'manufacturing_year' => 2021,
         'fuel_type' => 'Petrol', 'transmission' => 'Manual', 'body_type' => 'SUV',
         'odometer_km' => 28000, 'ownership_serial' => 1, 'branch_id' => $branch->id,
-        'status' => VehicleStatus::InStock->value, 'landed_cost' => 900000, 'asking_price' => 1050000,
+        'status' => VehicleStatus::InStock->value,
+        'purchase_price' => null, 'landed_cost' => 900000, 'asking_price' => 1050000,
     ]);
 
     $vehicle = Vehicle::query()->where('registration_number', 'MH12XY9999')->firstOrFail();
@@ -94,6 +96,7 @@ it('adds a stock vehicle from the admin form', function () {
 
     expect($vehicle->stock_number)->not->toBeEmpty()
         ->and($vehicle->status)->toBe(VehicleStatus::InStock)
+        ->and((float) $vehicle->purchase_price)->toBe(0.0)
         ->and((float) $vehicle->landed_cost)->toBe(900000.0)
         ->and($vehicle->created_by)->toBe($user->id)
         ->and($vehicle->slug)->not->toBeEmpty();

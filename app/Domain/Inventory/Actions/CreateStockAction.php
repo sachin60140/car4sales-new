@@ -41,6 +41,10 @@ class CreateStockAction
                 ...$data,
                 'stock_number' => $this->sequences->next('stock'),
                 'status' => $status,
+                // These columns are NOT NULL (default 0); coalesce blank input so
+                // an explicit null from the form doesn't violate the constraint.
+                'purchase_price' => $data['purchase_price'] ?? 0,
+                'landed_cost' => $data['landed_cost'] ?? 0,
                 'title' => ($data['title'] ?? null) ?: $title,
                 'created_by' => $actor?->id,
             ]);
